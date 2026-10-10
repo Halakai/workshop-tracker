@@ -14,6 +14,7 @@ import { syncErrorMessage } from '@/lib/errors';
 import {
   useAddCategory,
   useAddExpenseCategory,
+  useAddToolCategory,
   useAddUnit,
   useCategories,
   useDeleteEntry,
@@ -22,6 +23,7 @@ import {
   type Category,
   type ExpenseCategory,
   type ListTable,
+  type ToolCategory,
   type UnitEntry,
 } from './api';
 
@@ -197,6 +199,41 @@ export function AddExpenseCategoryDrawer({ open, onOpenChange }: { open: boolean
   );
 }
 
+export function AddToolCategoryDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const add = useAddToolCategory();
+  const form = useForm({ resolver: zodResolver(expenseCategorySchema), defaultValues: { name: '' } });
+  const close = (next: boolean) => {
+    onOpenChange(next);
+    if (!next) form.reset();
+  };
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      const category = await add.mutateAsync({ ...values, sort_order: 85 });
+      toast.success(`Tool category ${category.name} added`);
+      close(false);
+    } catch (e) {
+      toast.error(duplicateMessage(e, 'tool category'));
+    }
+  });
+  return (
+    <FormDrawer open={open} onOpenChange={close} title="New tool category">
+      <form onSubmit={onSubmit} noValidate>
+        <FieldGroup>
+          <Field data-invalid={!!form.formState.errors.name}>
+            <FieldLabel htmlFor="toolcat-name">Name</FieldLabel>
+            <Input id="toolcat-name" placeholder="e.g. Welding, Bodywork" autoFocus {...form.register('name')} />
+            <FieldError errors={[form.formState.errors.name]} />
+          </Field>
+          <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
+            Add tool category
+          </Button>
+        </FieldGroup>
+      </form>
+    </FormDrawer>
+  );
+}
+
 function WholeOnlySwitch({ control }: { control: any }) {
   return (
     <Field orientation="horizontal">
@@ -218,13 +255,15 @@ export type EditTarget =
   | { table: 'item_categories'; entry: Category; usedBy: number }
   | { table: 'units'; entry: UnitEntry; usedBy: number }
   | { table: 'brands'; entry: Brand; usedBy: number }
-  | { table: 'expense_categories'; entry: ExpenseCategory; usedBy: number };
+  | { table: 'expense_categories'; entry: ExpenseCategory; usedBy: number }
+  | { table: 'tool_categories'; entry: ToolCategory; usedBy: number };
 
 const TITLES: Record<ListTable, string> = {
   item_categories: 'category',
   units: 'unit',
   brands: 'brand',
   expense_categories: 'cost type',
+  tool_categories: 'tool category',
 };
 
 const editSchema = z.object({

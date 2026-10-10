@@ -1,4 +1,4 @@
-// The editable lists: item categories, units and brands.
+// The editable lists: item categories, units, brands, cost types and tool categories.
 // Everyone can add entries; only admins can rename or delete them (enforced by RLS).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -9,14 +9,16 @@ export type Category = Tables<'item_categories'>;
 export type UnitEntry = Tables<'units'>;
 export type Brand = Tables<'brands'>;
 export type ExpenseCategory = Tables<'expense_categories'>;
+export type ToolCategory = Tables<'tool_categories'>;
 
-export type ListTable = 'item_categories' | 'units' | 'brands' | 'expense_categories';
+export type ListTable = 'item_categories' | 'units' | 'brands' | 'expense_categories' | 'tool_categories';
 
 export const catalogKeys: Record<ListTable, readonly string[]> = {
   item_categories: ['item_categories'],
   units: ['units'],
   brands: ['brands'],
   expense_categories: ['expense_categories'],
+  tool_categories: ['tool_categories'],
 };
 
 export function useCategories() {
@@ -67,6 +69,30 @@ export function useExpenseCategories() {
   });
 }
 
+export function useToolCategories() {
+  return useQuery({
+    queryKey: catalogKeys.tool_categories,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('tool_categories').select('*').order('sort_order').order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useAddToolCategory() {
+  const invalidate = useInvalidate('tool_categories');
+  return useMutation({
+    mutationFn: async (values: TablesInsert<'tool_categories'>) => {
+      const { data, error } = await supabase.from('tool_categories').insert(values).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+}
+
 export function useAddExpenseCategory() {
   const invalidate = useInvalidate('expense_categories');
   return useMutation({
@@ -84,8 +110,9 @@ function useInvalidate(table: ListTable) {
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: catalogKeys[table] }),
-      // items embed category / unit / brand names, car money shows cost categories
+      // items and tools embed category / unit / brand names, car money shows cost categories
       queryClient.invalidateQueries({ queryKey: ['items'] }),
+      queryClient.invalidateQueries({ queryKey: ['tools'] }),
       queryClient.invalidateQueries({ queryKey: ['car-money'] }),
     ]);
 }
@@ -155,7 +182,7 @@ export function useDeleteEntry(table: ListTable) {
     mutationFn: async (id: string) => {
       const { data, error } = await supabase.from(table as 'brands').delete().eq('id', id).select();
       if (error) {
-        if (error.code === '23503') throw new Error('Still used by items. Change those items first.');
+        if (error.code === '23503') throw new Error('Still in use. Change the items or tools that use it first.');
         throw error;
       }
       if (!data.length) throw new Error('Only an admin can delete list entries.');

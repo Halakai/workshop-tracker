@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { BookUser, Car, ChevronRight, Package, Search, Wallet, Wrench, type LucideIcon } from 'lucide-react';
+import { BookUser, Car, ChevronRight, Hammer, Package, Search, Wallet, Wrench, type LucideIcon } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -17,13 +17,17 @@ import { unitOf, useItems } from '@/features/inventory/api';
 import { useContacts } from '@/features/contacts/api';
 import { useTransactions } from '@/features/money/api';
 import { categoryInfo } from '@/features/money/labels';
+import { useTools } from '@/features/tools/api';
+import { useProfileNames } from '@/features/auth/profiles';
+import { conditionLabel, goneLabel } from '@/domain/tools';
 
-type Group = 'cars' | 'jobs' | 'items' | 'contacts' | 'money';
+type Group = 'cars' | 'jobs' | 'items' | 'tools' | 'contacts' | 'money';
 
 const GROUPS: { id: Group; label: string; icon: LucideIcon }[] = [
   { id: 'cars', label: 'Cars', icon: Car },
   { id: 'jobs', label: 'Jobs', icon: Wrench },
   { id: 'items', label: 'Inventory', icon: Package },
+  { id: 'tools', label: 'Tools', icon: Hammer },
   { id: 'contacts', label: 'Contacts', icon: BookUser },
   { id: 'money', label: 'Money', icon: Wallet },
 ];
@@ -48,7 +52,9 @@ export function SearchPage() {
   const items = useItems();
   const contacts = useContacts();
   const money = useTransactions();
-  const loading = cars.isPending || jobs.isPending || items.isPending || contacts.isPending || money.isPending;
+  const tools = useTools();
+  const names = useProfileNames();
+  const loading = cars.isPending || jobs.isPending || items.isPending || tools.isPending || contacts.isPending || money.isPending;
 
   const docs = useMemo<Result[]>(() => {
     const list: Result[] = [];
@@ -91,6 +97,20 @@ export function SearchPage() {
         right: formatQuantity(toMilli(i.qty_on_hand), unitOf(i).name),
       });
     }
+    for (const t of tools.data ?? []) {
+      const status = t.gone_reason ? goneLabel(t.gone_reason) : t.lent_to ? `at ${t.lent_to}` : t.condition !== 'good' ? conditionLabel(t.condition) : '';
+      list.push({
+        key: `tool:${t.id}`,
+        group: 'tools',
+        to: `/inventory/tools/${t.id}`,
+        title: t.name,
+        codes: [t.code, t.serial_number, t.model],
+        text: [t.brand?.name, t.category?.name, t.location, t.lent_to, t.owner_id ? names.get(t.owner_id) : null, t.bought_from, t.notes, status],
+        heading: t.name,
+        sub: [t.code, [t.brand?.name, t.model].filter(Boolean).join(' '), t.location].filter(Boolean).join(' · '),
+        right: status,
+      });
+    }
     for (const c of contacts.data ?? []) {
       list.push({
         key: `contact:${c.id}`,
@@ -119,7 +139,7 @@ export function SearchPage() {
       });
     }
     return list;
-  }, [cars.data, jobs.data, items.data, contacts.data, money.data]);
+  }, [cars.data, jobs.data, items.data, tools.data, names, contacts.data, money.data]);
 
   const results = useMemo(() => search(query, docs), [query, docs]);
   const byGroup = GROUPS.map((g) => ({ ...g, rows: results.filter((r) => r.group === g.id) })).filter((g) => g.rows.length > 0);
@@ -144,8 +164,8 @@ export function SearchPage() {
         {!query.trim() && (
           <p className="text-sm text-muted-foreground">
             Finds cars (make, model, plate, VIN, car ID), jobs (customer, work, plate, invoice number), inventory (name, part
-            number, brand, shelf), contacts (name, phone) and money entries (description, who, amount). Spaces and dashes
-            don’t matter in plates and IDs.
+            number, brand, shelf), tools (name, ID, brand, serial number, who has it), contacts (name, phone) and money entries
+            (description, who, amount). Spaces and dashes don’t matter in plates and IDs.
           </p>
         )}
         {query.trim() && loading && <Skeleton className="h-40 rounded-xl" />}

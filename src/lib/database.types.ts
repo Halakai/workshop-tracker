@@ -1478,6 +1478,178 @@ export type Database = {
           },
         ];
       };
+      tool_categories: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tool_categories_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tool_categories_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tools: {
+        Row: {
+          bought_from: string | null;
+          bought_on: string | null;
+          brand_id: string | null;
+          category_id: string;
+          code: string;
+          condition: string;
+          created_at: string;
+          created_by: string | null;
+          gone_on: string | null;
+          gone_reason: string | null;
+          id: string;
+          lent_on: string | null;
+          lent_to: string | null;
+          location: string | null;
+          model: string | null;
+          name: string;
+          notes: string | null;
+          owner_id: string | null;
+          price_cents: number | null;
+          qty: number;
+          serial_number: string | null;
+          transaction_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          warranty_until: string | null;
+        };
+        Insert: {
+          bought_from?: string | null;
+          bought_on?: string | null;
+          brand_id?: string | null;
+          category_id: string;
+          code: string;
+          condition?: string;
+          created_at?: string;
+          created_by?: string | null;
+          gone_on?: string | null;
+          gone_reason?: string | null;
+          id?: string;
+          lent_on?: string | null;
+          lent_to?: string | null;
+          location?: string | null;
+          model?: string | null;
+          name: string;
+          notes?: string | null;
+          owner_id?: string | null;
+          price_cents?: number | null;
+          qty?: number;
+          serial_number?: string | null;
+          transaction_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          warranty_until?: string | null;
+        };
+        Update: {
+          bought_from?: string | null;
+          bought_on?: string | null;
+          brand_id?: string | null;
+          category_id?: string;
+          code?: string;
+          condition?: string;
+          created_at?: string;
+          created_by?: string | null;
+          gone_on?: string | null;
+          gone_reason?: string | null;
+          id?: string;
+          lent_on?: string | null;
+          lent_to?: string | null;
+          location?: string | null;
+          model?: string | null;
+          name?: string;
+          notes?: string | null;
+          owner_id?: string | null;
+          price_cents?: number | null;
+          qty?: number;
+          serial_number?: string | null;
+          transaction_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          warranty_until?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tools_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tools_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "tool_categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tools_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tools_owner_id_fkey";
+            columns: ["owner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tools_transaction_id_fkey";
+            columns: ["transaction_id"];
+            isOneToOne: true;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tools_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       transactions: {
         Row: {
           amount_cents: number;
@@ -1777,6 +1949,10 @@ export type Database = {
           p_sale_price_cents: number;
           p_supplier: string;
         };
+        Returns: string;
+      };
+      save_tool_payment: {
+        Args: { p_account_id: string; p_allocations?: Json; p_tool_id: string };
         Returns: string;
       };
       save_workshop_money: {

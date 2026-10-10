@@ -10,6 +10,7 @@ import { formatQuantity, toMilli } from '@/domain/quantity';
 import { cn } from '@/lib/utils';
 import { useCategories } from '@/features/catalog/api';
 import { itemIsLow, unitOf, useItems, useLowStockItems, type Item } from './api';
+import { InventoryTabs } from './InventoryTabs';
 
 /** 'all' | 'low' | 'archived' | a category id */
 type Filter = string;
@@ -77,6 +78,7 @@ export function StockListPage() {
         }
       />
       <PageBody>
+        <InventoryTabs current="stock" />
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground" />
           <Input
