@@ -1,4 +1,4 @@
-import { useMemo, useState, type ComponentProps } from 'react';
+import { useMemo, useState, type ComponentProps, type ReactNode } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { suggest } from '@/domain/codes';
@@ -13,6 +13,8 @@ export function SuggestionInput({
   options,
   newHint,
   limit = 6,
+  renderOption,
+  onPick,
   ...props
 }: Omit<ComponentProps<typeof Input>, 'value' | 'onChange'> & {
   value: string;
@@ -21,6 +23,10 @@ export function SuggestionInput({
   /** e.g. (v) => `“${v}” will be added as a new brand`, shown when the text matches no option exactly */
   newHint?: (value: string) => string;
   limit?: number;
+  /** what a suggestion chip shows (default: the text itself), e.g. a logo next to the name */
+  renderOption?: (option: string) => ReactNode;
+  /** called after a suggestion is tapped (typing doesn't call it) */
+  onPick?: (option: string) => void;
 }) {
   const [focused, setFocused] = useState(false);
   const matches = useMemo(() => suggest(value, options, limit), [value, options, limit]);
@@ -47,9 +53,13 @@ export function SuggestionInput({
               size="sm"
               // keep the keyboard open: don't move focus away from the input
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => onChange(m)}
+              onClick={() => {
+                onChange(m);
+                onPick?.(m);
+              }}
+              className={renderOption ? 'h-auto min-h-8 py-1' : undefined}
             >
-              {m}
+              {renderOption ? renderOption(m) : m}
             </Button>
           ))}
         </div>

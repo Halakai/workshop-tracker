@@ -42,6 +42,7 @@ describe('suggest', () => {
 
   it('shows prefix matches first, then contains', () => {
     expect(suggest('bo', brands)).toEqual(['Bosch', 'Bosal']);
+    expect(suggest('skoda', ['Škoda', 'Seat'])).toEqual(['Škoda']);
     expect(suggest('il', brands)).toEqual(['Mobil', 'Febi Bilstein']);
     expect(suggest('mo', brands)).toEqual(['Mobil', 'Liqui Moly']);
   });

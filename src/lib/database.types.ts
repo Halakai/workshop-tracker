@@ -277,6 +277,219 @@ export type Database = {
           },
         ];
       };
+      car_engines: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          fuel: string | null;
+          generation_id: string;
+          id: string;
+          name: string;
+          power_kw: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          fuel?: string | null;
+          generation_id: string;
+          id?: string;
+          name: string;
+          power_kw?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          fuel?: string | null;
+          generation_id?: string;
+          id?: string;
+          name?: string;
+          power_kw?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_engines_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_engines_generation_id_fkey";
+            columns: ["generation_id"];
+            isOneToOne: false;
+            referencedRelation: "car_generations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_engines_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      car_generations: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          model_id: string;
+          name: string;
+          updated_at: string;
+          updated_by: string | null;
+          year_from: number | null;
+          year_to: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          model_id: string;
+          name: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          year_from?: number | null;
+          year_to?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          model_id?: string;
+          name?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          year_from?: number | null;
+          year_to?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_generations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_generations_model_id_fkey";
+            columns: ["model_id"];
+            isOneToOne: false;
+            referencedRelation: "car_models";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_generations_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      car_makes: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          logo: string | null;
+          name: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          logo?: string | null;
+          name: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          logo?: string | null;
+          name?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_makes_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_makes_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      car_models: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          make_id: string;
+          name: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          make_id: string;
+          name: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          make_id?: string;
+          name?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_models_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_models_make_id_fkey";
+            columns: ["make_id"];
+            isOneToOne: false;
+            referencedRelation: "car_makes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_models_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       car_shares: {
         Row: {
           car_id: string;
@@ -326,6 +539,7 @@ export type Database = {
           created_by: string | null;
           engine: string | null;
           fuel: string | null;
+          generation: string | null;
           id: string;
           listing_url: string | null;
           make: string;
@@ -354,6 +568,7 @@ export type Database = {
           created_by?: string | null;
           engine?: string | null;
           fuel?: string | null;
+          generation?: string | null;
           id?: string;
           listing_url?: string | null;
           make: string;
@@ -382,6 +597,7 @@ export type Database = {
           created_by?: string | null;
           engine?: string | null;
           fuel?: string | null;
+          generation?: string | null;
           id?: string;
           listing_url?: string | null;
           make?: string;
@@ -842,10 +1058,13 @@ export type Database = {
       };
       jobs: {
         Row: {
+          car_engine: string | null;
+          car_generation: string | null;
           car_make: string | null;
           car_model: string | null;
           car_plate: string | null;
           car_vin: string | null;
+          car_year: number | null;
           created_at: string;
           created_by: string | null;
           customer_id: string;
@@ -863,10 +1082,13 @@ export type Database = {
           updated_by: string | null;
         };
         Insert: {
+          car_engine?: string | null;
+          car_generation?: string | null;
           car_make?: string | null;
           car_model?: string | null;
           car_plate?: string | null;
           car_vin?: string | null;
+          car_year?: number | null;
           created_at?: string;
           created_by?: string | null;
           customer_id: string;
@@ -884,10 +1106,13 @@ export type Database = {
           updated_by?: string | null;
         };
         Update: {
+          car_engine?: string | null;
+          car_generation?: string | null;
           car_make?: string | null;
           car_model?: string | null;
           car_plate?: string | null;
           car_vin?: string | null;
+          car_year?: number | null;
           created_at?: string;
           created_by?: string | null;
           customer_id?: string;

@@ -1,12 +1,12 @@
 # Workshop Tracker
 
-Mobile-first web app for our private car workshop: car flips, small jobs for friends, parts stock, the shared
-workshop wallet and settling up between partners.
+Mobile-first web app for our private car workshop: car flips, small jobs for friends, the parts inventory, the
+shared workshop wallet and settling up between partners.
 
 - **App:** https://halakai.github.io/workshop-tracker/ (install it with *Add to Home Screen*)
 - **Design and decisions:** [docs/PLAN.md](docs/PLAN.md)
 - **Stack:** Vite + React + TypeScript, Tailwind + shadcn/ui, TanStack Query, react-hook-form + zod, Supabase
-  (Postgres + Auth + Edge Functions), GitHub Pages. Photos and receipts go to Google Drive (milestone 6).
+  (Postgres + Auth + Edge Functions), GitHub Pages. Photos and receipts go to Google Drive.
 
 ## Status
 
@@ -17,27 +17,35 @@ workshop wallet and settling up between partners.
 | M3 | Cars and their costs | ✅ done |
 | M4 | Wallet, ledger and settling up | ✅ done |
 | M5 | Customer jobs and PDF invoices | ✅ done |
-| M6 | Google Drive uploads | ✅ built, needs the Google setup below |
+| M6 | Google Drive uploads | ✅ done |
 | M7 | Dashboard, low-stock alerts, export, polish | ✅ done |
+| R1 | After testing: dashboard with charts, search, Inventory rename, back button, restoring backups, car catalogue with logos | ✅ done |
 
 ## The app at a glance
 
-- **Home:**
-  - quick actions: *Expense, Use stock, Buy stock, New car, New job*;
+- **Home** is a dashboard:
+  - a **search** bar for everything (see below);
+  - quick actions: *Expense, Use part, Buy part, New car, New job*;
   - the wallet and each partner's balance;
-  - cars in progress with the amount invested;
-  - open and unpaid jobs;
-  - low stock;
-  - recent activity (who did what, when).
-- **Bottom bar:** Home · Stock (red badge = items to buy) · Cars · Jobs · More.
+  - tiles: inventory value (and what's running low), money in unsold cars, money still to collect from finished jobs,
+    and this year's profit (cars sold and jobs paid this year);
+  - **Money in & out**: a bar chart per month (6 or 12 months; tap a month) and what the money went on and came
+    from, for a month, the year or the last 12 months. Moves between the wallet and partners aren't counted;
+  - **recently opened** cars, jobs and items (remembered on each phone);
+  - cars in progress, open and unpaid jobs, low stock, and recent activity (who did what, when).
+- **Search** finds cars (make, model, plate, VIN, car ID), jobs (customer, work, plate, invoice number), inventory
+  (name, part number, brand, shelf), contacts (name, phone) and money entries (description, who, amount). Case,
+  accents and spaces or dashes in plates and IDs don't matter: `zg123ab` finds `ZG 123-AB`.
+- **Bottom bar:** Home · Inventory (red badge = items to buy) · Cars · Jobs · More.
+- **Back arrows** go back to wherever you came from.
 - **More:**
   - Money and Partners;
   - Contacts (sellers, buyers, customers, with tap-to-call);
-  - Lists (categories, units, brands, cost types);
+  - Lists (car makes & models, categories, units, brands, cost types);
   - My account;
-  - admin only: Users & partners, Workshop settings (invoice header, Google Drive test), Backup & export.
+  - admin only: Users & partners, Workshop settings (invoice header, Google Drive test), Backup & restore.
 
-## How stock works (short)
+## How the inventory works (short)
 
 - Every item's quantity changes **only** through movements: **Buy**, **Use**, **Adjust** (and, from M3/M5, use
   on a car or job and return to stock). Each movement records who added it and when.
@@ -59,16 +67,17 @@ workshop wallet and settling up between partners.
 - **Part number** = the item's unique ID: category code + brand code + number, e.g. `FLD-CAST-001`. It is
   filled in automatically and can be edited. Uniqueness ignores upper/lower case. The maker's own number goes in
   **Manufacturer ref**.
-- **Categories, units and brands** are lists (More → Categories, units & brands). Everyone can add entries there.
+- **Categories, units and brands** are lists (More → Lists). Everyone can add entries there.
   New categories and units are added only on that page. A new **brand** can also be typed straight into an item.
   Only an admin can rename or delete entries, and an entry that is still used can't be deleted. Brand names are
   case-sensitive.
 
 ## How cars work (short)
 
-- **New car:** make and model (suggested from earlier cars), year, plate, VIN, engine, fuel, mileage, colour, and a
-  car ID that's filled in automatically (`CAR-001`) and can be changed. With it go the **purchase price, who paid
-  and the seller**. Sellers and buyers are saved as **contacts** (name and phone) and suggested next time.
+- **New car:** make, model, generation and engine (suggested from the car catalogue, see below), year, plate, VIN,
+  fuel, mileage, colour, and a car ID that's filled in automatically (`CAR-001`) and can be changed. With it go the
+  **purchase price, who paid and the seller**. Sellers and buyers are saved as **contacts** (name and phone) and
+  suggested next time.
 - **Costs on a car:**
   - **From stock:** parts and consumables at the average cost, also possible from an item's **Use** button.
   - **Part bought:** for this car only; it never enters stock.
@@ -102,9 +111,9 @@ workshop wallet and settling up between partners.
 
 ## Jobs for friends (short)
 
-- **New job:** the customer comes from contacts (type-ahead; a new name is added), with their car. When a customer is
-  picked, their earlier cars are offered as one-tap chips. The work description, a fixed **labor price**, and an
-  automatic job ID (`JOB-001`).
+- **New job:** the customer comes from contacts (type-ahead; a new name is added), with their car (make, model,
+  generation, year, engine, plate, VIN; suggested like on a new car). When a customer is picked, their earlier cars
+  are offered as one-tap chips. The work description, a fixed **labor price**, and an automatic job ID (`JOB-001`).
 - **Lines the customer pays for:**
   - **From stock:** at the average cost.
   - **Part bought:** for this job, with who paid.
@@ -126,67 +135,24 @@ workshop wallet and settling up between partners.
     and car costs, job parts and workshop expenses (open the entry).
   - Every invoice PDF is also copied to Drive.
 
-## Things to know## How cars work (short)
+## Car makes and models (catalogue)
 
-- **New car:** make and model (suggested from earlier cars), year, plate, VIN, engine, fuel, mileage, colour, and a
-  car ID that's filled in automatically (`CAR-001`) and can be changed. With it go the **purchase price, who paid
-  and the seller**. Sellers and buyers are saved as **contacts** (name and phone) and suggested next time.
-- **Costs on a car:**
-  - **From stock:** parts and consumables at the average cost, also possible from an item's **Use** button.
-  - **Part bought:** for this car only; it never enters stock.
-  - **Other cost:** registration, inspection, towing, ads, insurance… The cost types are a list (More → Lists).
-  - Every entry records who paid and who added it.
-- **Return:** a part taken off a car unused goes back to stock at exactly what the car was charged.
-- **Status:** Bought → In repair → Ready for sale → Listed (asking price and ad link) → Sold (or Scrapped).
-  **Sell** records the price, who got the money, the buyer and the mileage.
-- The car page shows **total invested** live. Once the car is sold it also shows **profit, margin and ROI**. The car
-  list filters by status and sorts by newest, invested or profit.
-- Each car has its own **profit shares**, copied from the defaults. Change them per car, e.g. "All to Ivan".
-
-## Money (short)
-
-- **Wallet** (More → Money): the balance is always calculated from the entries. The buttons:
-  - **Put in:** a partner puts money into the wallet.
-  - **Take out:** a partner takes money out.
-  - **Transfer:** e.g. the wallet pays a partner back.
-  - **Expense:** a workshop cost not tied to a car, e.g. tools or electricity.
-  - **Income:** e.g. scrap metal sold.
-- **Expense** and **Income** are split between partners by their default profit shares.
-- **Partners** (More → Partners): for each partner, **put in** (deposits, things they paid), **taken out**
-  (withdrawals, money they received), **profit share**, and the **balance** = what the workshop owes them. Their
-  page lists every entry and every profit share, with where it came from.
-- **Settle up** a sold or scrapped car (button on the car):
-  1. The app shows who paid what (parts from stock count as the wallet) and who holds the sale money.
-  2. It splits the profit or loss by the car's shares and adds it to each partner's balance.
-  3. Choose **Keep profit in wallet** (default) or **Pay out profit**, and whether to pay back out-of-pocket costs.
-  4. It suggests the fewest transfers ("Ivan → Wallet 1 800.00€"); untick any you'll handle differently.
-  5. **Record settlement** writes it all and locks the car's money. **Undo settlement** unlocks it again.
-
-## Jobs for friends (short)
-
-- **New job:** the customer comes from contacts (type-ahead; a new name is added), with their car. When a customer is
-  picked, their earlier cars are offered as one-tap chips. The work description, a fixed **labor price**, and an
-  automatic job ID (`JOB-001`).
-- **Lines the customer pays for:**
-  - **From stock:** at the average cost.
-  - **Part bought:** for this job, with who paid.
-  - **Other:** e.g. diagnostics or a disposal fee.
-  - Each line has its own **price for the customer**. Leave it empty to charge cost, or tap *+10 %*, *+20 %*…
-  - A stock line can be taken off the job, and the parts go back to stock.
-- **Status:** Open → Done → Paid. **Customer paid** records the amount and who got the money. When the total is
-  covered, the job becomes Paid automatically.
-- **Invoice (PDF):**
-  - The first time, it gets the next number (`2026-001`, gapless per year).
-  - It is made on the phone and opens the share sheet (WhatsApp, mail, Files), or downloads on a computer.
-  - It uses the workshop name, logo, contact, IBAN and footer from **More → Workshop settings** (admin).
-  - No VAT.
-- **Settle up** a paid job like a car: profit = payments − parts. A job can belong to one person: set the shares to
-  "All to Ivan".
-- **Photos and receipts:**
-  - **Take photo** opens the camera; **Choose file** picks a photo or PDF.
-  - They can be added to cars (photos, papers and receipts), jobs (photos), stock purchases (📎 on the purchase),
-    and car costs, job parts and workshop expenses (open the entry).
-  - Every invoice PDF is also copied to Drive.
+- The car and job forms suggest **makes** (with their logo), **models**, **generations** (e.g. Golf *IV (1J)*,
+  1997–2003; the ones made in the year you typed come first) and **engines** (e.g. *1.9 TDI 77 kW (105 HP)*, with
+  fuel; picking one fills in the fuel).
+- It starts with 62 makes, 583 models, about 1 000 generations and 6 700 engines, focused on cars sold in Europe since
+  about 1990. Anything new you type on a form is added when you save, so the list grows with your cars. A typed name
+  that matches an entry is saved in the catalogue's spelling (`skoda` → `Škoda`).
+- **More → Lists → Car makes & models** shows it all. Everyone can add; only an admin can rename or delete.
+- **Where the data comes from:** the starting list was written for this app from general knowledge of the
+  European market (power in kW and HP as the makers quote it). It was not copied from a specifications website (sites
+  like ultimatespecs.com don't allow that). It can have gaps or mistakes: the car's registration papers (field P.2,
+  kW) are the reference, and an admin can correct any entry in the app. The source is `data/car-catalog/*.txt`; to
+  add a lot at once, edit those files and run `npm run catalog -- supabase/migrations/<timestamp>_car_catalog_more.sql`
+  (entries that already exist are skipped).
+- **Logos** are public-domain or CC0 files from Wikimedia Commons and Simple Icons, listed with their sources in
+  [data/car-catalog/LOGOS.md](data/car-catalog/LOGOS.md). Makes without a free logo (and makes you add) show their
+  initials.
 
 ## Things to know
 
@@ -196,11 +162,18 @@ workshop wallet and settling up between partners.
   dashboard (possible for 90 days). You can have only 2 active free projects.
 - **No password-reset emails.** Supabase's built-in email only reaches your Supabase team, so the admin sets new
   passwords in the app: *More → Users & partners → (user) → Set a new password*.
-- **Backups:** the free plan has no downloadable backups. Use **More → Backup & export** (admin) now and then:
-  - **JSON** is everything in one file.
-  - **CSV ZIP** is one file per table, for Excel.
+- **Backups:** the free plan has no downloadable backups. Use **More → Backup & restore** (admin) now and then:
+  - **Backup file (JSON)** is everything in one file. Keep it somewhere safe, e.g. in Google Drive.
+  - **CSV ZIP** is one file per table, for Excel. It can't be restored.
   - Home reminds the admin when the last backup is more than 30 days old.
   - Photos and receipts are already safe in Google Drive.
+- **Restoring a backup** (More → Backup & restore → *Choose backup file*) replaces everything in the app with the
+  file's contents: inventory, cars, jobs, money, contacts, lists, settings and history. Users, passwords and profit
+  shares are not touched.
+  - Before it starts, the app downloads a copy of the current data, so a wrong file can be undone by restoring that.
+  - People in the backup are matched to today's users by account, email or name; check the matches before you
+    confirm. This also works in a brand-new Supabase project: create the users first (step 3 below), then restore.
+  - It's all or nothing: if anything fails, nothing changes.
 - **Keep-alive:** `.github/workflows/keepalive.yml` pings the database every 3 days, so the free project doesn't pause
   while you're on holiday. If GitHub switches it off after 60 days without commits, re-enable it under
   **Actions → Keep Supabase awake → Enable workflow**.

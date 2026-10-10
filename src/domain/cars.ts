@@ -59,6 +59,7 @@ export function nextCarRef(existing: Iterable<string>): string {
   return nextPartNumber('CAR', existing);
 }
 
-export function carTitle(car: { year: number | null; make: string; model: string }): string {
-  return [car.year, car.make, car.model].filter(Boolean).join(' ');
+/** "2004 Volkswagen Golf IV (1J)" */
+export function carTitle(car: { year: number | null; make: string; model: string; generation?: string | null }): string {
+  return [car.year, car.make, car.model, car.generation].filter(Boolean).join(' ');
 }

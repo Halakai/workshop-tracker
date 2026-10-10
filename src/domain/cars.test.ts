@@ -45,5 +45,6 @@ describe('car helpers', () => {
   it('builds a title', () => {
     expect(carTitle({ year: 2012, make: 'Škoda', model: 'Octavia' })).toBe('2012 Škoda Octavia');
     expect(carTitle({ year: null, make: 'VW', model: 'Golf' })).toBe('VW Golf');
+    expect(carTitle({ year: 2001, make: 'Volkswagen', model: 'Golf', generation: 'IV (1J)' })).toBe('2001 Volkswagen Golf IV (1J)');
   });
 });

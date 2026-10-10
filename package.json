@@ -14,7 +14,8 @@
     "icons": "pwa-assets-generator",
     "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts && prettier --write src/lib/database.types.ts",
     "db:push": "supabase db push --linked",
-    "functions:deploy": "supabase functions deploy --use-api"
+    "functions:deploy": "supabase functions deploy --use-api",
+    "catalog": "node scripts/build-car-catalog.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",

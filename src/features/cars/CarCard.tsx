@@ -4,6 +4,7 @@ import { carStatusLabel, carTitle, type CarStatus } from '@/domain/cars';
 import { formatMoney } from '@/domain/money';
 import { formatPercentBp } from '@/domain/shares';
 import { cn } from '@/lib/utils';
+import { CarLogo } from '@/components/CarLogo';
 import type { Car } from './api';
 
 const STATUS_STYLES: Record<CarStatus, string> = {
@@ -23,8 +24,9 @@ export function CarCard({ car }: { car: Car }) {
   const { totals } = car;
   return (
     <Link to={`/cars/${car.id}`} className="flex flex-col gap-2 rounded-xl border bg-card p-4 active:bg-muted">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0">
+      <div className="flex items-start gap-3">
+        <CarLogo make={car.make} />
+        <div className="min-w-0 flex-1">
           <p className="truncate font-semibold">{carTitle(car)}</p>
           <p className="truncate font-mono text-xs text-muted-foreground">
             {car.ref}
