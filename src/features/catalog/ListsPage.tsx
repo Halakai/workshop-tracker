@@ -10,11 +10,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentProfile } from '@/features/auth/profiles';
 import { useItems } from '@/features/inventory/api';
 import { useTools } from '@/features/tools/api';
-import { useBrands, useCategories, useExpenseCategories, useToolCategories, useUnits, type Brand } from './api';
-import { AddCategoryDrawer, AddExpenseCategoryDrawer, AddToolCategoryDrawer, AddUnitDrawer, EditEntryDrawer, type EditTarget } from './EntryDrawers';
+import { useBrands, useCategories, useExpenseCategories, usePhotoAlbums, useToolCategories, useUnits, type Brand } from './api';
+import { AddCategoryDrawer, AddExpenseCategoryDrawer, AddPhotoAlbumDrawer, AddToolCategoryDrawer, AddUnitDrawer, EditEntryDrawer, type EditTarget } from './EntryDrawers';
 import { AddBrandDrawer } from './AddBrandDrawer';
 
-/** Car makes, categories, units, brands, cost types and tool categories. Everyone can add; admins can rename and delete. */
+/** Car makes, categories, units, brands, cost types, photo albums and tool categories. Everyone can add; admins can rename and delete. */
 export function ListsPage() {
   const me = useCurrentProfile();
   const isAdmin = me.role === 'admin';
@@ -35,7 +35,18 @@ export function ListsPage() {
       return map;
     },
   });
-  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'cost' | 'tool-category' | null>(null);
+  const photoAlbums = usePhotoAlbums();
+  const albumUsage = useQuery({
+    queryKey: ['photo-album-usage'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('attachments').select('album_id').not('album_id', 'is', null);
+      if (error) throw error;
+      const map = new Map<string, number>();
+      for (const r of data) map.set(r.album_id!, (map.get(r.album_id!) ?? 0) + 1);
+      return map;
+    },
+  });
+  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'cost' | 'tool-category' | 'album' | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
 
   const usage = useMemo(() => {
@@ -112,6 +123,21 @@ export function ListsPage() {
           ))}
         </Section>
 
+        <Section title="Photo albums" onAdd={() => setAdding('album')} loading={photoAlbums.isPending}>
+          {photoAlbums.data?.map((a) => {
+            const used = albumUsage.data?.get(a.id) ?? 0;
+            return (
+              <Row
+                key={a.id}
+                title={a.name}
+                usedBy={used}
+                usedLabel="photo"
+                onEdit={isAdmin ? () => setEditing({ table: 'photo_albums', entry: a, usedBy: used }) : undefined}
+              />
+            );
+          })}
+        </Section>
+
         <Section title="Tool categories" onAdd={() => setAdding('tool-category')} loading={toolCategories.isPending}>
           {toolCategories.data?.map((c) => {
             const used = usage.toolCategories.get(c.id) ?? 0;
@@ -148,6 +174,7 @@ export function ListsPage() {
       <AddUnitDrawer open={adding === 'unit'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddBrandDrawer open={adding === 'brand'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddToolCategoryDrawer open={adding === 'tool-category'} onOpenChange={(o) => !o && setAdding(null)} />
+      <AddPhotoAlbumDrawer open={adding === 'album'} onOpenChange={(o) => !o && setAdding(null)} />
       <EditEntryDrawer target={editing} onClose={() => setEditing(null)} />
     </>
   );

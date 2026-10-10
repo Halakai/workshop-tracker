@@ -14,6 +14,7 @@ import { syncErrorMessage } from '@/lib/errors';
 import {
   useAddCategory,
   useAddExpenseCategory,
+  useAddPhotoAlbum,
   useAddToolCategory,
   useAddUnit,
   useCategories,
@@ -23,6 +24,7 @@ import {
   type Category,
   type ExpenseCategory,
   type ListTable,
+  type PhotoAlbum,
   type ToolCategory,
   type UnitEntry,
 } from './api';
@@ -234,6 +236,51 @@ export function AddToolCategoryDrawer({ open, onOpenChange }: { open: boolean; o
   );
 }
 
+/** A new photo album (Before, After, Damage …); the new album is passed to onAdded. */
+export function AddPhotoAlbumDrawer({
+  open,
+  onOpenChange,
+  onAdded,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onAdded?: (album: PhotoAlbum) => void;
+}) {
+  const add = useAddPhotoAlbum();
+  const form = useForm({ resolver: zodResolver(expenseCategorySchema), defaultValues: { name: '' } });
+  const close = (next: boolean) => {
+    onOpenChange(next);
+    if (!next) form.reset();
+  };
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      const album = await add.mutateAsync(values.name);
+      toast.success(`Album ${album.name} added`);
+      onAdded?.(album);
+      close(false);
+    } catch (e) {
+      toast.error(duplicateMessage(e, 'album'));
+    }
+  });
+  return (
+    <FormDrawer open={open} onOpenChange={close} title="New photo album" description="Albums are shared by all cars, jobs, tools and parts.">
+      <form onSubmit={onSubmit} noValidate>
+        <FieldGroup>
+          <Field data-invalid={!!form.formState.errors.name}>
+            <FieldLabel htmlFor="album-name">Name</FieldLabel>
+            <Input id="album-name" placeholder="e.g. Damage, Interior, For the ad" autoFocus {...form.register('name')} />
+            <FieldError errors={[form.formState.errors.name]} />
+          </Field>
+          <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
+            Add album
+          </Button>
+        </FieldGroup>
+      </form>
+    </FormDrawer>
+  );
+}
+
 function WholeOnlySwitch({ control }: { control: any }) {
   return (
     <Field orientation="horizontal">
@@ -256,7 +303,8 @@ export type EditTarget =
   | { table: 'units'; entry: UnitEntry; usedBy: number }
   | { table: 'brands'; entry: Brand; usedBy: number }
   | { table: 'expense_categories'; entry: ExpenseCategory; usedBy: number }
-  | { table: 'tool_categories'; entry: ToolCategory; usedBy: number };
+  | { table: 'tool_categories'; entry: ToolCategory; usedBy: number }
+  | { table: 'photo_albums'; entry: PhotoAlbum; usedBy: number };
 
 const TITLES: Record<ListTable, string> = {
   item_categories: 'category',
@@ -264,6 +312,7 @@ const TITLES: Record<ListTable, string> = {
   brands: 'brand',
   expense_categories: 'cost type',
   tool_categories: 'tool category',
+  photo_albums: 'photo album',
 };
 
 const editSchema = z.object({

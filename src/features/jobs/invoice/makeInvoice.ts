@@ -58,10 +58,13 @@ export function buildInvoiceData({
   };
 }
 
-/** On a phone: the share sheet (WhatsApp, mail, save to Files). Elsewhere: a normal download. */
+function pdfFileName(name: string) {
+  return `${name.replace(/[\\/:*?"<>|]+/g, '-')}.pdf`;
+}
+
+/** On a phone: the share sheet with the PDF file (WhatsApp, mail, save to Files). Elsewhere: a normal download. */
 export async function shareOrDownload(blob: Blob, name: string) {
-  const fileName = `${name.replace(/[\\/:*?"<>|]+/g, '-')}.pdf`;
-  const file = new File([blob], fileName, { type: 'application/pdf' });
+  const file = new File([blob], pdfFileName(name), { type: 'application/pdf' });
   if (navigator.canShare?.({ files: [file] })) {
     try {
       await navigator.share({ files: [file], title: name });
@@ -71,6 +74,11 @@ export async function shareOrDownload(blob: Blob, name: string) {
       // fall back to download
     }
   }
+  downloadPdf(blob, name);
+}
+
+export function downloadPdf(blob: Blob, name: string) {
+  const fileName = pdfFileName(name);
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

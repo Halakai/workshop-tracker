@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { ChevronRight, Plus, Search } from 'lucide-react';
+import { ChevronRight, Hammer, Plus, Search } from 'lucide-react';
+import { useCoverThumbs } from '@/features/files/api';
+import { Thumb } from '@/features/files/Photos';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +37,7 @@ export function ToolsListPage() {
   const tools = useTools();
   const categories = useToolCategories();
   const names = useProfileNames();
+  const thumbs = useCoverThumbs('tool');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -146,7 +149,8 @@ export function ToolsListPage() {
             ].filter(Boolean);
             return (
               <li key={t.id}>
-                <Link to={`/inventory/tools/${t.id}`} className="flex min-h-16 items-center gap-3 px-4 py-3 active:bg-muted">
+                <Link to={`/inventory/tools/${t.id}`} className="flex min-h-16 items-center gap-3 px-3 py-2.5 active:bg-muted">
+                  <Thumb url={thumbs.get(t.id)} icon={Hammer} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">
                       {t.name}
