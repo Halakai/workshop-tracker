@@ -23,6 +23,13 @@ export function formatShare(bp: number): string {
   return frac === 0 ? `${whole} %` : `${whole}.${frac.toString().padStart(2, '0').replace(/0$/, '')} %`;
 }
 
+/** Basis points as a percentage with one decimal: 3375 → "33.8 %", -4722 → "-47.2 %". */
+export function formatPercentBp(bp: number): string {
+  const tenths = Math.round(Math.abs(bp) / 10);
+  const sign = bp < 0 && tenths !== 0 ? '-' : '';
+  return `${sign}${Math.floor(tenths / 10)}.${tenths % 10} %`;
+}
+
 /** "50" → 5000, "33,33" → 3333. Null if not a percentage between 0 and 100 with ≤ 2 decimals. */
 export function parseSharePercent(input: string): number | null {
   const match = /^(\d{1,3})(?:[.,](\d{0,2}))?$/.exec(input.trim().replace(/\s|%/g, ''));

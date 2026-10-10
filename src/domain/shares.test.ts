@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatShare, parseSharePercent, sharesAreComplete, splitByShares } from './shares';
+import { formatPercentBp, formatShare, parseSharePercent, sharesAreComplete, splitByShares } from './shares';
 
 const half = [
   { id: 'a', bp: 5000 },
@@ -64,5 +64,14 @@ describe('share helpers', () => {
     expect(parseSharePercent('25.5 %')).toBe(2550);
     expect(parseSharePercent('101')).toBeNull();
     expect(parseSharePercent('1.234')).toBeNull();
+  });
+});
+
+describe('formatPercentBp', () => {
+  it('shows one decimal', () => {
+    expect(formatPercentBp(3375)).toBe('33.8 %');
+    expect(formatPercentBp(-4722)).toBe('-47.2 %');
+    expect(formatPercentBp(0)).toBe('0.0 %');
+    expect(formatPercentBp(-4)).toBe('0.0 %');
   });
 });

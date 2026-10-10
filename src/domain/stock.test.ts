@@ -5,6 +5,10 @@ import {
   buildAdjustment,
   buildOverheadUse,
   buildPurchase,
+  buildReturnFromCar,
+  buildUseOnCar,
+  onCar,
+  returnDelta,
   adjustmentDelta,
   countDelta,
   isLowStock,
@@ -179,5 +183,32 @@ describe('adjustment modes', () => {
     expect(buildAdjustment({ stock: { qty: 0, value: 0 }, mode: 'count', amount: 4000, unitCostIfEmpty: 550, shares: half, occurredOn: '2026-10-10' }).reason).toBe('Opening stock');
     expect(buildAdjustment({ stock, mode: 'count', amount: 1000, shares: half, occurredOn: '2026-10-10' }).reason).toBe('Stock count');
     expect(buildAdjustment({ stock, mode: 'damaged', amount: 1000, shares: half, occurredOn: '2026-10-10' }).reason).toBe('Damaged');
+  });
+});
+
+describe('parts on cars', () => {
+  it('using parts on a car charges the average cost and has no allocations', () => {
+    const m = buildUseOnCar({ stock: { qty: 10000, value: 7000 }, qty: 4500, carId: 'car', occurredOn: '2026-10-10' });
+    expect(m).toMatchObject({ type: 'use_car', delta: { qty: -4500, value: -3150 }, carId: 'car', allocations: [] });
+  });
+
+  it('knows what is on a car after uses and returns', () => {
+    expect(onCar([{ qty: -4500, value: -3150 }, { qty: -1000, value: -800 }, { qty: 500, value: 359 }])).toEqual({ qty: 5000, value: 3591 });
+    expect(onCar([])).toEqual({ qty: 0, value: 0 });
+  });
+
+  it('returns at what the car was charged, all of it when everything comes back', () => {
+    const fromCar = { qty: 3000, value: 1000 };
+    expect(returnDelta(fromCar, 1000)).toEqual({ qty: 1000, value: 333 });
+    expect(returnDelta(fromCar, 3000)).toEqual({ qty: 3000, value: 1000 });
+    expect(() => returnDelta(fromCar, 4000)).toThrow('More than');
+  });
+
+  it('a full use and full return leaves the stock exactly as before', () => {
+    const before = { qty: 7000, value: 4321 };
+    const use = buildUseOnCar({ stock: before, qty: 2500, carId: 'c', occurredOn: '2026-10-10' });
+    const during = applyDelta(before, use.delta);
+    const back = buildReturnFromCar({ fromCar: onCar([use.delta]), qty: 2500, carId: 'c', occurredOn: '2026-10-10' });
+    expect(applyDelta(during, back.delta)).toEqual(before);
   });
 });

@@ -20,6 +20,7 @@ export function toPostStockMovementArgs(itemId: string, expectedVersion: number,
     p_note: input.note?.trim() || undefined,
     p_paid_by: input.paidBy,
     p_allocations: input.allocations.map((a) => ({ partner_id: a.partnerId, amount_cents: a.amount })),
+    p_car_id: input.carId,
   };
 }
 

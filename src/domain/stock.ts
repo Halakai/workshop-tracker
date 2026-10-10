@@ -105,6 +105,24 @@ export function adjustmentReason(mode: AdjustMode, stock: StockLevel): string {
   }
 }
 
+/**
+ * What of an item is "on" a car: everything used on it minus what came back.
+ * Movements are the car's use_car (negative) and return (positive) rows for that item.
+ */
+export function onCar(movements: readonly StockDelta[]): StockLevel {
+  const qty = -movements.reduce((s, m) => s + m.qty, 0);
+  const value = -movements.reduce((s, m) => s + m.value, 0);
+  return { qty: qty || 0, value: value || 0 }; // || 0 turns -0 into 0
+}
+
+/** Returning parts from a car: they come back at exactly what the car was charged for them. */
+export function returnDelta(fromCar: StockLevel, qty: Milli): StockDelta {
+  if (qty <= 0) throw new StockError('Quantity must be more than 0');
+  if (qty > fromCar.qty) throw new StockError('More than was used on this car');
+  const value = qty === fromCar.qty ? fromCar.value : mulDivRound(fromCar.value, qty, fromCar.qty);
+  return { qty, value };
+}
+
 export function applyDelta(stock: StockLevel, delta: StockDelta): StockLevel {
   const next = { qty: stock.qty + delta.qty, value: stock.value + delta.value };
   assertLevel(next);
@@ -120,7 +138,7 @@ export function isLowStock(qty: Milli, minQty: Milli): boolean {
 // Movements as sent to the database (post_stock_movement)
 // ---------------------------------------------------------------------------
 
-export type MovementType = 'purchase' | 'overhead' | 'adjustment';
+export type MovementType = 'purchase' | 'overhead' | 'adjustment' | 'use_car' | 'return';
 
 export interface Allocation {
   partnerId: string;
@@ -138,6 +156,8 @@ export interface MovementInput {
   paidBy?: string;
   /** profit-share allocations (overhead and corrections); they add up to delta.value */
   allocations: Allocation[];
+  /** the car parts go on / come back from */
+  carId?: string;
 }
 
 /** Splits a change in what the workshop owns across partners by their default shares. */
@@ -202,5 +222,40 @@ export function buildAdjustment(args: {
     reason: adjustmentReason(args.mode, args.stock),
     note: args.note,
     allocations: allocateByShares(delta.value, args.shares),
+  };
+}
+
+/** Parts from stock used on a car: they become part of what the car cost (no profit split yet). */
+export function buildUseOnCar(args: {
+  stock: StockLevel;
+  qty: Milli;
+  carId: string;
+  occurredOn: string;
+  note?: string;
+}): MovementInput {
+  return {
+    type: 'use_car',
+    delta: issueDelta(args.stock, args.qty),
+    occurredOn: args.occurredOn,
+    note: args.note,
+    carId: args.carId,
+    allocations: [],
+  };
+}
+
+export function buildReturnFromCar(args: {
+  fromCar: StockLevel;
+  qty: Milli;
+  carId: string;
+  occurredOn: string;
+  note?: string;
+}): MovementInput {
+  return {
+    type: 'return',
+    delta: returnDelta(args.fromCar, args.qty),
+    occurredOn: args.occurredOn,
+    note: args.note,
+    carId: args.carId,
+    allocations: [],
   };
 }
