@@ -326,7 +326,7 @@ function ToolForm({ tool }: { tool?: Tool }) {
 
                 <Field>
                   <FieldLabel htmlFor="tool-serial">Serial number</FieldLabel>
-                  <Input id="tool-serial" className="font-mono" placeholder="For warranty and if it gets stolen" {...form.register('serial_number')} />
+                  <Input id="tool-serial" className="font-mono placeholder:font-sans" placeholder="For warranty and if it gets stolen" {...form.register('serial_number')} />
                 </Field>
 
                 <Field>

@@ -19,7 +19,6 @@ import { useAccountLabels } from '@/features/money/api';
 import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 import { useRememberVisit } from '@/features/home/recent';
 import { useRemoveToolPayment, useSaveTool, useTool, useToolHistory, type Tool } from './api';
-import { ToolBadges } from './ToolBadges';
 import { ConditionDrawer, GoneDrawer, LendDrawer, PaymentDrawer } from './ToolDrawers';
 
 type Action = 'lend' | 'condition' | 'gone' | 'pay' | null;
@@ -83,12 +82,11 @@ function ToolView({ tool }: { tool: Tool }) {
                 {tool.category?.name}
               </Badge>
             </div>
-            {(tool.lent_to || tool.condition !== 'good' || gone) && <ToolBadges tool={tool} className="justify-start" />}
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <Stat label="Belongs to" value={owner} />
               {tool.qty > 1 && <Stat label="How many" value={String(tool.qty)} />}
               {tool.location && <Stat label="Where" value={tool.location} />}
-              <Stat label="Condition" value={conditionLabel(tool.condition)} />
+              <Stat label="Condition" value={conditionLabel(tool.condition)} className={cn(tool.condition === 'needs_repair' && 'text-warning', tool.condition === 'broken' && 'text-destructive')} />
               {tool.serial_number && <Stat label="Serial number" value={tool.serial_number} mono />}
               {tool.bought_on && <Stat label="Bought" value={formatDate(tool.bought_on)} />}
               {tool.bought_from && <Stat label="Bought from" value={tool.bought_from} />}

@@ -90,7 +90,7 @@ export function ToolsListPage() {
           <Search className="pointer-events-none absolute top-1/2 left-3 size-5 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Search name, brand, ID, serial no., place"
+            placeholder="Search name, brand, ID, place"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="pl-10"

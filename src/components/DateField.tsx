@@ -34,7 +34,8 @@ export function DateField({
         className,
       )}
     >
-      <CalendarDays className="size-5 shrink-0 text-muted-foreground" />
+      {/* room for the date next to the × in narrow fields */}
+      {!(onClear && value) && <CalendarDays className="size-5 shrink-0 text-muted-foreground" />}
       <span className="min-w-0 flex-1 truncate">
         {value ? (
           <>
