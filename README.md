@@ -16,7 +16,7 @@ workshop wallet and settling up between partners.
 | M2 | Inventory and stock movements | ✅ done |
 | M3 | Cars and their costs | ✅ done |
 | M4 | Wallet, ledger and settling up | ✅ done |
-| M5 | Customer jobs and PDF invoices | |
+| M5 | Customer jobs and PDF invoices | ✅ done |
 | M6 | Google Drive uploads | |
 | M7 | Dashboard, low-stock alerts, export, polish | |
 
@@ -83,6 +83,27 @@ workshop wallet and settling up between partners.
   4. It suggests the fewest transfers ("Ivan → Wallet 1 800.00€"); untick any you'll handle differently.
   5. **Record settlement** writes it all and locks the car's money. **Undo settlement** unlocks it again.
 
+## Jobs for friends (short)
+
+- **New job:** the customer comes from contacts (type-ahead; a new name is added), with their car. When a customer is
+  picked, their earlier cars are offered as one-tap chips. The work description, a fixed **labor price**, and an
+  automatic job ID (`JOB-001`).
+- **Lines the customer pays for:**
+  - **From stock:** at the average cost.
+  - **Part bought:** for this job, with who paid.
+  - **Other:** e.g. diagnostics or a disposal fee.
+  - Each line has its own **price for the customer**. Leave it empty to charge cost, or tap *+10 %*, *+20 %*…
+  - A stock line can be taken off the job, and the parts go back to stock.
+- **Status:** Open → Done → Paid. **Customer paid** records the amount and who got the money. When the total is
+  covered, the job becomes Paid automatically.
+- **Invoice (PDF):**
+  - The first time, it gets the next number (`2026-001`, gapless per year).
+  - It is made on the phone and opens the share sheet (WhatsApp, mail, Files), or downloads on a computer.
+  - It uses the workshop name, logo, contact, IBAN and footer from **More → Workshop settings** (admin).
+  - No VAT.
+- **Settle up** a paid job like a car: profit = payments − parts. A job can belong to one person: set the shares to
+  "All to Ivan".
+
 ## Things to know## How cars work (short)
 
 - **New car:** make and model (suggested from earlier cars), year, plate, VIN, engine, fuel, mileage, colour, and a
@@ -118,6 +139,27 @@ workshop wallet and settling up between partners.
   3. Choose **Keep profit in wallet** (default) or **Pay out profit**, and whether to pay back out-of-pocket costs.
   4. It suggests the fewest transfers ("Ivan → Wallet 1 800.00€"); untick any you'll handle differently.
   5. **Record settlement** writes it all and locks the car's money. **Undo settlement** unlocks it again.
+
+## Jobs for friends (short)
+
+- **New job:** the customer comes from contacts (type-ahead; a new name is added), with their car. When a customer is
+  picked, their earlier cars are offered as one-tap chips. The work description, a fixed **labor price**, and an
+  automatic job ID (`JOB-001`).
+- **Lines the customer pays for:**
+  - **From stock:** at the average cost.
+  - **Part bought:** for this job, with who paid.
+  - **Other:** e.g. diagnostics or a disposal fee.
+  - Each line has its own **price for the customer**. Leave it empty to charge cost, or tap *+10 %*, *+20 %*…
+  - A stock line can be taken off the job, and the parts go back to stock.
+- **Status:** Open → Done → Paid. **Customer paid** records the amount and who got the money. When the total is
+  covered, the job becomes Paid automatically.
+- **Invoice (PDF):**
+  - The first time, it gets the next number (`2026-001`, gapless per year).
+  - It is made on the phone and opens the share sheet (WhatsApp, mail, Files), or downloads on a computer.
+  - It uses the workshop name, logo, contact, IBAN and footer from **More → Workshop settings** (admin).
+  - No VAT.
+- **Settle up** a paid job like a car: profit = payments − parts. A job can belong to one person: set the shares to
+  "All to Ivan".
 
 ## Things to know
 

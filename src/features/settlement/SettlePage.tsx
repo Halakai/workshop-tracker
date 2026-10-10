@@ -19,15 +19,18 @@ import { syncErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { useAccounts } from '@/features/money/accounts';
 import { useAccountLabels } from '@/features/money/api';
-import { useCar, useCarMoney, type Car } from '@/features/cars/api';
+import { useCar, useCarMoney } from '@/features/cars/api';
 import { useProfiles } from '@/features/auth/profiles';
-import { useCarShares, useRecordSettlement } from './api';
+import { useRecordSettlement, useShares, type Target } from './api';
 import { toRecordSettlementArgs } from './rpc';
-import { CarSharesDrawer } from './CarSharesDrawer';
+import { SharesDrawer } from './SharesDrawer';
 
+
+/** Settle up a sold or scrapped car. */
 export function SettlePage() {
   const { id } = useParams();
   const car = useCar(id);
+  const money = useCarMoney(id);
   if (car.isPending) {
     return (
       <>
@@ -39,20 +42,49 @@ export function SettlePage() {
     );
   }
   if (!car.data) return null;
-  return <Settle car={car.data} />;
+  const c = car.data;
+  return (
+    <SettleView
+      target={{ kind: 'car', id: c.id }}
+      title={`Settle up ${c.ref}`}
+      subtitle={carTitle(c)}
+      backTo={`/cars/${c.id}`}
+      settled={Boolean(c.settled_at)}
+      ready={isClosed(c.status as CarStatus)}
+      notReady="Sell (or scrap) the car first; then settle up."
+      rows={money.data}
+      stockCents={c.money.stock}
+      defaultDate={c.sale_date ?? todayIso()}
+      costWord="car"
+    />
+  );
 }
 
-function Settle({ car }: { car: Car }) {
+export interface SettleViewProps {
+  target: Target;
+  title: string;
+  subtitle: string;
+  backTo: string;
+  settled: boolean;
+  ready: boolean;
+  notReady: string;
+  rows: { category: string; from_account_id: string; to_account_id: string; amount_cents: number }[] | undefined;
+  stockCents: number;
+  defaultDate: string;
+  costWord: 'car' | 'job';
+}
+
+/** Shared settle-up screen for cars and jobs. */
+export function SettleView({ target, title, subtitle, backTo, settled, ready, notReady, rows, stockCents, defaultDate, costWord }: SettleViewProps) {
   const navigate = useNavigate();
-  const money = useCarMoney(car.id);
-  const sharesQuery = useCarShares(car.id);
+  const sharesQuery = useShares(target);
   const accounts = useAccounts();
   const profiles = useProfiles();
   const label = useAccountLabels();
   const record = useRecordSettlement();
   const [mode, setMode] = useState<PayoutMode>('retain');
   const [reimburse, setReimburse] = useState(true);
-  const [date, setDate] = useState(car.sale_date ?? todayIso());
+  const [date, setDate] = useState(defaultDate);
   const [skipped, setSkipped] = useState<Set<number>>(new Set());
   const [editingShares, setEditingShares] = useState(false);
 
@@ -70,33 +102,22 @@ function Settle({ car }: { car: Car }) {
   const sharesTotal = shares.reduce((s, x) => s + x.bp, 0);
 
   const computed = useMemo(() => {
-    if (!wallet || !money.data || sharesTotal !== FULL_SHARE_BP) return null;
+    if (!wallet || !rows || sharesTotal !== FULL_SHARE_BP) return null;
     const funding = carFunding(
-      money.data.map((r) => ({ category: r.category, from: r.from_account_id, to: r.to_account_id, amount: r.amount_cents })),
-      car.money.stock,
+      rows.map((r) => ({ category: r.category, from: r.from_account_id, to: r.to_account_id, amount: r.amount_cents })),
+      stockCents,
       wallet.id,
     );
     const input: SettlementInput = { walletAccountId: wallet.id, shares, ...funding, mode, reimburse };
     return { input, result: settle(input) };
-  }, [wallet, money.data, shares, sharesTotal, car.money.stock, mode, reimburse]);
+  }, [wallet, rows, shares, sharesTotal, stockCents, mode, reimburse]);
 
-  const status = car.status as CarStatus;
-  if (car.settled_at) {
+  if (settled || !ready) {
     return (
       <>
-        <PageHeader title="Settle up" back={`/cars/${car.id}`} />
+        <PageHeader title="Settle up" back={backTo} />
         <PageBody>
-          <p className="text-muted-foreground">This car is already settled.</p>
-        </PageBody>
-      </>
-    );
-  }
-  if (!isClosed(status)) {
-    return (
-      <>
-        <PageHeader title="Settle up" back={`/cars/${car.id}`} />
-        <PageBody>
-          <p className="text-muted-foreground">Sell (or scrap) the car first; then settle up.</p>
+          <p className="text-muted-foreground">{settled ? 'This is already settled.' : notReady}</p>
         </PageBody>
       </>
     );
@@ -106,10 +127,16 @@ function Settle({ car }: { car: Car }) {
     if (!computed) return;
     try {
       await record.mutateAsync(
-        toRecordSettlementArgs({ carId: car.id }, computed.input, computed.result, date, computed.result.transfers.map((_, i) => !skipped.has(i))),
+        toRecordSettlementArgs(
+          target.kind === 'car' ? { carId: target.id } : { jobId: target.id },
+          computed.input,
+          computed.result,
+          date,
+          computed.result.transfers.map((_, i) => !skipped.has(i)),
+        ),
       );
-      toast.success(`${car.ref} settled`);
-      navigate(`/cars/${car.id}`, { replace: true });
+      toast.success('Settled');
+      navigate(backTo, { replace: true });
     } catch (e) {
       toast.error(syncErrorMessage(e));
     }
@@ -118,9 +145,9 @@ function Settle({ car }: { car: Car }) {
   const r = computed?.result;
   return (
     <>
-      <PageHeader title={`Settle up ${car.ref}`} back={`/cars/${car.id}`} />
+      <PageHeader title={title} back={backTo} />
       <PageBody>
-        <p className="text-sm text-muted-foreground">{carTitle(car)}</p>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
 
         <Card>
           <CardHeader>
@@ -151,17 +178,17 @@ function Settle({ car }: { car: Car }) {
                 <CardTitle>The numbers</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col gap-3 text-sm">
-                <Block title="Who paid for the car">
+                <Block title={`Who paid for the ${costWord}`}>
                   {[...computed.input.costs].map(([acc, amount]) => (
                     <Row key={acc} label={acc === wallet?.id ? 'Wallet (incl. parts from stock)' : label(acc)} value={formatMoney(amount)} />
                   ))}
                   <Row label="Total invested" value={formatMoney(r.invested)} strong />
                 </Block>
-                <Block title="Who holds the sale money">
+                <Block title={costWord === 'car' ? 'Who holds the sale money' : 'Who got the customer’s money'}>
                   {[...computed.input.receipts].map(([acc, amount]) => (
                     <Row key={acc} label={label(acc)} value={formatMoney(amount)} />
                   ))}
-                  {computed.input.receipts.size === 0 && <Row label="Nobody (no sale money)" value={formatMoney(0)} />}
+                  {computed.input.receipts.size === 0 && <Row label="Nobody (no money received)" value={formatMoney(0)} />}
                 </Block>
                 <Block title={r.profit >= 0 ? 'Profit, split by shares' : 'Loss, split by shares'}>
                   <Row label="Total" value={formatMoney(r.profit, { sign: true })} strong className={r.profit >= 0 ? 'text-success' : 'text-destructive'} />
@@ -235,12 +262,12 @@ function Settle({ car }: { car: Car }) {
               Record settlement
             </Button>
             <p className="text-center text-xs text-muted-foreground">
-              Afterwards the car’s money is locked. You can undo the settlement on the car page.
+              Afterwards the {costWord}’s money is locked. You can undo the settlement on the {costWord} page.
             </p>
           </>
         )}
       </PageBody>
-      <CarSharesDrawer carId={car.id} open={editingShares} onOpenChange={setEditingShares} />
+      <SharesDrawer target={target} open={editingShares} onOpenChange={setEditingShares} />
     </>
   );
 }

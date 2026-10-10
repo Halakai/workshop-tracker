@@ -164,6 +164,8 @@ function AllocationList({ partnerId }: { partnerId: string }) {
       {rows.map((a) => {
         const source = a.settlement?.car
           ? `Settled ${a.settlement.car.ref} ${carTitle(a.settlement.car)}`
+          : a.settlement?.job
+            ? `Settled ${a.settlement.job.ref}: ${a.settlement.job.description}`
           : a.stock_movement
             ? `${a.stock_movement.type === 'overhead' ? 'Workshop use' : (a.stock_movement.reason ?? 'Stock correction')}: ${a.stock_movement.item?.name ?? ''}`
             : a.transaction

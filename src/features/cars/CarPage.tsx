@@ -5,8 +5,8 @@ import { toast } from 'sonner';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { syncErrorMessage } from '@/lib/errors';
 import { useProfiles } from '@/features/auth/profiles';
-import { useCarShares, useSettlement, useUndoSettlement } from '@/features/settlement/api';
-import { CarSharesDrawer } from '@/features/settlement/CarSharesDrawer';
+import { useSettlement, useShares, useUndoSettlement } from '@/features/settlement/api';
+import { SharesDrawer } from '@/features/settlement/SharesDrawer';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { Button } from '@/components/ui/button';
@@ -66,8 +66,9 @@ function CarView({ car }: { car: Car }) {
   const [usingStock, setUsingStock] = useState(false);
   const [returning, setReturning] = useState<string | null>(null);
   const [editingShares, setEditingShares] = useState(false);
-  const shares = useCarShares(car.id);
-  const settlement = useSettlement(car.id);
+  const target = { kind: 'car' as const, id: car.id };
+  const shares = useShares(target);
+  const settlement = useSettlement(target);
   const undoSettlement = useUndoSettlement();
   const profiles = useProfiles();
   const partnerName = (id: string) => profiles.data?.find((p) => p.id === id)?.display_name ?? 'partner';
@@ -294,7 +295,7 @@ function CarView({ car }: { car: Car }) {
                 confirmLabel="Undo settlement"
                 onConfirm={async () => {
                   try {
-                    await undoSettlement.mutateAsync(car.id);
+                    await undoSettlement.mutateAsync(target);
                     toast.success('Settlement undone');
                   } catch (e) {
                     toast.error(syncErrorMessage(e));
@@ -313,7 +314,7 @@ function CarView({ car }: { car: Car }) {
       <StatusDrawer car={car} open={statusOpen} onOpenChange={setStatusOpen} onSell={() => setSelling(true)} />
       <UseOnCarDrawer car={car} open={usingStock} onOpenChange={setUsingStock} />
       <ReturnToStockDrawer car={car} itemId={returning} rows={stock.data ?? []} onClose={() => setReturning(null)} />
-      <CarSharesDrawer carId={car.id} open={editingShares} onOpenChange={setEditingShares} />
+      <SharesDrawer target={target} open={editingShares} onOpenChange={setEditingShares} />
     </>
   );
 }

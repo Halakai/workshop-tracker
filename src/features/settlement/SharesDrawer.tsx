@@ -8,13 +8,13 @@ import { FULL_SHARE_BP, formatShare, parseSharePercent } from '@/domain/shares';
 import { syncErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { useProfiles } from '@/features/auth/profiles';
-import { useCarShares, useSetCarShares } from './api';
+import { useSetShares, useShares, type Target } from './api';
 
-/** Profit shares for one car: defaults, "all to one person", or custom percentages. */
-export function CarSharesDrawer({ carId, open, onOpenChange }: { carId: string; open: boolean; onOpenChange: (o: boolean) => void }) {
+/** Profit shares for one car or job: defaults, "all to one person", or custom percentages. */
+export function SharesDrawer({ target, open, onOpenChange }: { target: Target; open: boolean; onOpenChange: (o: boolean) => void }) {
   const profiles = useProfiles();
-  const shares = useCarShares(carId);
-  const save = useSetCarShares();
+  const shares = useShares(target);
+  const save = useSetShares();
   const partners = (profiles.data ?? []).filter((p) => p.is_active || shares.data?.some((s) => s.partner_id === p.id));
   const [values, setValues] = useState<Record<string, string>>({});
 
@@ -32,7 +32,7 @@ export function CarSharesDrawer({ carId, open, onOpenChange }: { carId: string; 
 
   const submit = async () => {
     try {
-      await save.mutateAsync({ carId, shares: parsed.map((p) => ({ partnerId: p.partnerId, bp: p.bp! })) });
+      await save.mutateAsync({ target, shares: parsed.map((p) => ({ partnerId: p.partnerId, bp: p.bp! })) });
       toast.success('Shares saved');
       onOpenChange(false);
     } catch (e) {
@@ -41,7 +41,7 @@ export function CarSharesDrawer({ carId, open, onOpenChange }: { carId: string; 
   };
 
   return (
-    <FormDrawer open={open} onOpenChange={onOpenChange} title="Profit shares for this car">
+    <FormDrawer open={open} onOpenChange={onOpenChange} title={`Profit shares for this ${target.kind}`}>
       <div className="flex flex-col gap-3">
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={() => preset((id) => profiles.data?.find((p) => p.id === id)?.default_share_bp ?? 0)}>

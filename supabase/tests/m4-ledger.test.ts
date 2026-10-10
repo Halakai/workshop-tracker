@@ -250,7 +250,7 @@ describe('settling up a car', () => {
         ...args,
         p_allocations: [{ partner_id: outsiderShare[0].id, amount_cents: 80000 }],
       });
-      expect(toStranger.error?.message).toMatch(/share in this car/);
+      expect(toStranger.error?.message).toMatch(/with a share in/);
     }
 
     const badTransfer = await asA.rpc('record_settlement', {

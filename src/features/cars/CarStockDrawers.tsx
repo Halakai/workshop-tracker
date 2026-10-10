@@ -28,7 +28,7 @@ export function UseOnCarDrawer({ car, open, onOpenChange }: { car: Car; open: bo
   );
 }
 
-function ItemPicker({ onPick }: { onPick: (item: Item) => void }) {
+export function ItemPicker({ onPick }: { onPick: (item: Item) => void }) {
   const items = useItems();
   const [query, setQuery] = useState('');
   const matches = useMemo(() => {

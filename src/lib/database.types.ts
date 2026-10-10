@@ -418,6 +418,21 @@ export type Database = {
           },
         ];
       };
+      counters: {
+        Row: {
+          name: string;
+          value: number;
+        };
+        Insert: {
+          name: string;
+          value: number;
+        };
+        Update: {
+          name?: string;
+          value?: number;
+        };
+        Relationships: [];
+      };
       expense_categories: {
         Row: {
           created_at: string;
@@ -610,6 +625,228 @@ export type Database = {
           },
         ];
       };
+      job_lines: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          id: string;
+          job_id: string;
+          kind: string;
+          qty: number;
+          sale_price_cents: number;
+          sort_order: number;
+          stock_movement_id: string | null;
+          transaction_id: string | null;
+          unit: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description: string;
+          id?: string;
+          job_id: string;
+          kind: string;
+          qty?: number;
+          sale_price_cents: number;
+          sort_order?: number;
+          stock_movement_id?: string | null;
+          transaction_id?: string | null;
+          unit?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          job_id?: string;
+          kind?: string;
+          qty?: number;
+          sale_price_cents?: number;
+          sort_order?: number;
+          stock_movement_id?: string | null;
+          transaction_id?: string | null;
+          unit?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_lines_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_lines_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "job_summaries";
+            referencedColumns: ["job_id"];
+          },
+          {
+            foreignKeyName: "job_lines_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_lines_stock_movement_id_fkey";
+            columns: ["stock_movement_id"];
+            isOneToOne: true;
+            referencedRelation: "stock_movements";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_lines_transaction_id_fkey";
+            columns: ["transaction_id"];
+            isOneToOne: true;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_lines_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      job_shares: {
+        Row: {
+          job_id: string;
+          partner_id: string;
+          share_bp: number;
+        };
+        Insert: {
+          job_id: string;
+          partner_id: string;
+          share_bp: number;
+        };
+        Update: {
+          job_id?: string;
+          partner_id?: string;
+          share_bp?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "job_shares_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "job_summaries";
+            referencedColumns: ["job_id"];
+          },
+          {
+            foreignKeyName: "job_shares_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "job_shares_partner_id_fkey";
+            columns: ["partner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      jobs: {
+        Row: {
+          car_make: string | null;
+          car_model: string | null;
+          car_plate: string | null;
+          car_vin: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_id: string;
+          description: string;
+          done_on: string | null;
+          id: string;
+          invoice_date: string | null;
+          invoice_number: string | null;
+          labor_price_cents: number;
+          notes: string | null;
+          ref: string;
+          settled_at: string | null;
+          status: Database["public"]["Enums"]["job_status"];
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          car_make?: string | null;
+          car_model?: string | null;
+          car_plate?: string | null;
+          car_vin?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          customer_id: string;
+          description: string;
+          done_on?: string | null;
+          id?: string;
+          invoice_date?: string | null;
+          invoice_number?: string | null;
+          labor_price_cents?: number;
+          notes?: string | null;
+          ref: string;
+          settled_at?: string | null;
+          status?: Database["public"]["Enums"]["job_status"];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          car_make?: string | null;
+          car_model?: string | null;
+          car_plate?: string | null;
+          car_vin?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          customer_id?: string;
+          description?: string;
+          done_on?: string | null;
+          id?: string;
+          invoice_date?: string | null;
+          invoice_number?: string | null;
+          labor_price_cents?: number;
+          notes?: string | null;
+          ref?: string;
+          settled_at?: string | null;
+          status?: Database["public"]["Enums"]["job_status"];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "jobs_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobs_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "jobs_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -737,6 +974,7 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           id: string;
+          job_id: string | null;
           payout_mode: string;
           reimburse: boolean;
           settled_on: string;
@@ -749,6 +987,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           id?: string;
+          job_id?: string | null;
           payout_mode: string;
           reimburse: boolean;
           settled_on?: string;
@@ -761,6 +1000,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           id?: string;
+          job_id?: string | null;
           payout_mode?: string;
           reimburse?: boolean;
           settled_on?: string;
@@ -790,6 +1030,20 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "settlements_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: true;
+            referencedRelation: "job_summaries";
+            referencedColumns: ["job_id"];
+          },
+          {
+            foreignKeyName: "settlements_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: true;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "settlements_updated_by_fkey";
             columns: ["updated_by"];
             isOneToOne: false;
@@ -805,6 +1059,7 @@ export type Database = {
           created_by: string | null;
           id: string;
           item_id: string;
+          job_id: string | null;
           note: string | null;
           occurred_on: string;
           qty_delta: number;
@@ -823,6 +1078,7 @@ export type Database = {
           created_by?: string | null;
           id?: string;
           item_id: string;
+          job_id?: string | null;
           note?: string | null;
           occurred_on?: string;
           qty_delta: number;
@@ -841,6 +1097,7 @@ export type Database = {
           created_by?: string | null;
           id?: string;
           item_id?: string;
+          job_id?: string | null;
           note?: string | null;
           occurred_on?: string;
           qty_delta?: number;
@@ -883,6 +1140,20 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "stock_movements_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "job_summaries";
+            referencedColumns: ["job_id"];
+          },
+          {
+            foreignKeyName: "stock_movements_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "stock_movements_transaction_id_fkey";
             columns: ["transaction_id"];
             isOneToOne: true;
@@ -911,6 +1182,7 @@ export type Database = {
           expense_category_id: string | null;
           from_account_id: string;
           id: string;
+          job_id: string | null;
           kind: Database["public"]["Enums"]["txn_kind"];
           occurred_on: string;
           settlement_id: string | null;
@@ -930,6 +1202,7 @@ export type Database = {
           expense_category_id?: string | null;
           from_account_id: string;
           id?: string;
+          job_id?: string | null;
           kind: Database["public"]["Enums"]["txn_kind"];
           occurred_on?: string;
           settlement_id?: string | null;
@@ -949,6 +1222,7 @@ export type Database = {
           expense_category_id?: string | null;
           from_account_id?: string;
           id?: string;
+          job_id?: string | null;
           kind?: Database["public"]["Enums"]["txn_kind"];
           occurred_on?: string;
           settlement_id?: string | null;
@@ -990,6 +1264,20 @@ export type Database = {
             columns: ["from_account_id"];
             isOneToOne: false;
             referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "job_summaries";
+            referencedColumns: ["job_id"];
+          },
+          {
+            foreignKeyName: "transactions_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
             referencedColumns: ["id"];
           },
           {
@@ -1095,18 +1383,44 @@ export type Database = {
           },
         ];
       };
+      job_summaries: {
+        Row: {
+          job_id: string | null;
+          labor_cents: number | null;
+          lines_cents: number | null;
+          parts_cents: number | null;
+          payments_cents: number | null;
+          stock_cents: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
+      add_job_stock_line: {
+        Args: {
+          p_description: string;
+          p_expected_version: number;
+          p_item_id: string;
+          p_job_id: string;
+          p_occurred_on?: string;
+          p_qty_delta: number;
+          p_sale_price_cents: number;
+          p_value_delta_cents: number;
+        };
+        Returns: string;
+      };
       admin_set_default_shares: {
         Args: { p_actor: string; p_shares: Json };
         Returns: undefined;
       };
+      issue_invoice_number: { Args: { p_job_id: string }; Returns: string };
       post_stock_movement: {
         Args: {
           p_allocations?: Json;
           p_car_id?: string;
           p_expected_version: number;
           p_item_id: string;
+          p_job_id?: string;
           p_note?: string;
           p_occurred_on?: string;
           p_paid_by?: string;
@@ -1122,11 +1436,34 @@ export type Database = {
         Args: {
           p_allocations: Json;
           p_breakdown?: Json;
-          p_car_id: string;
+          p_car_id?: string;
+          p_job_id?: string;
           p_payout_mode: string;
           p_reimburse: boolean;
           p_settled_on: string;
           p_transfers: Json;
+        };
+        Returns: string;
+      };
+      remove_job_stock_line: {
+        Args: {
+          p_expected_version: number;
+          p_line_id: string;
+          p_value_delta_cents: number;
+        };
+        Returns: undefined;
+      };
+      save_job_bought_line: {
+        Args: {
+          p_cost_cents: number;
+          p_description: string;
+          p_job_id: string;
+          p_line_id: string;
+          p_occurred_on?: string;
+          p_paid_by: string;
+          p_qty: number;
+          p_sale_price_cents: number;
+          p_supplier: string;
         };
         Returns: string;
       };
@@ -1148,7 +1485,14 @@ export type Database = {
         Args: { p_car_id: string; p_shares: Json };
         Returns: undefined;
       };
-      undo_settlement: { Args: { p_car_id: string }; Returns: undefined };
+      set_job_shares: {
+        Args: { p_job_id: string; p_shares: Json };
+        Returns: undefined;
+      };
+      undo_settlement: {
+        Args: { p_car_id?: string; p_job_id?: string };
+        Returns: undefined;
+      };
       undo_stock_movement: {
         Args: { p_movement_id: string };
         Returns: undefined;
@@ -1158,6 +1502,7 @@ export type Database = {
       account_kind: "wallet" | "partner" | "external";
       car_status:
         "bought" | "in_repair" | "ready" | "listed" | "sold" | "scrapped";
+      job_status: "open" | "done" | "paid";
       movement_type:
         | "purchase"
         | "use_car"
@@ -1303,6 +1648,7 @@ export const Constants = {
         "sold",
         "scrapped",
       ],
+      job_status: ["open", "done", "paid"],
       movement_type: [
         "purchase",
         "use_car",
