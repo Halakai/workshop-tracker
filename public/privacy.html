@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy · Workshop Tracker</title>
+    <style>
+      :root { color-scheme: light dark; }
+      body { font-family: system-ui, sans-serif; max-width: 42rem; margin: 0 auto; padding: 2rem 1rem; line-height: 1.6; }
+      h1 { font-size: 1.6rem; }
+      h2 { font-size: 1.15rem; margin-top: 1.8rem; }
+      a { color: #e8590c; }
+    </style>
+  </head>
+  <body>
+    <h1>Workshop Tracker: privacy</h1>
+    <p>
+      Workshop Tracker is a private tool used by the members of one small car workshop to keep track of their parts
+      stock, cars, small repair jobs and shared money. There is no public sign-up. Only people the workshop’s admin
+      creates an account for can use it.
+    </p>
+
+    <h2>What is stored</h2>
+    <ul>
+      <li>Members’ names, email addresses and passwords (passwords are handled by Supabase Auth and never stored in plain text).</li>
+      <li>The workshop’s records: parts, cars, jobs, customers’ names and phone numbers, and money entries.</li>
+      <li>Photos and receipts that members upload.</li>
+    </ul>
+
+    <h2>Where it is stored</h2>
+    <ul>
+      <li>Records are stored in a Supabase database (EU region) and protected so that only signed-in members can read them.</li>
+      <li>
+        Photos and receipts are stored in the workshop admin’s own Google Drive, in a folder named “Workshop Tracker”.
+        The app uses Google’s <code>drive.file</code> permission, so it can only see and manage files it created itself.
+        It cannot read anything else in that Google Drive.
+      </li>
+    </ul>
+
+    <h2>Sharing</h2>
+    <p>
+      Nothing is sold or shared with anyone. The data is used only to run the workshop. There is no advertising and no
+      tracking.
+    </p>
+
+    <h2>Deleting data</h2>
+    <p>
+      Members can delete entries in the app. The admin can disable accounts and export or delete all data. Access to
+      Google Drive can be revoked at any time in the Google account’s security settings (Third-party apps &amp; services).
+    </p>
+
+    <h2>Contact</h2>
+    <p>Questions about this app go to the workshop’s admin.</p>
+
+    <p><a href="./">Back to the app</a></p>
+  </body>
+</html>
