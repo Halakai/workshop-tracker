@@ -14,6 +14,8 @@ async function normalise(path) {
   src = src.replace(/^\s*ComputedFields: never;\n/gm, '');
   // the local generator marks NOT NULL json columns, the remote one doesn't
   src = src.replace(/NonNullable<Json>/g, 'Json');
+  // functions without arguments: "Args: never" (remote) vs "Args: Record<PropertyKey, never>" (local)
+  src = src.replace(/Args: Record<PropertyKey, never>/g, 'Args: never');
   return src.split('\n');
 }
 
