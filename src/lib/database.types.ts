@@ -1493,10 +1493,12 @@ export type Database = {
         };
         Returns: string;
       };
+      admin_restore: { Args: { p_backup: Json }; Returns: Json };
       admin_set_default_shares: {
         Args: { p_actor: string; p_shares: Json };
         Returns: undefined;
       };
+      backup_tables: { Args: never; Returns: string[] };
       issue_invoice_number: { Args: { p_job_id: string }; Returns: string };
       keepalive: { Args: never; Returns: boolean };
       post_stock_movement: {

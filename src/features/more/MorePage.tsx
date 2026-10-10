@@ -25,7 +25,7 @@ export function MorePage() {
       ? [
           { to: '/users', label: 'Users & partners', description: 'Accounts, roles, profit shares', icon: Users },
           { to: '/settings', label: 'Workshop settings', description: 'Name, logo, contact, invoice text, Google Drive', icon: Settings },
-          { to: '/export', label: 'Backup & export', description: 'Download all data (JSON / CSV)', icon: DatabaseBackup },
+          { to: '/export', label: 'Backup & restore', description: 'Save all data to a file, or load it back', icon: DatabaseBackup },
         ]
       : []),
   ];
