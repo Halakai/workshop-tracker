@@ -2031,12 +2031,12 @@ export type Database = {
         };
         Returns: string;
       };
-      set_cover_photo: {
-        Args: { p_attachment_id: string; p_cover?: boolean };
-        Returns: undefined;
-      };
       set_car_shares: {
         Args: { p_car_id: string; p_shares: Json };
+        Returns: undefined;
+      };
+      set_cover_photo: {
+        Args: { p_attachment_id: string; p_cover?: boolean };
         Returns: undefined;
       };
       set_job_shares: {

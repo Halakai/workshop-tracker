@@ -1,6 +1,6 @@
 # Workshop Tracker: plan
 
-Status: **approved 10.10.2026, M1–M7 built and deployed; changes after testing done (R1, R2)**.
+Status: **approved 10.10.2026, M1–M7 built and deployed; changes after testing done (R1–R3)**.
 Your answers are recorded in §9 and worked into the sections below. Changes made along the way:
 - categories, units and brands became editable lists;
 - part numbers became unique auto-generated IDs;
@@ -19,6 +19,13 @@ R2 (10.10.2026):
 - tools & equipment (Inventory → Tools): tool IDs `T-001`, categories list, owner (workshop or a partner), place,
   condition, lending, "gone" (kept on record), purchase and warranty, photos and receipts in Drive; a workshop
   tool's purchase can go into Money as a workshop expense (`save_tool_payment()`, cost type Tools).
+
+R3 (10.10.2026):
+- car pages start with a swipeable photo gallery and a full-screen viewer; photo albums (a shared list, Before and
+  After to start) on cars and jobs; a cover photo per record (`set_cover_photo()`), shown in the tools and parts
+  lists; parts and supplies can have photos;
+- invoices get a link for the customer: the `files` function signs `/files/invoice/<job>` for a year and always
+  serves the job's latest invoice copy from Drive.
 
 ---
 

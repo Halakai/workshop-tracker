@@ -21,6 +21,7 @@ shared workshop wallet and settling up between partners.
 | M7 | Dashboard, low-stock alerts, export, polish | ✅ done |
 | R1 | After testing: dashboard with charts, search, Inventory rename, back button, restoring backups, car catalogue with logos | ✅ done |
 | R2 | Tools & equipment we own (Inventory → Tools) | ✅ done |
+| R3 | Photo gallery on cars, albums (Before/After), cover photos for tools and parts, invoice links | ✅ done |
 
 ## The app at a glance
 
@@ -147,15 +148,25 @@ up: hand and power tools, the compressor, lifts, the scanner…
   covered, the job becomes Paid automatically.
 - **Invoice (PDF):**
   - The first time, it gets the next number (`2026-001`, gapless per year).
-  - It is made on the phone and opens the share sheet (WhatsApp, mail, Files), or downloads on a computer.
+  - It is made on the phone and saved in Google Drive. Then: **Send link** / **Copy link** gives the customer a link
+    that opens the PDF without an account (valid for a year; making the invoice again keeps the link and shows the
+    new version), or **Send PDF file** / **Download** for the file itself. **Link for the customer** on the job
+    gets the link again later.
   - It uses the workshop name, logo, contact, IBAN and footer from **More → Workshop settings** (admin).
   - No VAT.
 - **Settle up** a paid job like a car: profit = payments − parts. A job can belong to one person: set the shares to
   "All to Ivan".
 - **Photos and receipts:**
-  - **Take photo** opens the camera; **Choose file** picks a photo or PDF.
-  - They can be added to cars (photos, papers and receipts), jobs (photos), stock purchases (📎 on the purchase),
-    and car costs, job parts and workshop expenses (open the entry).
+  - **Take photo** opens the camera; **Choose photos** / **Choose file** picks photos (several at once) or a PDF.
+  - They can be added to cars (photos, papers and receipts), jobs (photos), tools and parts (photos), stock
+    purchases (📎 on the purchase), and car costs, job parts and workshop expenses (open the entry).
+  - A car's page starts with its photos, like a marketplace ad: swipe through them, tap one for full screen (swipe
+    there too). Tools and parts with photos start the same way.
+  - **Albums** (cars and jobs): pick *Before*, *After* or another album above the photos to see only those; new
+    photos go into the album picked. **+ Album** adds one (a shared list; admins rename or delete under More →
+    Lists). In full screen, a photo can be moved to another album.
+  - **Cover photo:** in full screen, *Set as cover*. It is shown first, and as the picture in the tools and parts
+    lists. Without one, the first photo is used.
   - Every invoice PDF is also copied to Drive.
 
 ## Car makes and models (catalogue)
@@ -270,6 +281,7 @@ The setup it needs:
   - Cars: `Cars/<year make model plate (CAR-001)>/Photos` and `/Receipts`
   - Jobs: `Jobs/<year>/<JOB-001 customer plate>`
   - Invoices: `Invoices/<year>`
+  - Tools: `Tools/<T-001 name>`; parts and supplies: `Inventory/<part number name>`
   - Other receipts: `Receipts/<year>`
   - Previews: `.thumbs`
 - The database stores only which file belongs to which record. The Supabase Edge Function `files` talks to Google

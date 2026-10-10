@@ -209,7 +209,7 @@ export function PhotoViewer({
     <Dialog open={start !== null} onOpenChange={(o) => !o && onClose()}>
       <DialogContent
         showCloseButton={false}
-        className="top-0 left-0 flex h-dvh max-h-dvh w-screen max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none bg-black p-0 text-white ring-0 sm:max-w-none"
+        className="inset-0 flex h-full max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-none bg-black p-0 text-white ring-0 sm:max-w-none"
       >
         {start !== null && <ViewerBody photos={photos} links={links} start={start} albums={albums} onClose={onClose} />}
       </DialogContent>
