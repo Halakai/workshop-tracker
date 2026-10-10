@@ -28,13 +28,13 @@ export function UseOnCarDrawer({ car, open, onOpenChange }: { car: Car; open: bo
   );
 }
 
-export function ItemPicker({ onPick }: { onPick: (item: Item) => void }) {
+export function ItemPicker({ onPick, includeEmpty = false }: { onPick: (item: Item) => void; includeEmpty?: boolean }) {
   const items = useItems();
   const [query, setQuery] = useState('');
   const matches = useMemo(() => {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
     return (items.data ?? [])
-      .filter((i) => !i.archived_at && toMilli(i.qty_on_hand) > 0)
+      .filter((i) => !i.archived_at && (includeEmpty || toMilli(i.qty_on_hand) > 0))
       .filter((i) => {
         const hay = [i.name, i.part_number, i.brand?.name, i.manufacturer_ref].filter(Boolean).join(' ').toLowerCase();
         return words.every((w) => hay.includes(w));

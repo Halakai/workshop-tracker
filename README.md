@@ -18,7 +18,24 @@ workshop wallet and settling up between partners.
 | M4 | Wallet, ledger and settling up | ✅ done |
 | M5 | Customer jobs and PDF invoices | ✅ done |
 | M6 | Google Drive uploads | ✅ built, needs the Google setup below |
-| M7 | Dashboard, low-stock alerts, export, polish | |
+| M7 | Dashboard, low-stock alerts, export, polish | ✅ done |
+
+## The app at a glance
+
+- **Home:**
+  - quick actions: *Expense, Use stock, Buy stock, New car, New job*;
+  - the wallet and each partner's balance;
+  - cars in progress with the amount invested;
+  - open and unpaid jobs;
+  - low stock;
+  - recent activity (who did what, when).
+- **Bottom bar:** Home · Stock (red badge = items to buy) · Cars · Jobs · More.
+- **More:**
+  - Money and Partners;
+  - Contacts (sellers, buyers, customers, with tap-to-call);
+  - Lists (categories, units, brands, cost types);
+  - My account;
+  - admin only: Users & partners, Workshop settings (invoice header, Google Drive test), Backup & export.
 
 ## How stock works (short)
 
@@ -179,7 +196,14 @@ workshop wallet and settling up between partners.
   dashboard (possible for 90 days). You can have only 2 active free projects.
 - **No password-reset emails.** Supabase's built-in email only reaches your Supabase team, so the admin sets new
   passwords in the app: *More → Users & partners → (user) → Set a new password*.
-- **Backups:** the free plan has no downloadable backups, so use the app's Export page regularly (milestone 7).
+- **Backups:** the free plan has no downloadable backups. Use **More → Backup & export** (admin) now and then:
+  - **JSON** is everything in one file.
+  - **CSV ZIP** is one file per table, for Excel.
+  - Home reminds the admin when the last backup is more than 30 days old.
+  - Photos and receipts are already safe in Google Drive.
+- **Keep-alive:** `.github/workflows/keepalive.yml` pings the database every 3 days, so the free project doesn't pause
+  while you're on holiday. If GitHub switches it off after 60 days without commits, re-enable it under
+  **Actions → Keep Supabase awake → Enable workflow**.
 
 ## Where the settings and secrets live
 

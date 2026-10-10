@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { ChevronRight, Handshake, ListChecks, LogOut, Settings, UserRound, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { BookUser, ChevronRight, DatabaseBackup, Handshake, ListChecks, LogOut, Settings, UserRound, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { useCurrentProfile } from '@/features/auth/profiles';
@@ -18,12 +18,14 @@ export function MorePage() {
   const links: MoreLink[] = [
     { to: '/money', label: 'Money', description: 'Wallet, expenses, deposits, transfers', icon: Wallet },
     { to: '/partners', label: 'Partners', description: 'Who put in what, balances', icon: Handshake },
+    { to: '/contacts', label: 'Contacts', description: 'Sellers, buyers and customers', icon: BookUser },
     { to: '/lists', label: 'Lists', description: 'Categories, units, brands, cost types', icon: ListChecks },
     { to: '/account', label: 'My account', description: 'Name and password', icon: UserRound },
     ...(me.role === 'admin'
       ? [
           { to: '/users', label: 'Users & partners', description: 'Accounts, roles, profit shares', icon: Users },
-          { to: '/settings', label: 'Workshop settings', description: 'Name, logo, contact, invoice text', icon: Settings },
+          { to: '/settings', label: 'Workshop settings', description: 'Name, logo, contact, invoice text, Google Drive', icon: Settings },
+          { to: '/export', label: 'Backup & export', description: 'Download all data (JSON / CSV)', icon: DatabaseBackup },
         ]
       : []),
   ];

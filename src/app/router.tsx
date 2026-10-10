@@ -4,7 +4,6 @@ import { AppLayout } from './AppLayout';
 import { NotFoundPage } from './screens';
 import { RequireAdmin, RequireAuth } from '@/features/auth/RequireAuth';
 import { LoginPage } from '@/features/auth/LoginPage';
-import { HomePage } from '@/features/home/HomePage';
 import { MorePage } from '@/features/more/MorePage';
 
 // Each area's code loads the first time it's opened (AppLayout shows a placeholder meanwhile),
@@ -31,6 +30,9 @@ const JobPage = lazy(() => jobs().then((m) => ({ default: m.JobPage })));
 const JobFormPage = lazy(() => jobs().then((m) => ({ default: m.JobFormPage })));
 const JobSettlePage = lazy(() => jobs().then((m) => ({ default: m.JobSettlePage })));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
+const HomePage = lazy(() => import('@/features/home/HomePage').then((m) => ({ default: m.HomePage })));
+const ContactsPage = lazy(() => import('@/features/contacts/ContactsPage').then((m) => ({ default: m.ContactsPage })));
+const ExportPage = lazy(() => import('@/features/export/ExportPage').then((m) => ({ default: m.ExportPage })));
 const UsersPage = lazy(() => import('@/features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 
 // HashRouter: URLs look like …/workshop-tracker/#/cars/123, which always works on GitHub Pages.
@@ -64,11 +66,13 @@ export const router = createHashRouter([
           { path: 'more', element: <MorePage /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'lists', element: <ListsPage /> },
+          { path: 'contacts', element: <ContactsPage /> },
           {
             element: <RequireAdmin />,
             children: [
               { path: 'users', element: <UsersPage /> },
               { path: 'settings', element: <SettingsPage /> },
+              { path: 'export', element: <ExportPage /> },
             ],
           },
         ],

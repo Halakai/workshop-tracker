@@ -992,6 +992,7 @@ export type Database = {
           id: boolean;
           invoice_footer: string | null;
           invoice_title: string;
+          last_export_at: string | null;
           logo_data_url: string | null;
           phone: string | null;
           updated_at: string;
@@ -1008,6 +1009,7 @@ export type Database = {
           id?: boolean;
           invoice_footer?: string | null;
           invoice_title?: string;
+          last_export_at?: string | null;
           logo_data_url?: string | null;
           phone?: string | null;
           updated_at?: string;
@@ -1024,6 +1026,7 @@ export type Database = {
           id?: boolean;
           invoice_footer?: string | null;
           invoice_title?: string;
+          last_export_at?: string | null;
           logo_data_url?: string | null;
           phone?: string | null;
           updated_at?: string;
@@ -1495,6 +1498,7 @@ export type Database = {
         Returns: undefined;
       };
       issue_invoice_number: { Args: { p_job_id: string }; Returns: string };
+      keepalive: { Args: never; Returns: boolean };
       post_stock_movement: {
         Args: {
           p_allocations?: Json;

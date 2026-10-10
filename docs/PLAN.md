@@ -1,6 +1,12 @@
 # Workshop Tracker: plan
 
-Status: **approved 10.10.2026**. Your answers are recorded in §9 and worked into the sections below.
+Status: **approved 10.10.2026, M1–M7 built and deployed** (M6 needs the one-time Google setup from the README).
+Your answers are recorded in §9 and worked into the sections below. Changes made along the way:
+- categories, units and brands became editable lists;
+- part numbers became unique auto-generated IDs;
+- Adjust replaced Count, with Damaged, Lost and Found;
+- contacts are shared by sellers, buyers and customers;
+- cost types became a list.
 
 ---
 
