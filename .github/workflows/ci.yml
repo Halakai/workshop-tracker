@@ -53,7 +53,7 @@ jobs:
         run: |
           npx supabase gen types typescript --local --schema public > "$RUNNER_TEMP/database.types.ts"
           cp "$RUNNER_TEMP/database.types.ts" generated-database.types.ts
-          diff -u src/lib/database.types.ts "$RUNNER_TEMP/database.types.ts"
+          node scripts/check-db-types.mjs src/lib/database.types.ts "$RUNNER_TEMP/database.types.ts"
       - name: Upload generated types (to copy into src/lib if the check fails)
         if: always()
         uses: actions/upload-artifact@v7

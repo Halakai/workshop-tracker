@@ -12,7 +12,7 @@
     "test:watch": "vitest",
     "test:rls": "vitest run --config vitest.integration.config.ts",
     "icons": "pwa-assets-generator",
-    "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts",
+    "db:types": "supabase gen types typescript --linked --schema public > src/lib/database.types.ts && prettier --write src/lib/database.types.ts",
     "db:push": "supabase db push --linked",
     "functions:deploy": "supabase functions deploy --use-api"
   },
@@ -42,6 +42,7 @@
     "@types/react-dom": "^19.3.0",
     "@vite-pwa/assets-generator": "^2.0.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "prettier": "^3.9.10",
     "shadcn": "^4.21.4",
     "supabase": "^2.120.0",
     "tailwindcss": "^4.3.3",
