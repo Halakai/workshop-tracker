@@ -25,6 +25,7 @@ import { CarStatusBadge } from './CarCard';
 import { CarMoneyDrawer, type CarMoneyKind } from './CarMoneyDrawer';
 import { SaleDrawer } from './SaleDrawer';
 import { StatusDrawer } from './StatusDrawer';
+import { useRememberVisit } from '@/features/home/recent';
 import { ReturnToStockDrawer, UseOnCarDrawer } from './CarStockDrawers';
 
 export function CarPage() {
@@ -58,6 +59,7 @@ type Entry =
   | { kind: 'stock'; row: CarStockRow; date: string; created: string };
 
 function CarView({ car }: { car: Car }) {
+  useRememberVisit('car', car.id);
   const money = useCarMoney(car.id);
   const stock = useCarStock(car.id);
   const payers = usePayerOptions();

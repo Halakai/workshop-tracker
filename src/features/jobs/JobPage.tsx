@@ -25,6 +25,7 @@ import { jobCar } from './JobsListPage';
 import { BoughtLineDrawer, LaborDrawer, OtherLineDrawer, PaymentDrawer, StockLineDrawer, type PaymentRow } from './JobDrawers';
 import { buildInvoiceData, shareOrDownload } from './invoice/makeInvoice';
 import { AttachmentStrip } from '@/features/files/AttachmentStrip';
+import { useRememberVisit } from '@/features/home/recent';
 import { useAttachments, useDeleteAttachment, useUploadAttachment } from '@/features/files/api';
 
 export function JobPage() {
@@ -56,6 +57,7 @@ export function JobPage() {
 type LineDrawer = { kind: 'stock' } | { kind: 'other'; line?: JobLine } | { kind: 'bought'; line?: JobLine } | null;
 
 function JobView({ job }: { job: Job }) {
+  useRememberVisit('job', job.id);
   const lines = useJobLines(job.id);
   const money = useJobMoney(job.id);
   const label = useAccountLabels();

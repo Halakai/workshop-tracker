@@ -33,6 +33,7 @@ const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then(
 const HomePage = lazy(() => import('@/features/home/HomePage').then((m) => ({ default: m.HomePage })));
 const ContactsPage = lazy(() => import('@/features/contacts/ContactsPage').then((m) => ({ default: m.ContactsPage })));
 const ExportPage = lazy(() => import('@/features/export/ExportPage').then((m) => ({ default: m.ExportPage })));
+const SearchPage = lazy(() => import('@/features/search/SearchPage').then((m) => ({ default: m.SearchPage })));
 const UsersPage = lazy(() => import('@/features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 
 // HashRouter: URLs look like …/workshop-tracker/#/cars/123, which always works on GitHub Pages.
@@ -45,6 +46,7 @@ export const router = createHashRouter([
         element: <AppLayout />,
         children: [
           { index: true, element: <HomePage /> },
+          { path: 'search', element: <SearchPage /> },
           { path: 'inventory', element: <StockListPage /> },
           { path: 'inventory/new', element: <ItemFormPage /> },
           { path: 'inventory/shopping-list', element: <ShoppingListPage /> },

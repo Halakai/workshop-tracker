@@ -23,6 +23,8 @@ export const CATEGORY_INFO: Record<string, { label: string; icon: LucideIcon }> 
   car_part: { label: 'Car part', icon: Wrench },
   car_cost: { label: 'Car cost', icon: Receipt },
   car_sale: { label: 'Car sale', icon: Banknote },
+  job_part: { label: 'Job part', icon: Wrench },
+  job_payment: { label: 'Job payment', icon: Banknote },
 };
 
 export function categoryInfo(category: string) {

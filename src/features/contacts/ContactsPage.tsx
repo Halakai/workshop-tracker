@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -28,6 +29,16 @@ export function ContactsPage() {
   const jobs = useJobs();
   const [query, setQuery] = useState('');
   const [editing, setEditing] = useState<Contact | null>(null);
+  // opened from the search: #/contacts?open=<id> shows that contact straight away
+  const [params, setParams] = useSearchParams();
+  const openId = params.get('open');
+  useEffect(() => {
+    const found = openId && contacts.data?.find((c) => c.id === openId);
+    if (found) {
+      setEditing(found);
+      setParams({}, { replace: true });
+    }
+  }, [openId, contacts.data, setParams]);
 
   const usage = useMemo(() => {
     const map = new Map<string, string[]>();

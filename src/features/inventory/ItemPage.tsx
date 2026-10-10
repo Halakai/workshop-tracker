@@ -31,6 +31,7 @@ import { BuyDrawer } from './BuyDrawer';
 import { UseDrawer } from './UseDrawer';
 import { AdjustDrawer } from './AdjustDrawer';
 import { ReceiptButton } from '@/features/files/ReceiptButton';
+import { useRememberVisit } from '@/features/home/recent';
 
 type Action = 'buy' | 'use' | 'adjust' | null;
 
@@ -40,6 +41,7 @@ export function ItemPage() {
   const movements = useItemMovements(id);
   const [action, setAction] = useState<Action>(null);
   const [undoing, setUndoing] = useState<Movement | null>(null);
+  useRememberVisit('item', item.data?.id);
 
   if (item.isPending) {
     return (
