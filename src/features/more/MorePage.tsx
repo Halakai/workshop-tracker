@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { ChevronRight, ListChecks, LogOut, UserRound, Users, type LucideIcon } from 'lucide-react';
+import { ChevronRight, Handshake, ListChecks, LogOut, UserRound, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { useCurrentProfile } from '@/features/auth/profiles';
@@ -16,6 +16,8 @@ interface MoreLink {
 export function MorePage() {
   const me = useCurrentProfile();
   const links: MoreLink[] = [
+    { to: '/money', label: 'Money', description: 'Wallet, expenses, deposits, transfers', icon: Wallet },
+    { to: '/partners', label: 'Partners', description: 'Who put in what, balances', icon: Handshake },
     { to: '/lists', label: 'Lists', description: 'Categories, units, brands, cost types', icon: ListChecks },
     { to: '/account', label: 'My account', description: 'Name and password', icon: UserRound },
     ...(me.role === 'admin'

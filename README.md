@@ -15,7 +15,7 @@ workshop wallet and settling up between partners.
 | M1 | Scaffold, sign-in, admin user management, CI + Pages deploy | ✅ done |
 | M2 | Inventory and stock movements | ✅ done |
 | M3 | Cars and their costs | ✅ done |
-| M4 | Wallet, ledger and settling up | |
+| M4 | Wallet, ledger and settling up | ✅ done |
 | M5 | Customer jobs and PDF invoices | |
 | M6 | Google Drive uploads | |
 | M7 | Dashboard, low-stock alerts, export, polish | |
@@ -62,7 +62,26 @@ workshop wallet and settling up between partners.
   **Sell** records the price, who got the money, the buyer and the mileage.
 - The car page shows **total invested** live. Once the car is sold it also shows **profit, margin and ROI**. The car
   list filters by status and sorts by newest, invested or profit.
-- Settling up between partners comes with M4. After that, a settled car's money is locked.
+- Each car has its own **profit shares**, copied from the defaults. Change them per car, e.g. "All to Ivan".
+
+## Money (short)
+
+- **Wallet** (More → Money): the balance is always calculated from the entries. The buttons:
+  - **Put in:** a partner puts money into the wallet.
+  - **Take out:** a partner takes money out.
+  - **Transfer:** e.g. the wallet pays a partner back.
+  - **Expense:** a workshop cost not tied to a car, e.g. tools or electricity.
+  - **Income:** e.g. scrap metal sold.
+- **Expense** and **Income** are split between partners by their default profit shares.
+- **Partners** (More → Partners): for each partner, **put in** (deposits, things they paid), **taken out**
+  (withdrawals, money they received), **profit share**, and the **balance** = what the workshop owes them. Their
+  page lists every entry and every profit share, with where it came from.
+- **Settle up** a sold or scrapped car (button on the car):
+  1. The app shows who paid what (parts from stock count as the wallet) and who holds the sale money.
+  2. It splits the profit or loss by the car's shares and adds it to each partner's balance.
+  3. Choose **Keep profit in wallet** (default) or **Pay out profit**, and whether to pay back out-of-pocket costs.
+  4. It suggests the fewest transfers ("Ivan → Wallet 1 800.00€"); untick any you'll handle differently.
+  5. **Record settlement** writes it all and locks the car's money. **Undo settlement** unlocks it again.
 
 ## Things to know## How cars work (short)
 
@@ -79,7 +98,26 @@ workshop wallet and settling up between partners.
   **Sell** records the price, who got the money, the buyer and the mileage.
 - The car page shows **total invested** live. Once the car is sold it also shows **profit, margin and ROI**. The car
   list filters by status and sorts by newest, invested or profit.
-- Settling up between partners comes with M4. After that, a settled car's money is locked.
+- Each car has its own **profit shares**, copied from the defaults. Change them per car, e.g. "All to Ivan".
+
+## Money (short)
+
+- **Wallet** (More → Money): the balance is always calculated from the entries. The buttons:
+  - **Put in:** a partner puts money into the wallet.
+  - **Take out:** a partner takes money out.
+  - **Transfer:** e.g. the wallet pays a partner back.
+  - **Expense:** a workshop cost not tied to a car, e.g. tools or electricity.
+  - **Income:** e.g. scrap metal sold.
+- **Expense** and **Income** are split between partners by their default profit shares.
+- **Partners** (More → Partners): for each partner, **put in** (deposits, things they paid), **taken out**
+  (withdrawals, money they received), **profit share**, and the **balance** = what the workshop owes them. Their
+  page lists every entry and every profit share, with where it came from.
+- **Settle up** a sold or scrapped car (button on the car):
+  1. The app shows who paid what (parts from stock count as the wallet) and who holds the sale money.
+  2. It splits the profit or loss by the car's shares and adds it to each partner's balance.
+  3. Choose **Keep profit in wallet** (default) or **Pay out profit**, and whether to pay back out-of-pocket costs.
+  4. It suggests the fewest transfers ("Ivan → Wallet 1 800.00€"); untick any you'll handle differently.
+  5. **Record settlement** writes it all and locks the car's money. **Undo settlement** unlocks it again.
 
 ## Things to know
 

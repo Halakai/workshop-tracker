@@ -92,6 +92,7 @@ export type Database = {
           id: string;
           occurred_on: string;
           partner_id: string;
+          settlement_id: string | null;
           stock_movement_id: string | null;
           transaction_id: string | null;
           updated_at: string;
@@ -104,6 +105,7 @@ export type Database = {
           id?: string;
           occurred_on: string;
           partner_id: string;
+          settlement_id?: string | null;
           stock_movement_id?: string | null;
           transaction_id?: string | null;
           updated_at?: string;
@@ -116,6 +118,7 @@ export type Database = {
           id?: string;
           occurred_on?: string;
           partner_id?: string;
+          settlement_id?: string | null;
           stock_movement_id?: string | null;
           transaction_id?: string | null;
           updated_at?: string;
@@ -134,6 +137,13 @@ export type Database = {
             columns: ["partner_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_settlement_id_fkey";
+            columns: ["settlement_id"];
+            isOneToOne: false;
+            referencedRelation: "settlements";
             referencedColumns: ["id"];
           },
           {
@@ -720,6 +730,74 @@ export type Database = {
           },
         ];
       };
+      settlements: {
+        Row: {
+          breakdown: Json;
+          car_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          payout_mode: string;
+          reimburse: boolean;
+          settled_on: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          breakdown?: Json;
+          car_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          payout_mode: string;
+          reimburse: boolean;
+          settled_on?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          breakdown?: Json;
+          car_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          payout_mode?: string;
+          reimburse?: boolean;
+          settled_on?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "settlements_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: true;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "settlements_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: true;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "settlements_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "settlements_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       stock_movements: {
         Row: {
           car_id: string | null;
@@ -835,6 +913,7 @@ export type Database = {
           id: string;
           kind: Database["public"]["Enums"]["txn_kind"];
           occurred_on: string;
+          settlement_id: string | null;
           to_account_id: string;
           updated_at: string;
           updated_by: string | null;
@@ -853,6 +932,7 @@ export type Database = {
           id?: string;
           kind: Database["public"]["Enums"]["txn_kind"];
           occurred_on?: string;
+          settlement_id?: string | null;
           to_account_id: string;
           updated_at?: string;
           updated_by?: string | null;
@@ -871,6 +951,7 @@ export type Database = {
           id?: string;
           kind?: Database["public"]["Enums"]["txn_kind"];
           occurred_on?: string;
+          settlement_id?: string | null;
           to_account_id?: string;
           updated_at?: string;
           updated_by?: string | null;
@@ -909,6 +990,13 @@ export type Database = {
             columns: ["from_account_id"];
             isOneToOne: false;
             referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_settlement_id_fkey";
+            columns: ["settlement_id"];
+            isOneToOne: false;
+            referencedRelation: "settlements";
             referencedColumns: ["id"];
           },
           {
@@ -1030,6 +1118,37 @@ export type Database = {
         };
         Returns: string;
       };
+      record_settlement: {
+        Args: {
+          p_allocations: Json;
+          p_breakdown?: Json;
+          p_car_id: string;
+          p_payout_mode: string;
+          p_reimburse: boolean;
+          p_settled_on: string;
+          p_transfers: Json;
+        };
+        Returns: string;
+      };
+      save_workshop_money: {
+        Args: {
+          p_account_id: string;
+          p_allocations?: Json;
+          p_amount_cents: number;
+          p_counterparty?: string;
+          p_description?: string;
+          p_expense_category_id?: string;
+          p_id: string;
+          p_kind: Database["public"]["Enums"]["txn_kind"];
+          p_occurred_on: string;
+        };
+        Returns: string;
+      };
+      set_car_shares: {
+        Args: { p_car_id: string; p_shares: Json };
+        Returns: undefined;
+      };
+      undo_settlement: { Args: { p_car_id: string }; Returns: undefined };
       undo_stock_movement: {
         Args: { p_movement_id: string };
         Returns: undefined;

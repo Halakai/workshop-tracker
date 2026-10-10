@@ -20,6 +20,11 @@ const CarPage = lazy(() => cars().then((m) => ({ default: m.CarPage })));
 const CarFormPage = lazy(() => cars().then((m) => ({ default: m.CarFormPage })));
 const AccountPage = lazy(() => import('@/features/account/AccountPage').then((m) => ({ default: m.AccountPage })));
 const ListsPage = lazy(() => import('@/features/catalog/ListsPage').then((m) => ({ default: m.ListsPage })));
+const money = () => import('@/features/money/pages');
+const MoneyPage = lazy(() => money().then((m) => ({ default: m.MoneyPage })));
+const PartnersPage = lazy(() => money().then((m) => ({ default: m.PartnersPage })));
+const PartnerPage = lazy(() => money().then((m) => ({ default: m.PartnerPage })));
+const SettlePage = lazy(() => import('@/features/settlement/SettlePage').then((m) => ({ default: m.SettlePage })));
 const UsersPage = lazy(() => import('@/features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 
 // HashRouter: URLs look like …/workshop-tracker/#/cars/123, which always works on GitHub Pages.
@@ -41,6 +46,10 @@ export const router = createHashRouter([
           { path: 'cars/new', element: <CarFormPage /> },
           { path: 'cars/:id', element: <CarPage /> },
           { path: 'cars/:id/edit', element: <CarFormPage /> },
+          { path: 'cars/:id/settle', element: <SettlePage /> },
+          { path: 'money', element: <MoneyPage /> },
+          { path: 'partners', element: <PartnersPage /> },
+          { path: 'partners/:id', element: <PartnerPage /> },
           { path: 'jobs', element: <ComingSoonPage title="Jobs" milestone="M5" /> },
           { path: 'more', element: <MorePage /> },
           { path: 'account', element: <AccountPage /> },

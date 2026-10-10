@@ -56,7 +56,7 @@ describe('direct ledger entries', () => {
     expect(backwards.error).not.toBeNull();
     const mismatch = await asA
       .from('transactions')
-      .insert({ kind: 'withdrawal', category: 'deposit', amount_cents: 1, from_account_id: accA, to_account_id: wallet });
+      .insert({ kind: 'deposit', category: 'withdrawal', amount_cents: 1, from_account_id: accA, to_account_id: wallet });
     expect(mismatch.error?.code).toBe('23514');
     const sneaky = await asA.from('transactions').insert({
       kind: 'expense',
@@ -184,7 +184,7 @@ async function settlementArgs(carId: string, mode: 'retain' | 'payout' = 'retain
   const { data: summary } = await service.from('car_summaries').select('stock_cents').eq('car_id', carId).single();
   const funding = carFunding(
     rows!.map((r) => ({ category: r.category, from: r.from_account_id, to: r.to_account_id, amount: r.amount_cents })),
-    summary!.stock_cents,
+    summary!.stock_cents ?? 0,
     wallet,
   );
   const input = {

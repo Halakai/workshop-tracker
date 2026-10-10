@@ -1,5 +1,9 @@
 import { Link } from 'react-router';
-import { AlertTriangle, Car, ChevronRight, Package, Users, Wrench } from 'lucide-react';
+import { AlertTriangle, Car, ChevronRight, Package, Users, Wallet, Wrench } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { formatMoney } from '@/domain/money';
+import { cn } from '@/lib/utils';
+import { usePartnerPositions, useWalletBalance } from '@/features/money/api';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PageBody, PageHeader } from '@/components/PageHeader';
@@ -11,6 +15,8 @@ import { unitOf, useLowStockItems } from '@/features/inventory/api';
 export function HomePage() {
   const me = useCurrentProfile();
   const lowStock = useLowStockItems();
+  const wallet = useWalletBalance();
+  const partners = usePartnerPositions();
   const links = [
     { to: '/stock', label: 'Stock', icon: Package },
     { to: '/cars', label: 'Cars', icon: Car },
@@ -24,6 +30,36 @@ export function HomePage() {
         <p className="text-lg">
           Hi <span className="font-semibold">{me.display_name}</span> 👋
         </p>
+
+        <Link to="/money">
+          <Card className="active:bg-muted">
+            <CardContent className="flex flex-col gap-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Wallet className="size-4" /> Wallet
+                  </p>
+                  {wallet === null ? (
+                    <Skeleton className="mt-1 h-8 w-32" />
+                  ) : (
+                    <p className={cn('text-2xl font-semibold tabular-nums', wallet < 0 && 'text-destructive')}>{formatMoney(wallet)}</p>
+                  )}
+                </div>
+                <ChevronRight className="size-5 text-muted-foreground" />
+              </div>
+              {partners && partners.length > 0 && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                  {partners.map((p) => (
+                    <span key={p.partnerId}>
+                      <span className="text-muted-foreground">{p.name}</span>{' '}
+                      <span className={cn('font-medium tabular-nums', p.balance < 0 && 'text-destructive')}>{formatMoney(p.balance)}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </Link>
 
         {lowStock.length > 0 && (
           <Card>

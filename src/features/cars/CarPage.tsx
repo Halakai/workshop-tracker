@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Banknote, Car as CarIcon, ChevronRight, ExternalLink, Package, Pencil, Phone, Receipt, Undo2, Wrench } from 'lucide-react';
+import { Banknote, Car as CarIcon, ChevronRight, ExternalLink, Handshake, Package, Pencil, Phone, Receipt, Undo2, Wrench } from 'lucide-react';
+import { toast } from 'sonner';
+import { ConfirmButton } from '@/components/ConfirmButton';
+import { syncErrorMessage } from '@/lib/errors';
+import { useProfiles } from '@/features/auth/profiles';
+import { useCarShares, useSettlement, useUndoSettlement } from '@/features/settlement/api';
+import { CarSharesDrawer } from '@/features/settlement/CarSharesDrawer';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { Button } from '@/components/ui/button';
@@ -8,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { carTitle, isClosed, type CarStatus } from '@/domain/cars';
 import { formatMoney } from '@/domain/money';
-import { formatPercentBp } from '@/domain/shares';
+import { formatPercentBp, formatShare } from '@/domain/shares';
 import { formatInteger, formatQuantity, toMilli } from '@/domain/quantity';
 import { formatDate } from '@/domain/dates';
 import { cn } from '@/lib/utils';
@@ -59,6 +65,12 @@ function CarView({ car }: { car: Car }) {
   const [statusOpen, setStatusOpen] = useState(false);
   const [usingStock, setUsingStock] = useState(false);
   const [returning, setReturning] = useState<string | null>(null);
+  const [editingShares, setEditingShares] = useState(false);
+  const shares = useCarShares(car.id);
+  const settlement = useSettlement(car.id);
+  const undoSettlement = useUndoSettlement();
+  const profiles = useProfiles();
+  const partnerName = (id: string) => profiles.data?.find((p) => p.id === id)?.display_name ?? 'partner';
 
   const status = car.status as CarStatus;
   const settled = Boolean(car.settled_at);
@@ -225,10 +237,74 @@ function CarView({ car }: { car: Car }) {
           </CardContent>
         </Card>
 
+        {!settled && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Profit shares</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2 text-sm">
+              <p>
+                {(shares.data ?? []).length === 0
+                  ? 'Not set'
+                  : (shares.data ?? []).map((s) => `${partnerName(s.partner_id)} ${formatShare(s.share_bp)}`).join(' · ')}
+              </p>
+              <Button variant="outline" size="sm" className="self-start" onClick={() => setEditingShares(true)}>
+                <Pencil /> Change for this car
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
         {isClosed(status) && !settled && (
-          <p className="rounded-lg border border-dashed px-3 py-2 text-sm text-muted-foreground">
-            Settling up between partners for this car arrives with milestone M4.
-          </p>
+          <Button size="lg" asChild>
+            <Link to={`/cars/${car.id}/settle`}>
+              <Handshake /> Settle up
+            </Link>
+          </Button>
+        )}
+
+        {settled && settlement.data && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Settled {formatDate(settlement.data.settled_on)}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-2 text-sm">
+              <p className="text-muted-foreground">
+                {settlement.data.payout_mode === 'retain' ? 'Profit kept in the wallet' : 'Profit paid out'}
+                {settlement.data.reimburse ? ', out-of-pocket costs paid back' : ''}.
+              </p>
+              {settlement.data.allocations.map((a) => (
+                <div key={a.partner_id} className="flex justify-between">
+                  <span>{partnerName(a.partner_id)}</span>
+                  <span className={cn('font-medium tabular-nums', a.amount_cents < 0 && 'text-destructive')}>
+                    {formatMoney(a.amount_cents, { sign: true })}
+                  </span>
+                </div>
+              ))}
+              {settlement.data.transactions.map((t) => (
+                <p key={t.id} className="text-muted-foreground">
+                  {payerLabel(t.from_account_id)} → {payerLabel(t.to_account_id)}: {formatMoney(t.amount_cents)}
+                </p>
+              ))}
+              <ConfirmButton
+                variant="ghost"
+                className="self-start"
+                title="Undo the settlement?"
+                description="Its profit split and transfers are removed and the car can be changed again."
+                confirmLabel="Undo settlement"
+                onConfirm={async () => {
+                  try {
+                    await undoSettlement.mutateAsync(car.id);
+                    toast.success('Settlement undone');
+                  } catch (e) {
+                    toast.error(syncErrorMessage(e));
+                  }
+                }}
+              >
+                <Undo2 /> Undo settlement
+              </ConfirmButton>
+            </CardContent>
+          </Card>
         )}
       </PageBody>
 
@@ -237,6 +313,7 @@ function CarView({ car }: { car: Car }) {
       <StatusDrawer car={car} open={statusOpen} onOpenChange={setStatusOpen} onSell={() => setSelling(true)} />
       <UseOnCarDrawer car={car} open={usingStock} onOpenChange={setUsingStock} />
       <ReturnToStockDrawer car={car} itemId={returning} rows={stock.data ?? []} onClose={() => setReturning(null)} />
+      <CarSharesDrawer carId={car.id} open={editingShares} onOpenChange={setEditingShares} />
     </>
   );
 }
