@@ -27,7 +27,7 @@ export function anonClient(): Client {
 }
 
 export const PASSWORD = 'correct-horse-battery-9';
-const runId = Date.now().toString(36);
+const runId = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
 
 export function testEmail(name: string) {
   return `${name}-${runId}@test.local`;

@@ -1,8 +1,12 @@
 // RLS / permission tests against a running Supabase (local stack in CI: `supabase start`).
 // Needs SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY and SUPABASE_SECRET_KEY. Never point this at production.
+import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  resolve: {
+    alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
+  },
   test: {
     include: ['supabase/tests/**/*.test.ts'],
     environment: 'node',
