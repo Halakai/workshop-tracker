@@ -1,12 +1,19 @@
 # Workshop Tracker: plan
 
-Status: **approved 10.10.2026, M1–M7 built and deployed** (M6 needs the one-time Google setup from the README).
+Status: **approved 10.10.2026, M1–M7 built and deployed; first round of changes after testing done (R1)**.
 Your answers are recorded in §9 and worked into the sections below. Changes made along the way:
 - categories, units and brands became editable lists;
 - part numbers became unique auto-generated IDs;
 - Adjust replaced Count, with Damaged, Lost and Found;
 - contacts are shared by sellers, buyers and customers;
 - cost types became a list.
+
+R1 (after the first test round, 10.10.2026):
+- Home became a dashboard (figures, money in/out chart, recently opened) with one search for everything;
+- Stock was renamed Inventory; back arrows return to the previous page;
+- backups can be restored (`admin_restore()`, all or nothing; people are matched to today's users);
+- a car catalogue (makes with logos, models, generations, engines) feeds type-ahead on the car and job forms and
+  grows with what is typed; customers' cars gained generation, year and engine.
 
 ---
 
