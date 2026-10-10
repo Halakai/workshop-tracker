@@ -326,11 +326,19 @@ export function useJobSuggestions(customerName?: string) {
     const theirs = customerName?.trim()
       ? list.filter((j) => j.customer?.name.toLowerCase() === customerName.trim().toLowerCase())
       : [];
-    const cars = new Map<string, { make: string; model: string; plate: string; vin: string }>();
+    const cars = new Map<string, { make: string; model: string; generation: string; year: string; engine: string; plate: string; vin: string }>();
     for (const j of theirs) {
       const key = `${j.car_plate ?? ''}|${j.car_make ?? ''}|${j.car_model ?? ''}`;
       if (key !== '||' && !cars.has(key)) {
-        cars.set(key, { make: j.car_make ?? '', model: j.car_model ?? '', plate: j.car_plate ?? '', vin: j.car_vin ?? '' });
+        cars.set(key, {
+          make: j.car_make ?? '',
+          model: j.car_model ?? '',
+          generation: j.car_generation ?? '',
+          year: j.car_year ? String(j.car_year) : '',
+          engine: j.car_engine ?? '',
+          plate: j.car_plate ?? '',
+          vin: j.car_vin ?? '',
+        });
       }
     }
     return {

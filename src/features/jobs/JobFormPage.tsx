@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +20,8 @@ import { partNumberTaken } from '@/domain/codes';
 import { syncErrorMessage } from '@/lib/errors';
 import { useGoBack } from '@/lib/navigation';
 import { ensureContact, useContacts } from '@/features/contacts/api';
+import { rememberCar, useCarFieldOptions } from '@/features/catalog/carCatalog';
+import { EngineOption, GenerationOption, MakeOption } from '@/features/catalog/CarOptions';
 import { useDeleteJob, useJob, useJobSuggestions, useSaveJob, type Job } from './api';
 
 const schema = z.object({
@@ -28,6 +30,9 @@ const schema = z.object({
   phone: z.string().trim().max(40),
   make: z.string().trim().max(40),
   model: z.string().trim().max(60),
+  generation: z.string().trim().max(40),
+  year: z.string().refine((v) => !v.trim() || (/^\d{4}$/.test(v.trim()) && +v >= 1900 && +v <= new Date().getFullYear() + 1), 'Enter a year like 2012'),
+  engine: z.string().trim().max(60),
   plate: z.string().trim().max(15),
   vin: z.string().trim().max(20),
   description: z.string().trim().min(1, 'What needs doing?').max(2000),
@@ -68,6 +73,9 @@ function JobForm({ job }: { job?: Job }) {
       phone: job?.customer?.phone ?? '',
       make: job?.car_make ?? '',
       model: job?.car_model ?? '',
+      generation: job?.car_generation ?? '',
+      year: job?.car_year ? String(job.car_year) : '',
+      engine: job?.car_engine ?? '',
       plate: job?.car_plate ?? '',
       vin: job?.car_vin ?? '',
       description: job?.description ?? '',
@@ -76,8 +84,9 @@ function JobForm({ job }: { job?: Job }) {
     },
   });
 
-  const customer = form.watch('customer');
+  const [customer, make, model, generation, year] = form.watch(['customer', 'make', 'model', 'generation', 'year']);
   const suggestions = useJobSuggestions(customer);
+  const catalog = useCarFieldOptions({ make, model, generation, year }, { makes: suggestions.makes, models: suggestions.models });
   const otherRefs = useMemo(() => suggestions.refs.filter((r) => r !== job?.ref), [suggestions.refs, job?.ref]);
   const suggestedRef = nextJobRef(otherRefs);
   useEffect(() => {
@@ -95,13 +104,18 @@ function JobForm({ job }: { job?: Job }) {
     }
     try {
       const contact = await ensureContact(v.customer, v.phone);
+      const names = catalog.canonical(v);
+      void rememberCar({ ...names, year: v.year.trim() ? Number(v.year) : null });
       const saved = await save.mutateAsync({
         id: job?.id,
         values: {
           ref: v.ref.toUpperCase(),
           customer_id: contact!.id,
-          car_make: v.make || null,
-          car_model: v.model || null,
+          car_make: names.make || null,
+          car_model: names.model || null,
+          car_generation: names.generation || null,
+          car_year: v.year.trim() ? Number(v.year) : null,
+          car_engine: names.engine || null,
           car_plate: v.plate.toUpperCase() || null,
           car_vin: v.vin.toUpperCase() || null,
           description: v.description,
@@ -118,13 +132,20 @@ function JobForm({ job }: { job?: Job }) {
   });
 
   const err = form.formState.errors;
-  const suggest = (name: 'make' | 'model', label: string, options: string[]) => (
+  const suggest = (
+    name: 'make' | 'model' | 'generation' | 'engine',
+    label: string,
+    options: string[],
+    extra: Partial<ComponentProps<typeof SuggestionInput>> = {},
+  ) => (
     <Field>
       <FieldLabel htmlFor={`job-${name}`}>{label}</FieldLabel>
       <Controller
         control={form.control}
         name={name}
-        render={({ field }) => <SuggestionInput id={`job-${name}`} value={field.value} onChange={field.onChange} options={options} limit={5} />}
+        render={({ field }) => (
+          <SuggestionInput id={`job-${name}`} value={field.value} onChange={field.onChange} options={options} limit={8} {...extra} />
+        )}
       />
     </Field>
   );
@@ -178,6 +199,9 @@ function JobForm({ job }: { job?: Job }) {
                         onClick={() => {
                           form.setValue('make', c.make);
                           form.setValue('model', c.model);
+                          form.setValue('generation', c.generation);
+                          form.setValue('year', c.year);
+                          form.setValue('engine', c.engine);
                           form.setValue('plate', c.plate);
                           form.setValue('vin', c.vin);
                         }}
@@ -187,10 +211,24 @@ function JobForm({ job }: { job?: Job }) {
                     ))}
                   </div>
                 )}
+                {suggest('make', 'Make', catalog.makes, { placeholder: 'e.g. Škoda', renderOption: (o) => <MakeOption name={o} /> })}
+                {suggest('model', 'Model', catalog.models, { placeholder: 'e.g. Octavia' })}
                 <div className="grid grid-cols-2 gap-3">
-                  {suggest('make', 'Make', suggestions.makes)}
-                  {suggest('model', 'Model', suggestions.models)}
+                  {suggest('generation', 'Generation', catalog.generationNames, {
+                    placeholder: 'e.g. II (1Z)',
+                    renderOption: (o) => <GenerationOption name={o} info={catalog.generationInfo(o)} />,
+                  })}
+                  <Field data-invalid={!!err.year}>
+                    <FieldLabel htmlFor="job-year">Year</FieldLabel>
+                    <Input id="job-year" inputMode="numeric" placeholder="2012" {...form.register('year')} />
+                    <FieldError errors={[err.year]} />
+                  </Field>
                 </div>
+                {suggest('engine', 'Engine', catalog.engineNames, {
+                  placeholder: '1.9 TDI 77 kW (105 HP)',
+                  limit: 12,
+                  renderOption: (o) => <EngineOption name={o} fuel={catalog.engineFuel(o)} />,
+                })}
                 <div className="grid grid-cols-2 gap-3">
                   <Field>
                     <FieldLabel htmlFor="job-plate">Plate</FieldLabel>

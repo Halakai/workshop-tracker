@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ComponentProps } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -24,6 +24,8 @@ import { syncErrorMessage } from '@/lib/errors';
 import { useGoBack } from '@/lib/navigation';
 import { getLastPayer, setLastPayer, useAccounts, usePayerOptions } from '@/features/money/accounts';
 import { ensureContact, useContacts } from '@/features/contacts/api';
+import { rememberCar, useCarFieldOptions } from '@/features/catalog/carCatalog';
+import { EngineOption, GenerationOption, MakeOption } from '@/features/catalog/CarOptions';
 import { useCar, useCarSuggestions, useCreateCar, useDeleteCar, useUpdateCar, type Car } from './api';
 
 const thisYear = new Date().getFullYear();
@@ -32,6 +34,7 @@ const schema = z.object({
   ref: z.string().trim().min(1, 'Car ID is required').max(20),
   make: z.string().trim().min(1, 'Make is required').max(40),
   model: z.string().trim().min(1, 'Model is required').max(60),
+  generation: z.string().trim().max(40),
   year: z.string().refine((v) => !v.trim() || (/^\d{4}$/.test(v.trim()) && +v >= 1900 && +v <= thisYear + 1), 'Enter a year like 2012'),
   plate: z.string().trim().max(15),
   vin: z.string().trim().max(20),
@@ -83,6 +86,7 @@ function CarForm({ car }: { car?: Car }) {
       ref: car?.ref ?? '',
       make: car?.make ?? '',
       model: car?.model ?? '',
+      generation: car?.generation ?? '',
       year: car?.year ? String(car.year) : '',
       plate: car?.plate ?? '',
       vin: car?.vin ?? '',
@@ -99,8 +103,9 @@ function CarForm({ car }: { car?: Car }) {
     },
   });
 
-  const make = form.watch('make');
+  const [make, model, generation, year] = form.watch(['make', 'model', 'generation', 'year']);
   const suggestions = useCarSuggestions(make);
+  const catalog = useCarFieldOptions({ make, model, generation, year }, { makes: suggestions.makes, models: suggestions.models });
   const otherRefs = useMemo(() => suggestions.refs.filter((r) => r !== car?.ref), [suggestions.refs, car?.ref]);
   const suggestedRef = nextCarRef(otherRefs);
 
@@ -134,14 +139,16 @@ function CarForm({ car }: { car?: Car }) {
     }
     try {
       const sellerContact = await ensureContact(v.seller, v.sellerPhone);
+      const names = catalog.canonical(v);
       const values = {
         ref: v.ref.toUpperCase(),
-        make: v.make,
-        model: v.model,
+        make: names.make,
+        model: names.model,
+        generation: names.generation || null,
         year: v.year.trim() ? Number(v.year) : null,
         plate: v.plate.toUpperCase() || null,
         vin: v.vin.toUpperCase() || null,
-        engine: v.engine || null,
+        engine: names.engine || null,
         fuel: v.fuel || null,
         mileage_km: v.mileage.trim() ? Number(v.mileage.replace(/\s/g, '')) : null,
         colour: v.colour || null,
@@ -149,6 +156,7 @@ function CarForm({ car }: { car?: Car }) {
         seller_id: sellerContact?.id ?? null,
         purchase_date: v.purchaseDate,
       };
+      void rememberCar({ ...names, year: values.year, fuel: v.fuel });
       if (car) {
         await update.mutateAsync({ id: car.id, values });
         toast.success('Saved');
@@ -199,14 +207,19 @@ function CarForm({ car }: { car?: Car }) {
       <FieldError errors={[err[name]]} />
     </Field>
   );
-  const suggest = (name: 'make' | 'model' | 'colour' | 'fuel', label: string, options: string[], placeholder?: string) => (
+  const suggest = (
+    name: 'make' | 'model' | 'generation' | 'engine' | 'colour' | 'fuel',
+    label: string,
+    options: string[],
+    extra: Partial<ComponentProps<typeof SuggestionInput>> = {},
+  ) => (
     <Field data-invalid={!!err[name]}>
       <FieldLabel htmlFor={`car-${name}`}>{label}</FieldLabel>
       <Controller
         control={form.control}
         name={name}
         render={({ field }) => (
-          <SuggestionInput id={`car-${name}`} value={field.value} onChange={field.onChange} options={options} placeholder={placeholder} limit={5} />
+          <SuggestionInput id={`car-${name}`} value={field.value} onChange={field.onChange} options={options} limit={5} {...extra} />
         )}
       />
       <FieldError errors={[err[name]]} />
@@ -222,17 +235,30 @@ function CarForm({ car }: { car?: Car }) {
             <FieldSet>
               <FieldLegend>Car</FieldLegend>
               <FieldGroup>
-                {suggest('make', 'Make', suggestions.makes, 'e.g. Škoda')}
-                {suggest('model', 'Model', suggestions.models, 'e.g. Octavia')}
+                {suggest('make', 'Make', catalog.makes, { placeholder: 'e.g. Škoda', limit: 8, renderOption: (o) => <MakeOption name={o} /> })}
+                {suggest('model', 'Model', catalog.models, { placeholder: 'e.g. Octavia', limit: 8 })}
                 <div className="grid grid-cols-2 gap-3">
+                  {suggest('generation', 'Generation', catalog.generationNames, {
+                    placeholder: 'e.g. II (1Z)',
+                    limit: 8,
+                    renderOption: (o) => <GenerationOption name={o} info={catalog.generationInfo(o)} />,
+                  })}
                   {text('year', 'Year', { inputMode: 'numeric', placeholder: '2012' })}
+                </div>
+                {suggest('engine', 'Engine', catalog.engineNames, {
+                  placeholder: '1.9 TDI 77 kW (105 HP)',
+                  limit: 12,
+                  renderOption: (o) => <EngineOption name={o} fuel={catalog.engineFuel(o)} />,
+                  onPick: (o) => {
+                    const fuel = catalog.engineFuel(o);
+                    if (fuel && !form.getValues('fuel')) form.setValue('fuel', fuel);
+                  },
+                })}
+                <div className="grid grid-cols-2 gap-3">
+                  {suggest('fuel', 'Fuel', suggestions.fuels)}
                   {text('plate', 'Plate', { autoCapitalize: 'characters', className: 'uppercase' })}
                 </div>
                 {text('vin', 'VIN', { autoCapitalize: 'characters', className: 'font-mono uppercase' })}
-                <div className="grid grid-cols-2 gap-3">
-                  {text('engine', 'Engine', { placeholder: '1.9 TDI 77 kW' })}
-                  {suggest('fuel', 'Fuel', suggestions.fuels)}
-                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Field data-invalid={!!err.mileage}>
                     <FieldLabel htmlFor="car-mileage">Mileage at purchase</FieldLabel>

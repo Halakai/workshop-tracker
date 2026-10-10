@@ -18,6 +18,9 @@ const CarsListPage = lazy(() => cars().then((m) => ({ default: m.CarsListPage })
 const CarPage = lazy(() => cars().then((m) => ({ default: m.CarPage })));
 const CarFormPage = lazy(() => cars().then((m) => ({ default: m.CarFormPage })));
 const AccountPage = lazy(() => import('@/features/account/AccountPage').then((m) => ({ default: m.AccountPage })));
+const carLists = () => import('@/features/catalog/CarCatalogPages');
+const CarMakesPage = lazy(() => carLists().then((m) => ({ default: m.CarMakesPage })));
+const CarMakePage = lazy(() => carLists().then((m) => ({ default: m.CarMakePage })));
 const ListsPage = lazy(() => import('@/features/catalog/ListsPage').then((m) => ({ default: m.ListsPage })));
 const money = () => import('@/features/money/pages');
 const MoneyPage = lazy(() => money().then((m) => ({ default: m.MoneyPage })));
@@ -70,6 +73,8 @@ export const router = createHashRouter([
           { path: 'more', element: <MorePage /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'lists', element: <ListsPage /> },
+          { path: 'lists/cars', element: <CarMakesPage /> },
+          { path: 'lists/cars/:id', element: <CarMakePage /> },
           { path: 'contacts', element: <ContactsPage /> },
           {
             element: <RequireAdmin />,

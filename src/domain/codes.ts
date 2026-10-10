@@ -1,6 +1,7 @@
 // Short codes for categories and brands, and the item IDs ("part numbers") built from them:
 //   category "Fluid" → FLD, brand "Castrol" → CAST, item → FLD-CAST-001
 // Pure functions; the database enforces uniqueness.
+import { fold } from './search';
 
 const FOLD: Record<string, string> = { đ: 'd', Đ: 'D', ß: 'ss', ø: 'o', Ø: 'O', æ: 'ae', Æ: 'AE', ł: 'l', Ł: 'L' };
 
@@ -58,15 +59,15 @@ export function partNumberTaken(partNumber: string, existing: Iterable<string>):
 
 /**
  * Suggestions for a typed text: entries that start with it first, then ones that contain it
- * (case-insensitive), at most `limit`.
+ * (ignoring case and accents: "skoda" finds Škoda), at most `limit`.
  */
 export function suggest(query: string, options: readonly string[], limit = 6): string[] {
-  const q = query.trim().toLowerCase();
+  const q = fold(query.trim());
   if (!q) return options.slice(0, limit);
   const starts: string[] = [];
   const contains: string[] = [];
   for (const o of options) {
-    const lower = o.toLowerCase();
+    const lower = fold(o);
     if (lower === q && o === query.trim()) continue; // exact pick already made
     if (lower.startsWith(q)) starts.push(o);
     else if (lower.includes(q)) contains.push(o);

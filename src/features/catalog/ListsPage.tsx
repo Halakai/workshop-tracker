@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { ChevronRight, Lock, Plus } from 'lucide-react';
+import { Link } from 'react-router';
+import { Car, ChevronRight, Lock, Plus } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +56,15 @@ export function ListsPage() {
             <Lock className="size-4" /> You can add entries. Only an admin can rename or delete them.
           </p>
         )}
+
+        <Link to="/lists/cars" className="flex min-h-14 items-center gap-3 rounded-xl border px-4 py-3 active:bg-muted">
+          <Car className="size-5 text-muted-foreground" />
+          <span className="flex-1">
+            <span className="block font-medium">Car makes & models</span>
+            <span className="block text-sm text-muted-foreground">Makes, models, generations and engines for the car forms</span>
+          </span>
+          <ChevronRight className="size-5 text-muted-foreground" />
+        </Link>
 
         <Section title="Categories" onAdd={() => setAdding('category')} loading={categories.isPending}>
           {categories.data?.map((c) => (

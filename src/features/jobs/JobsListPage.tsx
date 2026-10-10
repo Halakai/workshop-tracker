@@ -23,8 +23,8 @@ export function JobStatusBadge({ status }: { status: JobStatus }) {
   return <Badge className={cn('border-transparent', STATUS_STYLES[status])}>{jobStatusLabel(status)}</Badge>;
 }
 
-export function jobCar(job: Pick<Job, 'car_make' | 'car_model' | 'car_plate'>): string {
-  return [[job.car_make, job.car_model].filter(Boolean).join(' '), job.car_plate].filter(Boolean).join(' · ');
+export function jobCar(job: Pick<Job, 'car_make' | 'car_model' | 'car_generation' | 'car_year' | 'car_plate'>): string {
+  return [[job.car_year, job.car_make, job.car_model, job.car_generation].filter(Boolean).join(' '), job.car_plate].filter(Boolean).join(' · ');
 }
 
 export function JobsListPage() {

@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.18";
-  };
   public: {
     Tables: {
       accounts: {
@@ -22,6 +17,7 @@ export type Database = {
           name: string | null;
           partner_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: string;
@@ -56,6 +52,7 @@ export type Database = {
           id: number;
           summary: string;
         };
+        ComputedFields: never;
         Insert: {
           action: string;
           actor_id?: string | null;
@@ -98,6 +95,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           amount_cents: number;
           created_at?: string;
@@ -185,6 +183,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -242,6 +241,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           code: string;
           created_at?: string;
@@ -277,12 +277,230 @@ export type Database = {
           },
         ];
       };
+      car_engines: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          fuel: string | null;
+          generation_id: string;
+          id: string;
+          name: string;
+          power_kw: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          fuel?: string | null;
+          generation_id: string;
+          id?: string;
+          name: string;
+          power_kw?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          fuel?: string | null;
+          generation_id?: string;
+          id?: string;
+          name?: string;
+          power_kw?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_engines_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_engines_generation_id_fkey";
+            columns: ["generation_id"];
+            isOneToOne: false;
+            referencedRelation: "car_generations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_engines_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      car_generations: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          model_id: string;
+          name: string;
+          updated_at: string;
+          updated_by: string | null;
+          year_from: number | null;
+          year_to: number | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          model_id: string;
+          name: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          year_from?: number | null;
+          year_to?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          model_id?: string;
+          name?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          year_from?: number | null;
+          year_to?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_generations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_generations_model_id_fkey";
+            columns: ["model_id"];
+            isOneToOne: false;
+            referencedRelation: "car_models";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_generations_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      car_makes: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          logo: string | null;
+          name: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          logo?: string | null;
+          name: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          logo?: string | null;
+          name?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_makes_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_makes_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      car_models: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          make_id: string;
+          name: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          make_id: string;
+          name: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          make_id?: string;
+          name?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_models_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_models_make_id_fkey";
+            columns: ["make_id"];
+            isOneToOne: false;
+            referencedRelation: "car_makes";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_models_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       car_shares: {
         Row: {
           car_id: string;
           partner_id: string;
           share_bp: number;
         };
+        ComputedFields: never;
         Insert: {
           car_id: string;
           partner_id: string;
@@ -326,6 +544,7 @@ export type Database = {
           created_by: string | null;
           engine: string | null;
           fuel: string | null;
+          generation: string | null;
           id: string;
           listing_url: string | null;
           make: string;
@@ -346,6 +565,7 @@ export type Database = {
           vin: string | null;
           year: number | null;
         };
+        ComputedFields: never;
         Insert: {
           asking_price_cents?: number | null;
           buyer_id?: string | null;
@@ -354,6 +574,7 @@ export type Database = {
           created_by?: string | null;
           engine?: string | null;
           fuel?: string | null;
+          generation?: string | null;
           id?: string;
           listing_url?: string | null;
           make: string;
@@ -382,6 +603,7 @@ export type Database = {
           created_by?: string | null;
           engine?: string | null;
           fuel?: string | null;
+          generation?: string | null;
           id?: string;
           listing_url?: string | null;
           make?: string;
@@ -444,6 +666,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -486,6 +709,7 @@ export type Database = {
           name: string;
           value: number;
         };
+        ComputedFields: never;
         Insert: {
           name: string;
           value: number;
@@ -502,6 +726,7 @@ export type Database = {
           drive_folder_id: string;
           key: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           drive_folder_id: string;
@@ -524,6 +749,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -570,6 +796,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           code: string;
           created_at?: string;
@@ -628,6 +855,7 @@ export type Database = {
           updated_by: string | null;
           version: number;
         };
+        ComputedFields: never;
         Insert: {
           archived_at?: string | null;
           brand_id?: string | null;
@@ -723,6 +951,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -806,6 +1035,7 @@ export type Database = {
           partner_id: string;
           share_bp: number;
         };
+        ComputedFields: never;
         Insert: {
           job_id: string;
           partner_id: string;
@@ -842,10 +1072,13 @@ export type Database = {
       };
       jobs: {
         Row: {
+          car_engine: string | null;
+          car_generation: string | null;
           car_make: string | null;
           car_model: string | null;
           car_plate: string | null;
           car_vin: string | null;
+          car_year: number | null;
           created_at: string;
           created_by: string | null;
           customer_id: string;
@@ -862,11 +1095,15 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
+          car_engine?: string | null;
+          car_generation?: string | null;
           car_make?: string | null;
           car_model?: string | null;
           car_plate?: string | null;
           car_vin?: string | null;
+          car_year?: number | null;
           created_at?: string;
           created_by?: string | null;
           customer_id: string;
@@ -884,10 +1121,13 @@ export type Database = {
           updated_by?: string | null;
         };
         Update: {
+          car_engine?: string | null;
+          car_generation?: string | null;
           car_make?: string | null;
           car_model?: string | null;
           car_plate?: string | null;
           car_vin?: string | null;
+          car_year?: number | null;
           created_at?: string;
           created_by?: string | null;
           customer_id?: string;
@@ -941,6 +1181,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -1000,6 +1241,7 @@ export type Database = {
           website: string | null;
           workshop_name: string;
         };
+        ComputedFields: never;
         Insert: {
           address?: string | null;
           created_at?: string;
@@ -1053,7 +1295,7 @@ export type Database = {
       };
       settlements: {
         Row: {
-          breakdown: Json;
+          breakdown: NonNullable<Json>;
           car_id: string | null;
           created_at: string;
           created_by: string | null;
@@ -1065,8 +1307,9 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
-          breakdown?: Json;
+          breakdown?: NonNullable<Json>;
           car_id?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -1079,7 +1322,7 @@ export type Database = {
           updated_by?: string | null;
         };
         Update: {
-          breakdown?: Json;
+          breakdown?: NonNullable<Json>;
           car_id?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -1156,6 +1399,7 @@ export type Database = {
           updated_by: string | null;
           value_delta_cents: number;
         };
+        ComputedFields: never;
         Insert: {
           car_id?: string | null;
           created_at?: string;
@@ -1274,6 +1518,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           amount_cents: number;
           car_id?: string | null;
@@ -1398,6 +1643,7 @@ export type Database = {
           updated_by: string | null;
           whole_only: boolean;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -1447,6 +1693,7 @@ export type Database = {
           sale_count: number | null;
           stock_cents: number | null;
         };
+        ComputedFields: never;
         Relationships: [];
       };
       item_last_purchases: {
@@ -1457,6 +1704,7 @@ export type Database = {
           supplier: string | null;
           total_cents: number | null;
         };
+        ComputedFields: never;
         Relationships: [
           {
             foreignKeyName: "stock_movements_item_id_fkey";
@@ -1476,6 +1724,7 @@ export type Database = {
           payments_cents: number | null;
           stock_cents: number | null;
         };
+        ComputedFields: never;
         Relationships: [];
       };
     };
@@ -1498,9 +1747,9 @@ export type Database = {
         Args: { p_actor: string; p_shares: Json };
         Returns: undefined;
       };
-      backup_tables: { Args: never; Returns: string[] };
+      backup_tables: { Args: Record<PropertyKey, never>; Returns: string[] };
       issue_invoice_number: { Args: { p_job_id: string }; Returns: string };
-      keepalive: { Args: never; Returns: boolean };
+      keepalive: { Args: Record<PropertyKey, never>; Returns: boolean };
       post_stock_movement: {
         Args: {
           p_allocations?: Json;

@@ -160,6 +160,7 @@ function JobView({ job }: { job: Job }) {
               <div>
                 <p className="font-semibold">{job.customer?.name}</p>
                 {jobCar(job) && <p className="text-muted-foreground">{jobCar(job)}</p>}
+                {job.car_engine && <p className="text-muted-foreground">{job.car_engine}</p>}
                 {job.car_vin && <p className="font-mono text-xs text-muted-foreground">{job.car_vin}</p>}
               </div>
               {job.customer?.phone && (

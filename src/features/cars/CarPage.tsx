@@ -26,6 +26,7 @@ import { CarMoneyDrawer, type CarMoneyKind } from './CarMoneyDrawer';
 import { SaleDrawer } from './SaleDrawer';
 import { StatusDrawer } from './StatusDrawer';
 import { useRememberVisit } from '@/features/home/recent';
+import { CarLogo } from '@/components/CarLogo';
 import { ReturnToStockDrawer, UseOnCarDrawer } from './CarStockDrawers';
 
 export function CarPage() {
@@ -110,6 +111,7 @@ function CarView({ car }: { car: Car }) {
       />
       <PageBody>
         <div className="flex flex-wrap items-center gap-2">
+          <CarLogo make={car.make} className="size-10" />
           <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-sm font-semibold">{car.ref}</span>
           {car.plate && <span className="rounded-md border px-2 py-0.5 font-mono text-sm">{car.plate}</span>}
           <button type="button" disabled={locked} onClick={() => setStatusOpen(true)} className="ml-auto">

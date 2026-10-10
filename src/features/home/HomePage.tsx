@@ -25,6 +25,7 @@ import { CAR_STATUSES, carTitle, isClosed, type CarStatus } from '@/domain/cars'
 import { lastMonths } from '@/domain/dashboard';
 import { formatDate, formatDateTime, todayIso } from '@/domain/dates';
 import { cn } from '@/lib/utils';
+import { CarLogo } from '@/components/CarLogo';
 import { useCurrentProfile, useProfileNames } from '@/features/auth/profiles';
 import { itemIsLow, unitOf, useItems, type Item } from '@/features/inventory/api';
 import { usePartnerPositions, useWalletBalance } from '@/features/money/api';
@@ -208,8 +209,9 @@ export function HomePage() {
               <ul className="flex flex-col divide-y">
                 {activeCars.slice(0, 6).map((c) => (
                   <li key={c.id}>
-                    <Link to={`/cars/${c.id}`} className="flex items-center justify-between gap-2 py-2">
-                      <span className="min-w-0">
+                    <Link to={`/cars/${c.id}`} className="flex items-center gap-3 py-2">
+                      <CarLogo make={c.make} />
+                      <span className="min-w-0 flex-1">
                         <span className="block truncate font-medium">{carTitle(c)}</span>
                         <span className="block font-mono text-xs text-muted-foreground">{c.plate ?? c.ref}</span>
                       </span>
@@ -358,11 +360,11 @@ function RecentlyOpened({
 }) {
   const [visits] = useState(readRecent);
   const entries = useMemo(() => {
-    const list: { key: string; to: string; icon: typeof Car; title: string; sub: string }[] = [];
+    const list: { key: string; to: string; icon: typeof Car; make?: string; title: string; sub: string }[] = [];
     for (const v of visits) {
       if (v.kind === 'car') {
         const c = cars?.find((x) => x.id === v.id);
-        if (c) list.push({ key: `car:${c.id}`, to: `/cars/${c.id}`, icon: Car, title: carTitle(c), sub: c.plate ?? c.ref });
+        if (c) list.push({ key: `car:${c.id}`, to: `/cars/${c.id}`, icon: Car, make: c.make, title: carTitle(c), sub: c.plate ?? c.ref });
       } else if (v.kind === 'job') {
         const j = jobs?.find((x) => x.id === v.id);
         if (j) list.push({ key: `job:${j.id}`, to: `/jobs/${j.id}`, icon: Wrench, title: j.customer?.name ?? j.ref, sub: j.ref });
@@ -379,9 +381,9 @@ function RecentlyOpened({
     <section className="flex flex-col gap-2">
       <h2 className="font-semibold">Recently opened</h2>
       <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-        {entries.map(({ key, to, icon: Icon, title, sub }) => (
+        {entries.map(({ key, to, icon: Icon, make, title, sub }) => (
           <Link key={key} to={to} className="flex w-40 shrink-0 items-center gap-2 rounded-xl border bg-card p-3 active:bg-muted">
-            <Icon className="size-5 shrink-0 text-primary" />
+            {make ? <CarLogo make={make} className="size-8" /> : <Icon className="size-5 shrink-0 text-primary" />}
             <span className="min-w-0">
               <span className="block truncate text-sm font-medium">{title}</span>
               <span className="block truncate font-mono text-xs text-muted-foreground">{sub}</span>
