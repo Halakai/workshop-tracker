@@ -12,6 +12,8 @@ async function normalise(path) {
   src = src.replace(/^\s*\/\/ Allows to automatically.*\n\s*\/\/ instead of createClient.*\n\s*__InternalSupabase: \{\n[^}]*\};\n/m, '');
   // only emitted by the local generator
   src = src.replace(/^\s*ComputedFields: never;\n/gm, '');
+  // the local generator marks NOT NULL json columns, the remote one doesn't
+  src = src.replace(/NonNullable<Json>/g, 'Json');
   return src.split('\n');
 }
 
