@@ -1,0 +1,7 @@
+# Keep every text file with LF line endings in the repo (Windows editors and scripts may write CRLF).
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.ttf binary
+*.jpg binary
+*.webp binary
