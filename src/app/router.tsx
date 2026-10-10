@@ -1,3 +1,4 @@
+import { lazy } from 'react';
 import { createHashRouter } from 'react-router';
 import { AppLayout } from './AppLayout';
 import { ComingSoonPage, NotFoundPage } from './screens';
@@ -5,13 +6,21 @@ import { RequireAdmin, RequireAuth } from '@/features/auth/RequireAuth';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { HomePage } from '@/features/home/HomePage';
 import { MorePage } from '@/features/more/MorePage';
-import { AccountPage } from '@/features/account/AccountPage';
-import { UsersPage } from '@/features/users/UsersPage';
-import { StockListPage } from '@/features/inventory/StockListPage';
-import { ItemPage } from '@/features/inventory/ItemPage';
-import { ItemFormPage } from '@/features/inventory/ItemFormPage';
-import { ShoppingListPage } from '@/features/inventory/ShoppingListPage';
-import { ListsPage } from '@/features/catalog/ListsPage';
+
+// Each area's code loads the first time it's opened (AppLayout shows a placeholder meanwhile),
+// so the app starts fast on a phone.
+const stock = () => import('@/features/inventory/pages');
+const cars = () => import('@/features/cars/pages');
+const StockListPage = lazy(() => stock().then((m) => ({ default: m.StockListPage })));
+const ItemPage = lazy(() => stock().then((m) => ({ default: m.ItemPage })));
+const ItemFormPage = lazy(() => stock().then((m) => ({ default: m.ItemFormPage })));
+const ShoppingListPage = lazy(() => stock().then((m) => ({ default: m.ShoppingListPage })));
+const CarsListPage = lazy(() => cars().then((m) => ({ default: m.CarsListPage })));
+const CarPage = lazy(() => cars().then((m) => ({ default: m.CarPage })));
+const CarFormPage = lazy(() => cars().then((m) => ({ default: m.CarFormPage })));
+const AccountPage = lazy(() => import('@/features/account/AccountPage').then((m) => ({ default: m.AccountPage })));
+const ListsPage = lazy(() => import('@/features/catalog/ListsPage').then((m) => ({ default: m.ListsPage })));
+const UsersPage = lazy(() => import('@/features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 
 // HashRouter: URLs look like …/workshop-tracker/#/cars/123, which always works on GitHub Pages.
 export const router = createHashRouter([
@@ -28,7 +37,10 @@ export const router = createHashRouter([
           { path: 'stock/shopping-list', element: <ShoppingListPage /> },
           { path: 'stock/:id', element: <ItemPage /> },
           { path: 'stock/:id/edit', element: <ItemFormPage /> },
-          { path: 'cars', element: <ComingSoonPage title="Cars" milestone="M3" /> },
+          { path: 'cars', element: <CarsListPage /> },
+          { path: 'cars/new', element: <CarFormPage /> },
+          { path: 'cars/:id', element: <CarPage /> },
+          { path: 'cars/:id/edit', element: <CarFormPage /> },
           { path: 'jobs', element: <ComingSoonPage title="Jobs" milestone="M5" /> },
           { path: 'more', element: <MorePage /> },
           { path: 'account', element: <AccountPage /> },

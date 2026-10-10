@@ -14,7 +14,7 @@ workshop wallet and settling up between partners.
 |---|---|---|
 | M1 | Scaffold, sign-in, admin user management, CI + Pages deploy | ✅ done |
 | M2 | Inventory and stock movements | ✅ done |
-| M3 | Cars and their costs | |
+| M3 | Cars and their costs | ✅ done |
 | M4 | Wallet, ledger and settling up | |
 | M5 | Customer jobs and PDF invoices | |
 | M6 | Google Drive uploads | |
@@ -47,7 +47,41 @@ workshop wallet and settling up between partners.
   Only an admin can rename or delete entries, and an entry that is still used can't be deleted. Brand names are
   case-sensitive.
 
-## Things to know## Things to know
+## How cars work (short)
+
+- **New car:** make and model (suggested from earlier cars), year, plate, VIN, engine, fuel, mileage, colour, and a
+  car ID that's filled in automatically (`CAR-001`) and can be changed. With it go the **purchase price, who paid
+  and the seller**. Sellers and buyers are saved as **contacts** (name and phone) and suggested next time.
+- **Costs on a car:**
+  - **From stock:** parts and consumables at the average cost, also possible from an item's **Use** button.
+  - **Part bought:** for this car only; it never enters stock.
+  - **Other cost:** registration, inspection, towing, ads, insurance… The cost types are a list (More → Lists).
+  - Every entry records who paid and who added it.
+- **Return:** a part taken off a car unused goes back to stock at exactly what the car was charged.
+- **Status:** Bought → In repair → Ready for sale → Listed (asking price and ad link) → Sold (or Scrapped).
+  **Sell** records the price, who got the money, the buyer and the mileage.
+- The car page shows **total invested** live. Once the car is sold it also shows **profit, margin and ROI**. The car
+  list filters by status and sorts by newest, invested or profit.
+- Settling up between partners comes with M4. After that, a settled car's money is locked.
+
+## Things to know## How cars work (short)
+
+- **New car:** make and model (suggested from earlier cars), year, plate, VIN, engine, fuel, mileage, colour, and a
+  car ID that's filled in automatically (`CAR-001`) and can be changed. With it go the **purchase price, who paid
+  and the seller**. Sellers and buyers are saved as **contacts** (name and phone) and suggested next time.
+- **Costs on a car:**
+  - **From stock:** parts and consumables at the average cost, also possible from an item's **Use** button.
+  - **Part bought:** for this car only; it never enters stock.
+  - **Other cost:** registration, inspection, towing, ads, insurance… The cost types are a list (More → Lists).
+  - Every entry records who paid and who added it.
+- **Return:** a part taken off a car unused goes back to stock at exactly what the car was charged.
+- **Status:** Bought → In repair → Ready for sale → Listed (asking price and ad link) → Sold (or Scrapped).
+  **Sell** records the price, who got the money, the buyer and the mileage.
+- The car page shows **total invested** live. Once the car is sold it also shows **profit, margin and ROI**. The car
+  list filters by status and sorts by newest, invested or profit.
+- Settling up between partners comes with M4. After that, a settled car's money is locked.
+
+## Things to know
 
 - **The repo is public**, because GitHub Pages on a private repo needs a paid plan. The code contains no secrets, and
   the publishable key is meant to be public. Your data lives only in Supabase, protected by Row Level Security.

@@ -204,6 +204,255 @@ export type Database = {
           },
         ];
       };
+      car_shares: {
+        Row: {
+          car_id: string;
+          partner_id: string;
+          share_bp: number;
+        };
+        Insert: {
+          car_id: string;
+          partner_id: string;
+          share_bp: number;
+        };
+        Update: {
+          car_id?: string;
+          partner_id?: string;
+          share_bp?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_shares_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "car_shares_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_shares_partner_id_fkey";
+            columns: ["partner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      cars: {
+        Row: {
+          asking_price_cents: number | null;
+          buyer_id: string | null;
+          colour: string | null;
+          created_at: string;
+          created_by: string | null;
+          engine: string | null;
+          fuel: string | null;
+          id: string;
+          listing_url: string | null;
+          make: string;
+          mileage_km: number | null;
+          model: string;
+          notes: string | null;
+          plate: string | null;
+          purchase_date: string;
+          ref: string;
+          sale_date: string | null;
+          sale_mileage_km: number | null;
+          seller_id: string | null;
+          settled_at: string | null;
+          status: Database["public"]["Enums"]["car_status"];
+          status_changed_at: string;
+          updated_at: string;
+          updated_by: string | null;
+          vin: string | null;
+          year: number | null;
+        };
+        Insert: {
+          asking_price_cents?: number | null;
+          buyer_id?: string | null;
+          colour?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          engine?: string | null;
+          fuel?: string | null;
+          id?: string;
+          listing_url?: string | null;
+          make: string;
+          mileage_km?: number | null;
+          model: string;
+          notes?: string | null;
+          plate?: string | null;
+          purchase_date?: string;
+          ref: string;
+          sale_date?: string | null;
+          sale_mileage_km?: number | null;
+          seller_id?: string | null;
+          settled_at?: string | null;
+          status?: Database["public"]["Enums"]["car_status"];
+          status_changed_at?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          vin?: string | null;
+          year?: number | null;
+        };
+        Update: {
+          asking_price_cents?: number | null;
+          buyer_id?: string | null;
+          colour?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          engine?: string | null;
+          fuel?: string | null;
+          id?: string;
+          listing_url?: string | null;
+          make?: string;
+          mileage_km?: number | null;
+          model?: string;
+          notes?: string | null;
+          plate?: string | null;
+          purchase_date?: string;
+          ref?: string;
+          sale_date?: string | null;
+          sale_mileage_km?: number | null;
+          seller_id?: string | null;
+          settled_at?: string | null;
+          status?: Database["public"]["Enums"]["car_status"];
+          status_changed_at?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          vin?: string | null;
+          year?: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "cars_buyer_id_fkey";
+            columns: ["buyer_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cars_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cars_seller_id_fkey";
+            columns: ["seller_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cars_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      contacts: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          notes: string | null;
+          phone: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          notes?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          notes?: string | null;
+          phone?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "contacts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "contacts_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      expense_categories: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "expense_categories_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "expense_categories_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       item_categories: {
         Row: {
           code: string;
@@ -473,6 +722,7 @@ export type Database = {
       };
       stock_movements: {
         Row: {
+          car_id: string | null;
           created_at: string;
           created_by: string | null;
           id: string;
@@ -490,6 +740,7 @@ export type Database = {
           value_delta_cents: number;
         };
         Insert: {
+          car_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -507,6 +758,7 @@ export type Database = {
           value_delta_cents: number;
         };
         Update: {
+          car_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           id?: string;
@@ -524,6 +776,20 @@ export type Database = {
           value_delta_cents?: number;
         };
         Relationships: [
+          {
+            foreignKeyName: "stock_movements_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "stock_movements_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "stock_movements_created_by_fkey";
             columns: ["created_by"];
@@ -557,12 +823,14 @@ export type Database = {
       transactions: {
         Row: {
           amount_cents: number;
+          car_id: string | null;
           category: string;
           counterparty: string | null;
           created_at: string;
           created_by: string | null;
           currency: string;
           description: string | null;
+          expense_category_id: string | null;
           from_account_id: string;
           id: string;
           kind: Database["public"]["Enums"]["txn_kind"];
@@ -573,12 +841,14 @@ export type Database = {
         };
         Insert: {
           amount_cents: number;
+          car_id?: string | null;
           category: string;
           counterparty?: string | null;
           created_at?: string;
           created_by?: string | null;
           currency?: string;
           description?: string | null;
+          expense_category_id?: string | null;
           from_account_id: string;
           id?: string;
           kind: Database["public"]["Enums"]["txn_kind"];
@@ -589,12 +859,14 @@ export type Database = {
         };
         Update: {
           amount_cents?: number;
+          car_id?: string | null;
           category?: string;
           counterparty?: string | null;
           created_at?: string;
           created_by?: string | null;
           currency?: string;
           description?: string | null;
+          expense_category_id?: string | null;
           from_account_id?: string;
           id?: string;
           kind?: Database["public"]["Enums"]["txn_kind"];
@@ -605,10 +877,31 @@ export type Database = {
         };
         Relationships: [
           {
+            foreignKeyName: "transactions_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "transactions_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "transactions_created_by_fkey";
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_expense_category_id_fkey";
+            columns: ["expense_category_id"];
+            isOneToOne: false;
+            referencedRelation: "expense_categories";
             referencedColumns: ["id"];
           },
           {
@@ -684,6 +977,18 @@ export type Database = {
       };
     };
     Views: {
+      car_summaries: {
+        Row: {
+          car_id: string | null;
+          other_costs_cents: number | null;
+          parts_cents: number | null;
+          purchase_cents: number | null;
+          sale_cents: number | null;
+          sale_count: number | null;
+          stock_cents: number | null;
+        };
+        Relationships: [];
+      };
       item_last_purchases: {
         Row: {
           item_id: string | null;
@@ -711,6 +1016,7 @@ export type Database = {
       post_stock_movement: {
         Args: {
           p_allocations?: Json;
+          p_car_id?: string;
           p_expected_version: number;
           p_item_id: string;
           p_note?: string;
@@ -731,6 +1037,8 @@ export type Database = {
     };
     Enums: {
       account_kind: "wallet" | "partner" | "external";
+      car_status:
+        "bought" | "in_repair" | "ready" | "listed" | "sold" | "scrapped";
       movement_type:
         | "purchase"
         | "use_car"
@@ -868,6 +1176,14 @@ export const Constants = {
   public: {
     Enums: {
       account_kind: ["wallet", "partner", "external"],
+      car_status: [
+        "bought",
+        "in_repair",
+        "ready",
+        "listed",
+        "sold",
+        "scrapped",
+      ],
       movement_type: [
         "purchase",
         "use_car",

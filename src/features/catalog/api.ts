@@ -8,13 +8,15 @@ import { deriveCode } from '@/domain/codes';
 export type Category = Tables<'item_categories'>;
 export type UnitEntry = Tables<'units'>;
 export type Brand = Tables<'brands'>;
+export type ExpenseCategory = Tables<'expense_categories'>;
 
-export type ListTable = 'item_categories' | 'units' | 'brands';
+export type ListTable = 'item_categories' | 'units' | 'brands' | 'expense_categories';
 
 export const catalogKeys: Record<ListTable, readonly string[]> = {
   item_categories: ['item_categories'],
   units: ['units'],
   brands: ['brands'],
+  expense_categories: ['expense_categories'],
 };
 
 export function useCategories() {
@@ -53,13 +55,38 @@ export function useBrands() {
   });
 }
 
+export function useExpenseCategories() {
+  return useQuery({
+    queryKey: catalogKeys.expense_categories,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('expense_categories').select('*').order('sort_order').order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useAddExpenseCategory() {
+  const invalidate = useInvalidate('expense_categories');
+  return useMutation({
+    mutationFn: async (values: TablesInsert<'expense_categories'>) => {
+      const { data, error } = await supabase.from('expense_categories').insert(values).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+}
+
 function useInvalidate(table: ListTable) {
   const queryClient = useQueryClient();
   return () =>
     Promise.all([
       queryClient.invalidateQueries({ queryKey: catalogKeys[table] }),
-      // items embed category / unit / brand names
+      // items embed category / unit / brand names, car money shows cost categories
       queryClient.invalidateQueries({ queryKey: ['items'] }),
+      queryClient.invalidateQueries({ queryKey: ['car-money'] }),
     ]);
 }
 

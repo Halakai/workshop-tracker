@@ -27,9 +27,9 @@ export function milliToInput(milli: Milli): string {
 /** "4.5 L", "12 pcs", "-0.25 kg". */
 export function formatQuantity(milli: Milli, unit?: string): string {
   const number = milliToInput(milli).replace(/^(-?)(\d+)/, (_, sign: string, int: string) =>
-    sign + int.replace(/\B(?=(\d{3})+(?!\d))/g, ' '),
+    sign + int.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0'),
   );
-  return unit ? `${number} ${unit}` : number;
+  return unit ? `${number}\u00A0${unit}` : number;
 }
 
 /**
@@ -40,7 +40,7 @@ export function parseQuantity(
   input: string,
   options: { wholeOnly?: boolean; allowZero?: boolean; allowNegative?: boolean } = {},
 ): Milli | null {
-  let s = input.trim().replace(/[\s ]/g, '');
+  let s = input.trim().replace(/[\s\u00A0]/g, '');
   let negative = false;
   if (s.startsWith('-') || s.startsWith('−')) {
     negative = true;
@@ -58,4 +58,10 @@ export function parseQuantity(
 
 export function assertMilli(value: number): void {
   if (!Number.isSafeInteger(value)) throw new Error(`Quantity must be whole thousandths, got ${value}`);
+}
+
+/** 123456 → "123 456" (non-breaking space between thousands), e.g. for kilometres. */
+export function formatInteger(n: number): string {
+  const sign = n < 0 ? '-' : '';
+  return sign + Math.abs(Math.trunc(n)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
 }

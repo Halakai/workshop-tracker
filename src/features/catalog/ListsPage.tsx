@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/lib/supabase';
 import { ChevronRight, Lock, Plus } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -6,8 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentProfile } from '@/features/auth/profiles';
 import { useItems } from '@/features/inventory/api';
-import { useBrands, useCategories, useUnits, type Brand } from './api';
-import { AddCategoryDrawer, AddUnitDrawer, EditEntryDrawer, type EditTarget } from './EntryDrawers';
+import { useBrands, useCategories, useExpenseCategories, useUnits, type Brand } from './api';
+import { AddCategoryDrawer, AddExpenseCategoryDrawer, AddUnitDrawer, EditEntryDrawer, type EditTarget } from './EntryDrawers';
 import { AddBrandDrawer } from './AddBrandDrawer';
 
 /** Categories, units and brands. Everyone can add; admins can rename and delete. */
@@ -18,7 +20,18 @@ export function ListsPage() {
   const units = useUnits();
   const brands = useBrands();
   const items = useItems();
-  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | null>(null);
+  const expenseCategories = useExpenseCategories();
+  const expenseUsage = useQuery({
+    queryKey: ['expense-category-usage'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('transactions').select('expense_category_id').not('expense_category_id', 'is', null);
+      if (error) throw error;
+      const map = new Map<string, number>();
+      for (const r of data) map.set(r.expense_category_id!, (map.get(r.expense_category_id!) ?? 0) + 1);
+      return map;
+    },
+  });
+  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'cost' | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
 
   const usage = useMemo(() => {
@@ -35,7 +48,7 @@ export function ListsPage() {
 
   return (
     <>
-      <PageHeader title="Categories, units & brands" back="/more" />
+      <PageHeader title="Lists" back="/more" />
       <PageBody>
         {!isAdmin && (
           <p className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
@@ -79,8 +92,24 @@ export function ListsPage() {
             />
           ))}
         </Section>
+
+        <Section title="Cost types" onAdd={() => setAdding('cost')} loading={expenseCategories.isPending}>
+          {expenseCategories.data?.map((c) => {
+            const used = expenseUsage.data?.get(c.id) ?? 0;
+            return (
+              <Row
+                key={c.id}
+                title={c.name}
+                usedBy={used}
+                usedLabel="use"
+                onEdit={isAdmin ? () => setEditing({ table: 'expense_categories', entry: c, usedBy: used }) : undefined}
+              />
+            );
+          })}
+        </Section>
       </PageBody>
 
+      <AddExpenseCategoryDrawer open={adding === 'cost'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddCategoryDrawer open={adding === 'category'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddUnitDrawer open={adding === 'unit'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddBrandDrawer open={adding === 'brand'} onOpenChange={(o) => !o && setAdding(null)} />
@@ -118,12 +147,14 @@ function Row({
   subtitle,
   badge,
   usedBy,
+  usedLabel = 'item',
   onEdit,
 }: {
   title: string;
   subtitle?: string;
   badge?: string;
   usedBy: number;
+  usedLabel?: string;
   onEdit?: () => void;
 }) {
   const content = (
@@ -139,7 +170,7 @@ function Row({
         </div>
         <p className="text-xs text-muted-foreground">
           {subtitle ? `${subtitle} · ` : ''}
-          {usedBy === 0 ? 'not used' : `${usedBy} item${usedBy === 1 ? '' : 's'}`}
+          {usedBy === 0 ? 'not used' : `${usedBy} ${usedLabel}${usedBy === 1 ? '' : 's'}`}
         </p>
       </div>
       {onEdit && <ChevronRight className="size-5 text-muted-foreground" />}

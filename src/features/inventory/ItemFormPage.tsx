@@ -221,7 +221,7 @@ function ItemForm({ item }: { item?: Item }) {
             <FieldDescription className="-mt-3">
               Missing a category or unit? Add it under{' '}
               <Link to="/lists" className="text-primary underline">
-                More → Categories, units &amp; brands
+                More → Lists
               </Link>
               .
             </FieldDescription>

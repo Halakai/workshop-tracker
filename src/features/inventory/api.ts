@@ -81,16 +81,20 @@ export function useLastPurchases() {
   });
 }
 
-/** Suppliers we've bought from, most frequent first (for autocomplete). */
+/** Suppliers we've bought from (stock and car parts), most frequent first (for type-ahead). */
 export function useSuppliers() {
   return useQuery({
     queryKey: inventoryKeys.suppliers,
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase.from('stock_movements').select('supplier').not('supplier', 'is', null);
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('counterparty')
+        .in('category', ['stock_purchase', 'car_part'])
+        .not('counterparty', 'is', null);
       if (error) throw error;
       const counts = new Map<string, number>();
-      for (const row of data) counts.set(row.supplier!, (counts.get(row.supplier!) ?? 0) + 1);
+      for (const row of data) counts.set(row.counterparty!, (counts.get(row.counterparty!) ?? 0) + 1);
       return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
     },
   });
@@ -144,6 +148,8 @@ function invalidateStock(queryClient: ReturnType<typeof useQueryClient>, itemId:
     queryClient.invalidateQueries({ queryKey: ['transactions'] }),
     queryClient.invalidateQueries({ queryKey: ['allocations'] }),
     queryClient.invalidateQueries({ queryKey: ['activity'] }),
+    queryClient.invalidateQueries({ queryKey: ['cars'] }),
+    queryClient.invalidateQueries({ queryKey: ['car-stock'] }),
   ]);
 }
 

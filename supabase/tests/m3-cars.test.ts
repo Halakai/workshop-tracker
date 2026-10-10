@@ -244,9 +244,9 @@ describe('who can see and change what', () => {
   it.each(['cars', 'contacts', 'expense_categories', 'car_shares', 'car_summaries'] as const)(
     'signed-out users and non-members see no %s',
     async (table) => {
-      const anon = await anonClient().from(table).select('*');
+      const anon = await anonClient().from(table as 'cars').select('*');
       expect(anon.error).not.toBeNull();
-      const outsider = await asOutsider.from(table).select('*');
+      const outsider = await asOutsider.from(table as 'cars').select('*');
       expect(outsider.data ?? []).toEqual([]);
     },
   );

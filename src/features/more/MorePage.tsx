@@ -16,7 +16,7 @@ interface MoreLink {
 export function MorePage() {
   const me = useCurrentProfile();
   const links: MoreLink[] = [
-    { to: '/lists', label: 'Categories, units & brands', description: 'The lists used for stock items', icon: ListChecks },
+    { to: '/lists', label: 'Lists', description: 'Categories, units, brands, cost types', icon: ListChecks },
     { to: '/account', label: 'My account', description: 'Name and password', icon: UserRound },
     ...(me.role === 'admin'
       ? [{ to: '/users', label: 'Users & partners', description: 'Accounts, roles, profit shares', icon: Users }]

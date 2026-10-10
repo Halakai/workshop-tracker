@@ -13,12 +13,14 @@ import { CODE_PATTERN, deriveCode } from '@/domain/codes';
 import { syncErrorMessage } from '@/lib/errors';
 import {
   useAddCategory,
+  useAddExpenseCategory,
   useAddUnit,
   useCategories,
   useDeleteEntry,
   useUpdateEntry,
   type Brand,
   type Category,
+  type ExpenseCategory,
   type ListTable,
   type UnitEntry,
 } from './api';
@@ -158,6 +160,43 @@ export function AddUnitDrawer({
   );
 }
 
+const expenseCategorySchema = z.object({ name: z.string().trim().min(1, 'Name is required').max(40) });
+
+export function AddExpenseCategoryDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const add = useAddExpenseCategory();
+  const form = useForm({ resolver: zodResolver(expenseCategorySchema), defaultValues: { name: '' } });
+  const close = (next: boolean) => {
+    onOpenChange(next);
+    if (!next) form.reset();
+  };
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      const category = await add.mutateAsync({ ...values, sort_order: 80 });
+      toast.success(`Cost type ${category.name} added`);
+      close(false);
+    } catch (e) {
+      toast.error(duplicateMessage(e, 'cost type'));
+    }
+  });
+  return (
+    <FormDrawer open={open} onOpenChange={close} title="New cost type">
+      <form onSubmit={onSubmit} noValidate>
+        <FieldGroup>
+          <Field data-invalid={!!form.formState.errors.name}>
+            <FieldLabel htmlFor="expcat-name">Name</FieldLabel>
+            <Input id="expcat-name" placeholder="e.g. Parking, Customs" autoFocus {...form.register('name')} />
+            <FieldError errors={[form.formState.errors.name]} />
+          </Field>
+          <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
+            Add cost type
+          </Button>
+        </FieldGroup>
+      </form>
+    </FormDrawer>
+  );
+}
+
 function WholeOnlySwitch({ control }: { control: any }) {
   return (
     <Field orientation="horizontal">
@@ -178,9 +217,15 @@ function WholeOnlySwitch({ control }: { control: any }) {
 export type EditTarget =
   | { table: 'item_categories'; entry: Category; usedBy: number }
   | { table: 'units'; entry: UnitEntry; usedBy: number }
-  | { table: 'brands'; entry: Brand; usedBy: number };
+  | { table: 'brands'; entry: Brand; usedBy: number }
+  | { table: 'expense_categories'; entry: ExpenseCategory; usedBy: number };
 
-const TITLES: Record<ListTable, string> = { item_categories: 'category', units: 'unit', brands: 'brand' };
+const TITLES: Record<ListTable, string> = {
+  item_categories: 'category',
+  units: 'unit',
+  brands: 'brand',
+  expense_categories: 'cost type',
+};
 
 const editSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(60),
@@ -199,7 +244,7 @@ export function EditEntryDrawer({ target, onClose }: { target: EditTarget | null
 function EditEntryForm({ target, onDone }: { target: EditTarget; onDone: () => void }) {
   const update = useUpdateEntry(target.table);
   const remove = useDeleteEntry(target.table);
-  const hasCode = target.table !== 'units';
+  const hasCode = target.table === 'item_categories' || target.table === 'brands';
   const form = useForm({
     resolver: zodResolver(editSchema),
     defaultValues: {
@@ -211,8 +256,9 @@ function EditEntryForm({ target, onDone }: { target: EditTarget; onDone: () => v
 
   const onSubmit = form.handleSubmit(async (v) => {
     const code = v.code.trim().toUpperCase();
-    if (hasCode && !CODE_PATTERN.test(code)) {
-      form.setError('code', { message: '2–6 letters or digits' });
+    const maxCode = target.table === 'item_categories' ? 5 : 6;
+    if (hasCode && (!CODE_PATTERN.test(code) || code.length > maxCode)) {
+      form.setError('code', { message: `2–${maxCode} letters or digits` });
       return;
     }
     if (target.table === 'units' && /\s/.test(v.name)) {
@@ -220,7 +266,11 @@ function EditEntryForm({ target, onDone }: { target: EditTarget; onDone: () => v
       return;
     }
     const values =
-      target.table === 'units' ? { name: v.name, whole_only: v.whole_only } : { name: v.name, code };
+      target.table === 'units'
+        ? { name: v.name, whole_only: v.whole_only }
+        : hasCode
+          ? { name: v.name, code }
+          : { name: v.name };
     try {
       await update.mutateAsync({ id: target.entry.id, values });
       toast.success('Saved');
@@ -264,7 +314,7 @@ function EditEntryForm({ target, onDone }: { target: EditTarget; onDone: () => v
         <div className="border-t pt-4">
           {target.usedBy > 0 ? (
             <p className="text-sm text-muted-foreground">
-              Used by {target.usedBy} item{target.usedBy === 1 ? '' : 's'}, so it can’t be deleted.
+              Used {target.usedBy} time{target.usedBy === 1 ? '' : 's'}, so it can’t be deleted.
             </p>
           ) : (
             <Button type="button" variant="destructive" className="w-full" disabled={remove.isPending} onClick={onDelete}>
