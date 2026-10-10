@@ -30,6 +30,7 @@ import { itemIsLow, stockOf, unitOf, useItem, useItemMovements, useUndoMovement,
 import { BuyDrawer } from './BuyDrawer';
 import { UseDrawer } from './UseDrawer';
 import { AdjustDrawer } from './AdjustDrawer';
+import { ReceiptButton } from '@/features/files/ReceiptButton';
 
 type Action = 'buy' | 'use' | 'adjust' | null;
 
@@ -208,6 +209,7 @@ function MovementRow({
         </div>
         <div className="flex items-center justify-between">
           <AddedBy by={movement.created_by} at={movement.created_at} />
+          {movement.type === 'purchase' && <ReceiptButton entityType="stock_movement" entityId={movement.id} label={movement.supplier ?? undefined} />}
           {canUndo && (
             <Button variant="ghost" size="sm" onClick={onUndo}>
               <Undo2 /> Undo

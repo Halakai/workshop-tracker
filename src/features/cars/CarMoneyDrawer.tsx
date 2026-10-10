@@ -21,6 +21,7 @@ import { getLastPayer, setLastPayer, useAccounts, usePayerOptions } from '@/feat
 import { useExpenseCategories } from '@/features/catalog/api';
 import { useSuppliers } from '@/features/inventory/api';
 import { useDeleteCarTransaction, useSaveCarTransaction, type Car, type CarMoneyRow } from './api';
+import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 
 export type CarMoneyKind = 'purchase' | 'part' | 'cost';
 
@@ -192,6 +193,7 @@ function CarMoneyForm({ car, kind, row, onDone }: { car: Car; kind: CarMoneyKind
             render={({ field }) => <DateField id="money-date" value={field.value} onChange={field.onChange} />}
           />
         </Field>
+        {row && <AttachmentStrip entityType="transaction" entityId={row.id} kind="receipt" title="Receipt" allowPdf label={row.description ?? undefined} />}
         <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
           Save

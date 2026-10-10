@@ -20,6 +20,7 @@ import { syncErrorMessage } from '@/lib/errors';
 import { useExpenseCategories } from '@/features/catalog/api';
 import { getLastPayer, setLastPayer, useAccounts, useDefaultShares, usePayerOptions } from './accounts';
 import { useDeleteTransaction, useSaveDirectEntry, useSaveWorkshopMoney, type TransactionRow } from './api';
+import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 
 export type EntryMode = 'deposit' | 'withdrawal' | 'transfer' | 'expense' | 'income';
 
@@ -254,6 +255,9 @@ function EntryForm({ mode, row, prefill, onDone }: { mode: EntryMode; row?: Tran
             render={({ field }) => <DateField id="entry-date" value={field.value} onChange={field.onChange} />}
           />
         </Field>
+        {row && (mode === 'expense' || mode === 'income') && (
+          <AttachmentStrip entityType="transaction" entityId={row.id} kind="receipt" title="Receipt" allowPdf label={row.description ?? undefined} />
+        )}
         <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
           Save

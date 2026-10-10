@@ -7,6 +7,7 @@ import { syncErrorMessage } from '@/lib/errors';
 import { useProfiles } from '@/features/auth/profiles';
 import { useSettlement, useShares, useUndoSettlement } from '@/features/settlement/api';
 import { SharesDrawer } from '@/features/settlement/SharesDrawer';
+import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { Button } from '@/components/ui/button';
@@ -237,6 +238,9 @@ function CarView({ car }: { car: Car }) {
             <AddedBy by={car.created_by} at={car.created_at} />
           </CardContent>
         </Card>
+
+        <AttachmentStrip entityType="car" entityId={car.id} kind="photo" title="Photos" />
+        <AttachmentStrip entityType="car" entityId={car.id} kind="receipt" title="Papers & receipts" allowPdf />
 
         {!settled && (
           <Card>

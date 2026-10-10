@@ -17,7 +17,7 @@ workshop wallet and settling up between partners.
 | M3 | Cars and their costs | ✅ done |
 | M4 | Wallet, ledger and settling up | ✅ done |
 | M5 | Customer jobs and PDF invoices | ✅ done |
-| M6 | Google Drive uploads | |
+| M6 | Google Drive uploads | ✅ built, needs the Google setup below |
 | M7 | Dashboard, low-stock alerts, export, polish | |
 
 ## How stock works (short)
@@ -103,6 +103,11 @@ workshop wallet and settling up between partners.
   - No VAT.
 - **Settle up** a paid job like a car: profit = payments − parts. A job can belong to one person: set the shares to
   "All to Ivan".
+- **Photos and receipts:**
+  - **Take photo** opens the camera; **Choose file** picks a photo or PDF.
+  - They can be added to cars (photos, papers and receipts), jobs (photos), stock purchases (📎 on the purchase),
+    and car costs, job parts and workshop expenses (open the entry).
+  - Every invoice PDF is also copied to Drive.
 
 ## Things to know## How cars work (short)
 
@@ -160,6 +165,11 @@ workshop wallet and settling up between partners.
   - No VAT.
 - **Settle up** a paid job like a car: profit = payments − parts. A job can belong to one person: set the shares to
   "All to Ivan".
+- **Photos and receipts:**
+  - **Take photo** opens the camera; **Choose file** picks a photo or PDF.
+  - They can be added to cars (photos, papers and receipts), jobs (photos), stock purchases (📎 on the purchase),
+    and car costs, job parts and workshop expenses (open the entry).
+  - Every invoice PDF is also copied to Drive.
 
 ## Things to know
 
@@ -179,7 +189,8 @@ workshop wallet and settling up between partners.
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | `.env.local` and the GitHub repo **variable** `SUPABASE_PUBLISHABLE_KEY` | no (it's meant to be public) | the app |
 | `SUPABASE_DB_PASSWORD` | `.env.local` only, plus your password manager | **yes** | `npm run db:push` |
 | Supabase secret key (`sb_secret_…`) | inside Supabase only; Edge Functions get it automatically | **yes** | Edge Functions |
-| `GOOGLE_*`, `FILE_URL_SIGNING_SECRET` | Supabase → Edge Functions → Secrets (milestone 6) | **yes** | the `files` function |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | Supabase → Edge Functions → Secrets (see *Google Drive*) | **yes** | the `files` function |
+| `FILE_URL_SIGNING_SECRET` | Supabase → Edge Functions → Secrets (already set, random) | **yes** | signs the view links |
 
 Never commit `.env.local`, and never put a secret key into a `VITE_*` variable: everything in `VITE_*` ends up in
 the browser.
@@ -230,6 +241,66 @@ The workflow `.github/workflows/ci.yml` does the following on every push:
 The setup it needs:
 - **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 - **Settings → Secrets and variables → Actions → Variables** tab: `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY`.
+
+### 5. Google Drive (photos, receipts, invoice copies)
+
+**How it works:**
+- Files go to **your** Google Drive, into a folder **Workshop Tracker** that the app creates. That includes files your
+  partner uploads.
+  - Cars: `Cars/<year make model plate (CAR-001)>/Photos` and `/Receipts`
+  - Jobs: `Jobs/<year>/<JOB-001 customer plate>`
+  - Invoices: `Invoices/<year>`
+  - Other receipts: `Receipts/<year>`
+  - Previews: `.thumbs`
+- The database stores only which file belongs to which record. The Supabase Edge Function `files` talks to Google
+  using a refresh token for your account.
+
+**Gotchas, and how the app handles them:**
+- **Service accounts can't be used.** They have no storage quota in a personal Drive, so the app acts as you
+  (OAuth).
+- **"Testing" apps lose their token after 7 days.** The steps below publish the OAuth app to "In production". The
+  scope `drive.file` is *non-sensitive*, so no Google review is needed.
+- **`drive.file`** lets the app see only the files it created. Don't make the "Workshop Tracker" folder yourself.
+  Moving or renaming files in Drive is fine, because the app keeps file IDs.
+- **Edge Functions have request limits.** Photos are shrunk on the phone (max 2000 px, JPEG ~80 %) and get a 320 px
+  preview. PDFs can be up to 9 MB.
+- **The files are private.** The app shows them through signed links from the function, valid until the end of
+  tomorrow. Viewing counts towards Supabase's free 5 GB/month egress, which is why the previews are small.
+- **The token can stop working:** if it goes unused for 6 months, if you revoke the app in your Google account, or
+  if more than 100 tokens are made for one client. Uploads then show *"Google Drive is disconnected"*, and
+  everything else keeps working. Make a new token with step 6 and replace `GOOGLE_REFRESH_TOKEN`.
+
+**One-time setup (about 10 minutes):**
+
+1. Open https://console.cloud.google.com.
+   1. Project picker (top left) → **New project** → name it `workshop-tracker` → **Create**, then select it.
+   2. **APIs & Services → Library** → search **Google Drive API** → **Enable**.
+2. Set up the consent screen: **APIs & Services → OAuth consent screen** (it opens **Google Auth Platform**)
+   → **Get started**.
+   1. App name `Workshop Tracker`, and your Gmail as the support email.
+   2. Audience **External**.
+   3. Your email as the contact → agree → **Create**.
+3. **Data access** → **Add or remove scopes** → filter `drive.file` → tick
+   `https://www.googleapis.com/auth/drive.file` → **Update** → **Save**.
+4. **Audience** → **Publish app** → confirm. The status becomes **In production**.
+5. Create the client:
+   1. **Clients** → **Create client** → type **Web application**, name `Workshop Tracker Drive`.
+   2. Under **Authorized redirect URIs** → **Add URI** → `https://developers.google.com/oauthplayground` → **Create**.
+   3. Copy the **Client ID** and **Client secret** into your password manager.
+6. Get the refresh token from the playground:
+   1. Open https://developers.google.com/oauthplayground.
+   2. ⚙ (top right) → tick **Use your own OAuth credentials** → paste the client ID and secret → close the panel.
+   3. In **Input your own scopes**, type `https://www.googleapis.com/auth/drive.file` → **Authorize APIs**.
+   4. Pick your Google account. If Google says the app isn't verified: **Advanced → Go to Workshop Tracker** →
+      **Continue / Allow**.
+   5. **Exchange authorization code for tokens** → copy the **Refresh token**.
+7. Supabase dashboard → project `workshop-tracker` → **Edge Functions** → **Secrets** → add:
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `GOOGLE_REFRESH_TOKEN`
+
+   (`FILE_URL_SIGNING_SECRET` is already set.)
+8. In the app: **More → Workshop settings → Test Drive connection** should say *Connected*.
 
 ## Local development
 

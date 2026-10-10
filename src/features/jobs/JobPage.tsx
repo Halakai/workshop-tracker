@@ -24,6 +24,8 @@ import { useJob, useJobLines, useJobMoney, useIssueInvoiceNumber, useSaveJob, ty
 import { jobCar } from './JobsListPage';
 import { BoughtLineDrawer, LaborDrawer, OtherLineDrawer, PaymentDrawer, StockLineDrawer, type PaymentRow } from './JobDrawers';
 import { buildInvoiceData, shareOrDownload } from './invoice/makeInvoice';
+import { AttachmentStrip } from '@/features/files/AttachmentStrip';
+import { useAttachments, useDeleteAttachment, useUploadAttachment } from '@/features/files/api';
 
 export function JobPage() {
   const { id } = useParams();
@@ -70,6 +72,9 @@ function JobView({ job }: { job: Job }) {
   const [payment, setPayment] = useState<{ row?: PaymentRow } | null>(null);
   const [editingShares, setEditingShares] = useState(false);
   const [making, setMaking] = useState(false);
+  const files = useAttachments('job', job.id);
+  const uploadFile = useUploadAttachment();
+  const deleteFile = useDeleteAttachment();
 
   const status = job.status as JobStatus;
   const settled = Boolean(job.settled_at);
@@ -102,7 +107,15 @@ function JobView({ job }: { job: Job }) {
       const { renderInvoicePdf } = await import('./invoice/InvoiceDocument');
       const data = buildInvoiceData({ job, number, lines: lines.data, settings: settings.data });
       const blob = await renderInvoicePdf(data);
-      await shareOrDownload(blob, `${data.title} ${number} ${job.customer?.name ?? ''}`.trim());
+      const name = `${data.title} ${number} ${job.customer?.name ?? ''}`.trim();
+      // a copy goes to Google Drive (Invoices/<year>), replacing the previous copy of this job's invoice
+      const previous = (files.data ?? []).filter((f) => f.kind === 'invoice');
+      uploadFile
+        .mutateAsync({ file: new File([blob], `${name}.pdf`, { type: 'application/pdf' }), entityType: 'job', entityId: job.id, kind: 'invoice', label: name })
+        .then(() => Promise.all(previous.map((p) => deleteFile.mutateAsync(p))))
+        .then(() => toast.success('Invoice copy saved in Google Drive'))
+        .catch((e: Error) => toast.warning(`Invoice not copied to Google Drive: ${e.message}`));
+      await shareOrDownload(blob, name);
     } catch (e) {
       toast.error(syncErrorMessage(e));
     } finally {
@@ -254,6 +267,8 @@ function JobView({ job }: { job: Job }) {
         {!job.invoice_number && (
           <p className="-mt-2 text-center text-xs text-muted-foreground">Gets the next invoice number the first time.</p>
         )}
+
+        <AttachmentStrip entityType="job" entityId={job.id} kind="photo" title="Photos" />
 
         {!settled && (
           <Card>

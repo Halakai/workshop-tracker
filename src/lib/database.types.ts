@@ -169,6 +169,69 @@ export type Database = {
           },
         ];
       };
+      attachments: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          drive_file_id: string;
+          drive_thumb_id: string | null;
+          entity_id: string;
+          entity_type: string;
+          file_name: string;
+          id: string;
+          kind: string;
+          mime_type: string;
+          size_bytes: number | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          drive_file_id: string;
+          drive_thumb_id?: string | null;
+          entity_id: string;
+          entity_type: string;
+          file_name: string;
+          id?: string;
+          kind: string;
+          mime_type: string;
+          size_bytes?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          drive_file_id?: string;
+          drive_thumb_id?: string | null;
+          entity_id?: string;
+          entity_type?: string;
+          file_name?: string;
+          id?: string;
+          kind?: string;
+          mime_type?: string;
+          size_bytes?: number | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "attachments_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "attachments_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       brands: {
         Row: {
           code: string;
@@ -430,6 +493,24 @@ export type Database = {
         Update: {
           name?: string;
           value?: number;
+        };
+        Relationships: [];
+      };
+      drive_folders: {
+        Row: {
+          created_at: string;
+          drive_folder_id: string;
+          key: string;
+        };
+        Insert: {
+          created_at?: string;
+          drive_folder_id: string;
+          key: string;
+        };
+        Update: {
+          created_at?: string;
+          drive_folder_id?: string;
+          key?: string;
         };
         Relationships: [];
       };

@@ -420,3 +420,7 @@ enabled = true
 # asymmetric JWT signing keys and handles CORS preflight), so the platform check is off.
 [functions.admin-users]
 verify_jwt = false
+
+# Photos and receipts in Google Drive; checks the caller itself (signed view links have no JWT).
+[functions.files]
+verify_jwt = false

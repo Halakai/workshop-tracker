@@ -22,6 +22,7 @@ import { syncErrorMessage } from '@/lib/errors';
 import { getLastPayer, setLastPayer, useAccounts, usePayerOptions } from '@/features/money/accounts';
 import { stockOf, unitOf, useSuppliers, type Item } from '@/features/inventory/api';
 import { ItemPicker } from '@/features/cars/CarStockDrawers';
+import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 import {
   useAddJobStockLine,
   useDeleteLine,
@@ -365,6 +366,9 @@ function BoughtLineForm({ job, line, onDone }: { job: Job; line?: JobLine; onDon
           <FieldLabel>Date</FieldLabel>
           <Controller control={form.control} name="date" render={({ field }) => <DateField value={field.value} onChange={field.onChange} />} />
         </Field>
+        {line?.transaction_id && (
+          <AttachmentStrip entityType="transaction" entityId={line.transaction_id} kind="receipt" title="Receipt" allowPdf label={line.description} />
+        )}
         <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
           Save

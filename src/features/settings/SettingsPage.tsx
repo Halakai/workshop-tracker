@@ -15,6 +15,8 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { imageToPngDataUrl } from '@/lib/image';
 import { syncErrorMessage } from '@/lib/errors';
 import { useSettings, useUpdateSettings, type Settings } from './api';
+import { useDriveHealth } from '@/features/files/api';
+import { HardDrive } from 'lucide-react';
 
 const schema = z.object({
   workshop_name: z.string().trim().min(1, 'Name is required').max(100),
@@ -87,6 +89,8 @@ function SettingsForm({ settings }: { settings: Settings }) {
 
   return (
     <>
+      <DriveCard />
+
       <Card>
         <CardHeader>
           <CardTitle>Logo</CardTitle>
@@ -159,5 +163,24 @@ function SettingsForm({ settings }: { settings: Settings }) {
         </FieldGroup>
       </form>
     </>
+  );
+}
+
+function DriveCard() {
+  const health = useDriveHealth();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Google Drive</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2 text-sm">
+        <p className="text-muted-foreground">Photos, receipts and invoice copies go to the “Workshop Tracker” folder in your Google Drive.</p>
+        <Button variant="outline" className="self-start" disabled={health.isPending} onClick={() => health.mutate()}>
+          {health.isPending ? <Loader2 className="animate-spin" /> : <HardDrive />} Test Drive connection
+        </Button>
+        {health.data && <p className={health.data.ok ? 'text-success' : 'text-destructive'}>{health.data.message}</p>}
+        {health.isError && <p className="text-destructive">{health.error.message}</p>}
+      </CardContent>
+    </Card>
   );
 }
