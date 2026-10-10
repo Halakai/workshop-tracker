@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Link } from 'react-router';
+import { Link, Navigate, useLocation } from 'react-router';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AppLogo } from '@/components/AppLogo';
@@ -73,6 +73,12 @@ export function ComingSoonPage({ title, milestone }: { title: string; milestone:
       </PageBody>
     </>
   );
+}
+
+/** Sends an old address (e.g. #/stock/…) to where that page lives now (#/inventory/…). */
+export function LegacyRedirect({ from, to }: { from: string; to: string }) {
+  const { pathname, search } = useLocation();
+  return <Navigate to={to + pathname.slice(from.length) + search} replace />;
 }
 
 export function NotFoundPage() {

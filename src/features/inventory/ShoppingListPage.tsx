@@ -14,7 +14,7 @@ export function ShoppingListPage() {
 
   return (
     <>
-      <PageHeader title="Shopping list" back="/stock" />
+      <PageHeader title="Shopping list" back="/inventory" />
       <PageBody>
         {items.isPending && <Skeleton className="h-24 rounded-xl" />}
         {items.isSuccess && low.length === 0 && (
@@ -30,7 +30,7 @@ export function ShoppingListPage() {
             const lastQty = last?.qty != null ? toMilli(last.qty) : null;
             return (
               <li key={item.id}>
-                <Link to={`/stock/${item.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-muted">
+                <Link to={`/inventory/${item.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-muted">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{item.name}</p>
                     <p className="font-mono text-xs text-muted-foreground">

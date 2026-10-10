@@ -17,6 +17,7 @@ import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/c
 import { milliToDb, milliToInput, parseQuantity, toMilli } from '@/domain/quantity';
 import { deriveCode, nextPartNumber, partNumberPrefix, partNumberTaken } from '@/domain/codes';
 import { syncErrorMessage } from '@/lib/errors';
+import { useGoBack } from '@/lib/navigation';
 import { ensureBrand, useBrands, useCategories, useUnits } from '@/features/catalog/api';
 import { useDeleteItem, useItem, useItemMovements, useItems, useSaveItem, type Item } from './api';
 
@@ -54,6 +55,7 @@ export function ItemFormPage() {
 
 function ItemForm({ item }: { item?: Item }) {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const save = useSaveItem();
   const remove = useDeleteItem();
   const items = useItems();
@@ -132,7 +134,8 @@ function ItemForm({ item }: { item?: Item }) {
         },
       });
       toast.success(item ? 'Saved' : `${saved.name} added (${saved.part_number}). Record a purchase or adjust the stock.`);
-      navigate(`/stock/${saved.id}`, { replace: true });
+      if (item) goBack(`/inventory/${item.id}`);
+      else navigate(`/inventory/${saved.id}`, { replace: true });
     } catch (e) {
       toast.error(syncErrorMessage(e));
     }
@@ -142,8 +145,8 @@ function ItemForm({ item }: { item?: Item }) {
     if (!item) return;
     try {
       await save.mutateAsync({ id: item.id, values: { archived_at: item.archived_at ? null : new Date().toISOString() } });
-      toast.success(item.archived_at ? 'Back in the stock list' : 'Archived: hidden from the stock list');
-      navigate('/stock', { replace: true });
+      toast.success(item.archived_at ? 'Back in the inventory list' : 'Archived: hidden from the inventory list');
+      goBack('/inventory', 2);
     } catch (e) {
       toast.error(syncErrorMessage(e));
     }
@@ -154,7 +157,7 @@ function ItemForm({ item }: { item?: Item }) {
     try {
       await remove.mutateAsync(item.id);
       toast.success('Deleted');
-      navigate('/stock', { replace: true });
+      goBack('/inventory', 2);
     } catch (e) {
       toast.error(syncErrorMessage(e));
     }

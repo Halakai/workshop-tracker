@@ -18,6 +18,7 @@ import { nextJobRef } from '@/domain/jobs';
 import { centsToInput, parseMoney } from '@/domain/money';
 import { partNumberTaken } from '@/domain/codes';
 import { syncErrorMessage } from '@/lib/errors';
+import { useGoBack } from '@/lib/navigation';
 import { ensureContact, useContacts } from '@/features/contacts/api';
 import { useDeleteJob, useJob, useJobSuggestions, useSaveJob, type Job } from './api';
 
@@ -53,6 +54,7 @@ export function JobFormPage() {
 
 function JobForm({ job }: { job?: Job }) {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const save = useSaveJob();
   const remove = useDeleteJob();
   const contacts = useContacts();
@@ -108,7 +110,8 @@ function JobForm({ job }: { job?: Job }) {
         },
       });
       toast.success(job ? 'Saved' : `${saved.ref} added`);
-      navigate(`/jobs/${saved.id}`, { replace: true });
+      if (job) goBack(`/jobs/${job.id}`);
+      else navigate(`/jobs/${saved.id}`, { replace: true });
     } catch (e) {
       toast.error(syncErrorMessage(e));
     }
@@ -253,7 +256,7 @@ function JobForm({ job }: { job?: Job }) {
                 try {
                   await remove.mutateAsync(job.id);
                   toast.success('Deleted');
-                  navigate('/jobs', { replace: true });
+                  goBack('/jobs', 2);
                 } catch (e) {
                   toast.error(syncErrorMessage(e));
                 }

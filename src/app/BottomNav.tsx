@@ -14,7 +14,7 @@ export function BottomNav() {
   const lowStock = useLowStockItems().length;
   const items: NavItem[] = [
     { to: '/', label: 'Home', icon: House },
-    { to: '/stock', label: 'Stock', icon: Package, badge: lowStock },
+    { to: '/inventory', label: 'Inventory', icon: Package, badge: lowStock },
     { to: '/cars', label: 'Cars', icon: Car },
     { to: '/jobs', label: 'Jobs', icon: Wrench },
     { to: '/more', label: 'More', icon: Menu },

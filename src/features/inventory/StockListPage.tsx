@@ -55,11 +55,11 @@ export function StockListPage() {
   return (
     <>
       <PageHeader
-        title="Stock"
+        title="Inventory"
         actions={
           <>
             <Button variant="ghost" size="icon" asChild aria-label="Shopping list">
-              <Link to="/stock/shopping-list" className="relative">
+              <Link to="/inventory/shopping-list" className="relative">
                 <ShoppingCart className="size-5" />
                 {lowCount > 0 && (
                   <span className="absolute top-1 right-1 min-w-4 rounded-full bg-destructive px-1 text-[10px] leading-4 font-semibold text-white">
@@ -69,7 +69,7 @@ export function StockListPage() {
               </Link>
             </Button>
             <Button size="sm" asChild>
-              <Link to="/stock/new">
+              <Link to="/inventory/new">
                 <Plus /> Item
               </Link>
             </Button>
@@ -108,7 +108,7 @@ export function StockListPage() {
             {items.data.length === 0 ? (
               <>
                 No items yet.{' '}
-                <Link to="/stock/new" className="text-primary underline">
+                <Link to="/inventory/new" className="text-primary underline">
                   Add the first one
                 </Link>
                 .
@@ -125,7 +125,7 @@ export function StockListPage() {
             const details = [item.part_number, item.brand?.name, item.location && `📍 ${item.location}`].filter(Boolean).join(' · ');
             return (
               <li key={item.id}>
-                <Link to={`/stock/${item.id}`} className="flex min-h-16 items-center gap-3 px-4 py-3 active:bg-muted">
+                <Link to={`/inventory/${item.id}`} className="flex min-h-16 items-center gap-3 px-4 py-3 active:bg-muted">
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.name}</p>
                     {details && <p className="truncate text-sm text-muted-foreground">{details}</p>}

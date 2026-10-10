@@ -417,7 +417,7 @@ function StockRow({ row, onReturn }: { row: CarStockRow; onReturn?: () => void }
       {isReturn ? <Undo2 className="mt-0.5 size-5 shrink-0 text-muted-foreground" /> : <Package className="mt-0.5 size-5 shrink-0 text-muted-foreground" />}
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-2">
-          <Link to={`/stock/${row.item_id}`} className="truncate font-medium underline-offset-2 hover:underline">
+          <Link to={`/inventory/${row.item_id}`} className="truncate font-medium underline-offset-2 hover:underline">
             {row.item?.name ?? 'Item'}
           </Link>
           <span className={cn('font-semibold tabular-nums', isReturn && 'text-success')}>

@@ -1,17 +1,20 @@
 import type { ReactNode } from 'react';
-import { useNavigate } from 'react-router';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useGoBack } from '@/lib/navigation';
 
 interface PageHeaderProps {
   title: string;
-  /** Show a back button: a path to go to, or true for browser back. */
+  /**
+   * Show a back button. It returns to the previous page; the path (or home, for true) is used only when there is
+   * no previous page, e.g. when the app was opened on this page.
+   */
   back?: string | true;
   actions?: ReactNode;
 }
 
 export function PageHeader({ title, back, actions }: PageHeaderProps) {
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   return (
     <header className="sticky top-0 z-30 border-b bg-background/95 pt-[env(safe-area-inset-top)] backdrop-blur supports-backdrop-filter:bg-background/80">
       <div className="mx-auto flex h-14 max-w-2xl items-center gap-1 px-2">
@@ -20,7 +23,7 @@ export function PageHeader({ title, back, actions }: PageHeaderProps) {
             variant="ghost"
             size="icon"
             aria-label="Back"
-            onClick={() => (typeof back === 'string' ? navigate(back) : navigate(-1))}
+            onClick={() => goBack(typeof back === 'string' ? back : '/')}
           >
             <ChevronLeft className="size-6" />
           </Button>

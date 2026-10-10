@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { createHashRouter } from 'react-router';
 import { AppLayout } from './AppLayout';
-import { NotFoundPage } from './screens';
+import { LegacyRedirect, NotFoundPage } from './screens';
 import { RequireAdmin, RequireAuth } from '@/features/auth/RequireAuth';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { MorePage } from '@/features/more/MorePage';
@@ -45,11 +45,13 @@ export const router = createHashRouter([
         element: <AppLayout />,
         children: [
           { index: true, element: <HomePage /> },
-          { path: 'stock', element: <StockListPage /> },
-          { path: 'stock/new', element: <ItemFormPage /> },
-          { path: 'stock/shopping-list', element: <ShoppingListPage /> },
-          { path: 'stock/:id', element: <ItemPage /> },
-          { path: 'stock/:id/edit', element: <ItemFormPage /> },
+          { path: 'inventory', element: <StockListPage /> },
+          { path: 'inventory/new', element: <ItemFormPage /> },
+          { path: 'inventory/shopping-list', element: <ShoppingListPage /> },
+          { path: 'inventory/:id', element: <ItemPage /> },
+          { path: 'inventory/:id/edit', element: <ItemFormPage /> },
+          // old links and bookmarks (the section used to be called Stock)
+          { path: 'stock/*', element: <LegacyRedirect from="/stock" to="/inventory" /> },
           { path: 'cars', element: <CarsListPage /> },
           { path: 'cars/new', element: <CarFormPage /> },
           { path: 'cars/:id', element: <CarPage /> },

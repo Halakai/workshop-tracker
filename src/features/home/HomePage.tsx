@@ -171,7 +171,7 @@ export function HomePage() {
               </CardTitle>
               <CardAction>
                 <Button variant="outline" size="sm" asChild>
-                  <Link to="/stock/shopping-list">Shopping list</Link>
+                  <Link to="/inventory/shopping-list">Shopping list</Link>
                 </Button>
               </CardAction>
             </CardHeader>
@@ -179,7 +179,7 @@ export function HomePage() {
               <ul className="flex flex-col divide-y">
                 {lowStock.slice(0, 5).map((item) => (
                   <li key={item.id}>
-                    <Link to={`/stock/${item.id}`} className="flex items-center justify-between gap-2 py-2">
+                    <Link to={`/inventory/${item.id}`} className="flex items-center justify-between gap-2 py-2">
                       <span className="truncate">{item.name}</span>
                       <span className="flex items-center gap-1 text-sm font-semibold text-destructive tabular-nums">
                         {formatQuantity(toMilli(item.qty_on_hand), unitOf(item).name)}

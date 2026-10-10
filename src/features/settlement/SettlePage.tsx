@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { toast } from 'sonner';
 import { ArrowRight, Loader2, Pencil } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
@@ -16,6 +16,7 @@ import { FULL_SHARE_BP, formatShare } from '@/domain/shares';
 import { carFunding, settle, type PayoutMode, type SettlementInput } from '@/domain/settlement';
 import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
+import { useGoBack } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { useAccounts } from '@/features/money/accounts';
 import { useAccountLabels } from '@/features/money/api';
@@ -76,7 +77,7 @@ export interface SettleViewProps {
 
 /** Shared settle-up screen for cars and jobs. */
 export function SettleView({ target, title, subtitle, backTo, settled, ready, notReady, rows, stockCents, defaultDate, costWord }: SettleViewProps) {
-  const navigate = useNavigate();
+  const goBack = useGoBack();
   const sharesQuery = useShares(target);
   const accounts = useAccounts();
   const profiles = useProfiles();
@@ -136,7 +137,7 @@ export function SettleView({ target, title, subtitle, backTo, settled, ready, no
         ),
       );
       toast.success('Settled');
-      navigate(backTo, { replace: true });
+      goBack(backTo);
     } catch (e) {
       toast.error(syncErrorMessage(e));
     }

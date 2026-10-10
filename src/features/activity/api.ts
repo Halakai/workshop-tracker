@@ -22,7 +22,7 @@ export function activityLink(entityType: string, entityId: string | null): strin
     case 'job':
       return `/jobs/${entityId}`;
     case 'item':
-      return `/stock/${entityId}`;
+      return `/inventory/${entityId}`;
     case 'transaction':
       return '/money';
     default:

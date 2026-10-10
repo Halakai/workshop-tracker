@@ -44,7 +44,7 @@ export function ItemPage() {
   if (item.isPending) {
     return (
       <>
-        <PageHeader title="Item" back="/stock" />
+        <PageHeader title="Item" back="/inventory" />
         <PageBody>
           <Skeleton className="h-40 rounded-xl" />
         </PageBody>
@@ -54,7 +54,7 @@ export function ItemPage() {
   if (!item.data) {
     return (
       <>
-        <PageHeader title="Item" back="/stock" />
+        <PageHeader title="Item" back="/inventory" />
         <PageBody>
           <p className="text-muted-foreground">This item doesn’t exist (anymore).</p>
         </PageBody>
@@ -72,10 +72,10 @@ export function ItemPage() {
     <>
       <PageHeader
         title={it.name}
-        back="/stock"
+        back="/inventory"
         actions={
           <Button variant="ghost" size="icon" asChild aria-label="Edit item">
-            <Link to={`/stock/${it.id}/edit`}>
+            <Link to={`/inventory/${it.id}/edit`}>
               <Pencil className="size-5" />
             </Link>
           </Button>

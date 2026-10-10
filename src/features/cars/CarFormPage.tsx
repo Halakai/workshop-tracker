@@ -21,6 +21,7 @@ import { parseMoney } from '@/domain/money';
 import { partNumberTaken } from '@/domain/codes';
 import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
+import { useGoBack } from '@/lib/navigation';
 import { getLastPayer, setLastPayer, useAccounts, usePayerOptions } from '@/features/money/accounts';
 import { ensureContact, useContacts } from '@/features/contacts/api';
 import { useCar, useCarSuggestions, useCreateCar, useDeleteCar, useUpdateCar, type Car } from './api';
@@ -66,6 +67,7 @@ export function CarFormPage() {
 
 function CarForm({ car }: { car?: Car }) {
   const navigate = useNavigate();
+  const goBack = useGoBack();
   const create = useCreateCar();
   const update = useUpdateCar();
   const remove = useDeleteCar();
@@ -150,7 +152,7 @@ function CarForm({ car }: { car?: Car }) {
       if (car) {
         await update.mutateAsync({ id: car.id, values });
         toast.success('Saved');
-        navigate(`/cars/${car.id}`, { replace: true });
+        goBack(`/cars/${car.id}`);
         return;
       }
       const external = accounts.data?.find((a) => a.kind === 'external');
@@ -183,7 +185,7 @@ function CarForm({ car }: { car?: Car }) {
     try {
       await remove.mutateAsync(car.id);
       toast.success(`${car.ref} deleted`);
-      navigate('/cars', { replace: true });
+      goBack('/cars', 2);
     } catch (e) {
       toast.error(syncErrorMessage(e));
     }
