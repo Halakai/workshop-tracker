@@ -1,8 +1,10 @@
 // Photos and receipts in the admin's Google Drive (scope drive.file: the app only sees files it created).
 //
-//   POST /files/upload   multipart: file, thumb?, entity_type, entity_id, kind, label?   (signed-in member)
+//   POST /files/upload   multipart: file, thumb?, entity_type, entity_id, kind, label?, album_id?   (signed-in member)
 //   POST /files/sign     { ids: [...] } → signed view links                             (signed-in member)
 //   GET  /files/view/:id?v=thumb|full&exp=…&sig=…  → streams the file from Drive          (signed link)
+//   POST /files/invoice-link  { job_id } → a link for the customer, valid for a year       (signed-in member)
+//   GET  /files/invoice/:jobId?exp=…&sig=…  → the job's latest invoice PDF                (signed link)
 //   POST /files/delete   { id }  → moves the file to Drive's trash                        (signed-in member)
 //   POST /files/health   checks the Google connection                                     (signed-in admin)
 //
@@ -17,6 +19,8 @@ import {
   THUMBS_FOLDER,
   fileNameFor,
   folderChain,
+  invoiceLinkExpiry,
+  invoicePayload,
   linkExpiry,
   signingPayload,
   type EntityType,
@@ -201,6 +205,11 @@ async function folderChainFor(entityType: EntityType, entityId: string, kind: Fi
     if (!tool) throw new HttpError(404, 'Tool not found');
     return folderChain({ type: 'tool', tool });
   }
+  if (entityType === 'item') {
+    const { data: item } = await admin.from('items').select('id, part_number, name').eq('id', entityId).maybeSingle();
+    if (!item) throw new HttpError(404, 'Item not found');
+    return folderChain({ type: 'item', item });
+  }
   // stock purchases and other money: receipts by year; a car's money goes into the car's folder
   if (entityType === 'transaction') {
     const { data: txn } = await admin.from('transactions').select('id, car_id, job_id, occurred_on').eq('id', entityId).maybeSingle();
@@ -224,9 +233,15 @@ async function upload(req: Request) {
   const entityId = String(form.get('entity_id') ?? '');
   const kind = String(form.get('kind') ?? '') as FileKind;
   const label = String(form.get('label') ?? '');
+  const albumId = String(form.get('album_id') ?? '') || null;
   if (!(file instanceof File)) throw new HttpError(400, 'No file');
   if (!ENTITY_TYPES.includes(entityType) || !FILE_KINDS.includes(kind) || !/^[0-9a-f-]{36}$/i.test(entityId)) {
     throw new HttpError(400, 'Invalid target');
+  }
+  if (albumId) {
+    if (kind !== 'photo' || !/^[0-9a-f-]{36}$/i.test(albumId)) throw new HttpError(400, 'Only photos go into albums');
+    const { data: album } = await admin.from('photo_albums').select('id').eq('id', albumId).maybeSingle();
+    if (!album) throw new HttpError(404, 'That album no longer exists');
   }
   if (file.size > MAX_UPLOAD_BYTES) throw new HttpError(413, 'File too large (max 9 MB). Photos are shrunk automatically; for PDFs use a smaller scan.');
   if (!ALLOWED_MIME.test(file.type)) throw new HttpError(415, 'Only photos (JPEG, PNG, WebP, HEIC) and PDFs');
@@ -250,6 +265,7 @@ async function upload(req: Request) {
       file_name: name,
       mime_type: file.type,
       size_bytes: stored.size,
+      album_id: albumId,
       created_by: userId,
     })
     .select()
@@ -293,6 +309,47 @@ async function view(req: Request, id: string) {
       'Content-Type': variant === 'thumb' && row.drive_thumb_id ? 'image/jpeg' : row.mime_type,
       'Content-Disposition': `inline; filename="${encodeURIComponent(row.file_name)}"`,
       'Cache-Control': 'private, max-age=86400',
+    },
+  });
+}
+
+/** A link the customer can open without an account; it always shows the job's latest invoice copy. */
+async function invoiceLink(req: Request) {
+  await requireMember(req);
+  const body = await req.json().catch(() => null);
+  const jobId = typeof body?.job_id === 'string' && /^[0-9a-f-]{36}$/i.test(body.job_id) ? body.job_id : '';
+  const { data: copy } = await admin.from('attachments').select('id').eq('entity_type', 'job').eq('entity_id', jobId).eq('kind', 'invoice').limit(1).maybeSingle();
+  if (!copy) throw new HttpError(404, 'No invoice copy in Google Drive yet. Make the invoice first.');
+  const exp = invoiceLinkExpiry(new Date());
+  const sig = await hmac(invoicePayload(jobId, exp));
+  return Response.json({ url: `${new URL(req.url).origin}/functions/v1/files/invoice/${jobId}?exp=${exp}&sig=${sig}`, expires: exp });
+}
+
+async function invoice(req: Request, jobId: string) {
+  const url = new URL(req.url);
+  const exp = Number(url.searchParams.get('exp'));
+  const sig = url.searchParams.get('sig') ?? '';
+  if (!exp || exp * 1000 < Date.now()) throw new HttpError(403, 'This invoice link has expired. Ask the workshop for a new one.');
+  if (!timingSafeEqual(sig, await hmac(invoicePayload(jobId, exp)))) throw new HttpError(403, 'This invoice link is not valid.');
+  const { data: row } = await admin
+    .from('attachments')
+    .select('drive_file_id, file_name')
+    .eq('entity_type', 'job')
+    .eq('entity_id', jobId)
+    .eq('kind', 'invoice')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!row) throw new HttpError(404, 'This invoice is no longer available.');
+  const res = await drive(`/files/${row.drive_file_id}?alt=media`);
+  if (res.status === 404) throw new HttpError(404, 'This invoice is no longer available.');
+  if (!res.ok) throw new HttpError(502, 'The invoice could not be loaded. Try again in a moment.');
+  return new Response(res.body, {
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(row.file_name)}`,
+      // a remade invoice replaces the copy: don't keep an old one for long
+      'Cache-Control': 'private, max-age=300',
     },
   });
 }
@@ -342,12 +399,16 @@ async function route(req: Request): Promise<Response> {
     const path = new URL(req.url).pathname.replace(/^.*\/files/, '');
     const viewMatch = /^\/view\/([0-9a-f-]{36})$/i.exec(path);
     if (req.method === 'GET' && viewMatch) return await view(req, viewMatch[1]);
+    const invoiceMatch = /^\/invoice\/([0-9a-f-]{36})$/i.exec(path);
+    if (req.method === 'GET' && invoiceMatch) return await invoice(req, invoiceMatch[1]);
     if (req.method !== 'POST') throw new HttpError(405, 'Use POST');
     switch (path) {
       case '/upload':
         return await upload(req);
       case '/sign':
         return await sign(req);
+      case '/invoice-link':
+        return await invoiceLink(req);
       case '/delete':
         return await remove(req);
       case '/health':
@@ -356,6 +417,10 @@ async function route(req: Request): Promise<Response> {
         throw new HttpError(404, 'Unknown route');
     }
   } catch (e) {
+    // links opened in a browser (a customer's invoice link) get a readable sentence, not JSON
+    if (e instanceof HttpError && req.method === 'GET') {
+      return new Response(e.message, { status: e.status, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
     if (e instanceof HttpError) return Response.json({ error: e.message }, { status: e.status });
     console.error(e);
     return Response.json({ error: (e as Error)?.message ?? 'Unexpected error' }, { status: 500 });

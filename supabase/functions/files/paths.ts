@@ -1,9 +1,9 @@
 // Pure helpers for the files function (no Deno APIs, so they are unit-tested with Vitest).
 
-export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool';
+export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool' | 'item';
 export type FileKind = 'photo' | 'receipt' | 'invoice' | 'document';
 
-export const ENTITY_TYPES: readonly EntityType[] = ['car', 'job', 'stock_movement', 'transaction', 'tool'];
+export const ENTITY_TYPES: readonly EntityType[] = ['car', 'job', 'stock_movement', 'transaction', 'tool', 'item'];
 export const FILE_KINDS: readonly FileKind[] = ['photo', 'receipt', 'invoice', 'document'];
 
 export const ROOT_FOLDER_NAME = 'Workshop Tracker';
@@ -47,6 +47,12 @@ export interface ToolInfo {
   name: string;
 }
 
+export interface ItemInfo {
+  id: string;
+  part_number: string;
+  name: string;
+}
+
 /**
  * The chain of folders (root first) a file goes into:
  *   Workshop Tracker/Cars/2012 Škoda Octavia ZG1234AB (CAR-001)/Photos | Receipts
@@ -54,15 +60,25 @@ export interface ToolInfo {
  *   Workshop Tracker/Invoices/2026
  *   Workshop Tracker/Receipts/2026          (stock purchases, workshop expenses)
  *   Workshop Tracker/Tools/T-001 Impact wrench   (photos, receipts, manuals)
+ *   Workshop Tracker/Inventory/FLD-CAST-001 Engine oil 5W-30   (photos of parts and supplies)
  */
 export function folderChain(
   target:
     | { type: 'car'; car: CarInfo; kind: FileKind }
     | { type: 'job'; job: JobInfo; kind: FileKind }
     | { type: 'tool'; tool: ToolInfo }
+    | { type: 'item'; item: ItemInfo }
     | { type: 'other'; year: number },
 ): FolderSpec[] {
   const root: FolderSpec = { key: 'root', name: ROOT_FOLDER_NAME, parent: null };
+  if (target.type === 'item') {
+    const { item } = target;
+    return [
+      root,
+      { key: 'inventory', name: 'Inventory', parent: 'root' },
+      { key: `item:${item.id}`, name: cleanName(`${item.part_number} ${item.name}`), parent: 'inventory' },
+    ];
+  }
   if (target.type === 'tool') {
     const { tool } = target;
     return [
@@ -133,6 +149,20 @@ export function linkExpiry(now: Date): number {
 
 export function signingPayload(id: string, variant: 'thumb' | 'full', exp: number): string {
   return `${id}.${variant}.${exp}`;
+}
+
+/**
+ * Invoice links for customers stay valid for a year. They end at a midnight (UTC), so asking again on the
+ * same day gives the same link.
+ */
+export function invoiceLinkExpiry(now: Date): number {
+  const d = new Date(Date.UTC(now.getUTCFullYear() + 1, now.getUTCMonth(), now.getUTCDate() + 1));
+  return Math.floor(d.getTime() / 1000);
+}
+
+/** An invoice link is signed for the job, so it always shows the job's latest invoice copy. */
+export function invoicePayload(jobId: string, exp: number): string {
+  return `invoice.${jobId}.${exp}`;
 }
 
 export const MAX_UPLOAD_BYTES = 9 * 1024 * 1024;

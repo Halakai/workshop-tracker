@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
-import { ChevronRight, Plus, Search, ShoppingCart } from 'lucide-react';
+import { ChevronRight, Package, Plus, Search, ShoppingCart } from 'lucide-react';
+import { useCoverThumbs } from '@/features/files/api';
+import { Thumb } from '@/features/files/Photos';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -31,6 +33,7 @@ export function StockListPage() {
   const items = useItems();
   const categories = useCategories();
   const lowCount = useLowStockItems().length;
+  const thumbs = useCoverThumbs('item');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
 
@@ -127,7 +130,8 @@ export function StockListPage() {
             const details = [item.part_number, item.brand?.name, item.location && `📍 ${item.location}`].filter(Boolean).join(' · ');
             return (
               <li key={item.id}>
-                <Link to={`/inventory/${item.id}`} className="flex min-h-16 items-center gap-3 px-4 py-3 active:bg-muted">
+                <Link to={`/inventory/${item.id}`} className="flex min-h-16 items-center gap-3 px-3 py-2.5 active:bg-muted">
+                  <Thumb url={thumbs.get(item.id)} icon={Package} />
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium">{item.name}</p>
                     {details && <p className="truncate text-sm text-muted-foreground">{details}</p>}

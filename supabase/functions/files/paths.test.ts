@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanName, fileNameFor, folderChain, linkExpiry, signingPayload } from './paths';
+import { cleanName, fileNameFor, folderChain, invoiceLinkExpiry, invoicePayload, linkExpiry, signingPayload } from './paths';
 
 const car = { id: 'c1', ref: 'CAR-001', year: 2012, make: 'Škoda', model: 'Octavia', plate: 'ZG1234AB' };
 const job = { id: 'j1', ref: 'JOB-007', customer: 'Marko Marić', plate: 'ZG-123-AB', createdYear: 2026 };
@@ -31,6 +31,17 @@ describe('Drive folders', () => {
       'Tools',
       'T-001 Impact wrench 1 2',
     ]);
+  });
+
+  it('gives every inventory item its own folder', () => {
+    expect(folderChain({ type: 'item', item: { id: 'i1', part_number: 'FLD-CAST-001', name: 'Engine oil 5W-30' } }).map((f) => f.key)).toEqual([
+      'root',
+      'inventory',
+      'item:i1',
+    ]);
+    expect(folderChain({ type: 'item', item: { id: 'i1', part_number: 'FLD-CAST-001', name: 'Engine oil 5W-30' } }).at(-1)!.name).toBe(
+      'FLD-CAST-001 Engine oil 5W-30',
+    );
   });
 
   it('puts other receipts by year', () => {
@@ -67,5 +78,14 @@ describe('signed links', () => {
 
   it('signs id, variant and expiry together', () => {
     expect(signingPayload('abc', 'thumb', 123)).toBe('abc.thumb.123');
+  });
+
+  it('keep invoice links for a year, the same all day, and apart from photo links', () => {
+    const morning = invoiceLinkExpiry(new Date('2026-10-10T06:00:00Z'));
+    expect(invoiceLinkExpiry(new Date('2026-10-10T23:59:00Z'))).toBe(morning);
+    expect(new Date(morning * 1000).toISOString()).toBe('2027-10-11T00:00:00.000Z');
+    expect(invoicePayload('job1', 123)).toBe('invoice.job1.123');
+    // a photo link's signature can't be reused as an invoice link
+    expect(invoicePayload('job1', 123)).not.toBe(signingPayload('job1', 'full', 123));
   });
 });

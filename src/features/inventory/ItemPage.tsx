@@ -31,6 +31,7 @@ import { BuyDrawer } from './BuyDrawer';
 import { UseDrawer } from './UseDrawer';
 import { AdjustDrawer } from './AdjustDrawer';
 import { ReceiptButton } from '@/features/files/ReceiptButton';
+import { PhotoGallery, PhotoSection } from '@/features/files/Photos';
 import { useRememberVisit } from '@/features/home/recent';
 
 type Action = 'buy' | 'use' | 'adjust' | null;
@@ -84,6 +85,7 @@ export function ItemPage() {
         }
       />
       <PageBody>
+        <PhotoGallery entityType="item" entityId={it.id} className="-mx-4 -mt-4 sm:mx-0 sm:mt-0 sm:rounded-xl" />
         <Card>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -120,6 +122,8 @@ export function ItemPage() {
           <BigAction icon={MinusCircle} label="Use" onClick={() => setAction('use')} disabled={stock.qty === 0} />
           <BigAction icon={ClipboardCheck} label="Adjust" onClick={() => setAction('adjust')} />
         </div>
+
+        <PhotoSection entityType="item" entityId={it.id} />
 
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold">History</h2>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { Banknote, ChevronRight, FileText, Handshake, Loader2, Package, Pencil, Phone, Plus, Undo2, Wrench } from 'lucide-react';
+import { Banknote, ChevronRight, FileText, Handshake, Link2, Loader2, Package, Pencil, Phone, Plus, Undo2, Wrench } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { ConfirmButton } from '@/components/ConfirmButton';
@@ -23,8 +23,9 @@ import { useSettings } from '@/features/settings/api';
 import { useJob, useJobLines, useJobMoney, useIssueInvoiceNumber, useSaveJob, type Job, type JobLine } from './api';
 import { jobCar } from './JobsListPage';
 import { BoughtLineDrawer, LaborDrawer, OtherLineDrawer, PaymentDrawer, StockLineDrawer, type PaymentRow } from './JobDrawers';
-import { buildInvoiceData, shareOrDownload } from './invoice/makeInvoice';
-import { AttachmentStrip } from '@/features/files/AttachmentStrip';
+import { buildInvoiceData } from './invoice/makeInvoice';
+import { InvoiceDrawer, type MadeInvoice } from './invoice/InvoiceDrawer';
+import { PhotoSection } from '@/features/files/Photos';
 import { useRememberVisit } from '@/features/home/recent';
 import { useAttachments, useDeleteAttachment, useUploadAttachment } from '@/features/files/api';
 
@@ -74,7 +75,11 @@ function JobView({ job }: { job: Job }) {
   const [payment, setPayment] = useState<{ row?: PaymentRow } | null>(null);
   const [editingShares, setEditingShares] = useState(false);
   const [making, setMaking] = useState(false);
+  // the invoice drawer: just made (with the PDF), or only the link to the copy made earlier
+  const [invoiceDrawer, setInvoiceDrawer] = useState<'made' | 'link' | null>(null);
+  const [made, setMade] = useState<MadeInvoice | null>(null);
   const files = useAttachments('job', job.id);
+  const hasInvoiceCopy = (files.data ?? []).some((f) => f.kind === 'invoice');
   const uploadFile = useUploadAttachment();
   const deleteFile = useDeleteAttachment();
 
@@ -110,14 +115,16 @@ function JobView({ job }: { job: Job }) {
       const data = buildInvoiceData({ job, number, lines: lines.data, settings: settings.data });
       const blob = await renderInvoicePdf(data);
       const name = `${data.title} ${number} ${job.customer?.name ?? ''}`.trim();
-      // a copy goes to Google Drive (Invoices/<year>), replacing the previous copy of this job's invoice
+      setMade({ number, name, blob, drive: 'saving' });
+      setInvoiceDrawer('made');
+      // a copy goes to Google Drive (Invoices/<year>), replacing the previous copy of this job's invoice;
+      // the customer's link shows that copy
       const previous = (files.data ?? []).filter((f) => f.kind === 'invoice');
       uploadFile
         .mutateAsync({ file: new File([blob], `${name}.pdf`, { type: 'application/pdf' }), entityType: 'job', entityId: job.id, kind: 'invoice', label: name })
         .then(() => Promise.all(previous.map((p) => deleteFile.mutateAsync(p))))
-        .then(() => toast.success('Invoice copy saved in Google Drive'))
-        .catch((e: Error) => toast.warning(`Invoice not copied to Google Drive: ${e.message}`));
-      await shareOrDownload(blob, name);
+        .then(() => setMade((m) => m && { ...m, drive: 'saved' }))
+        .catch((e: Error) => setMade((m) => m && { ...m, drive: { error: e.message } }));
     } catch (e) {
       toast.error(syncErrorMessage(e));
     } finally {
@@ -270,8 +277,13 @@ function JobView({ job }: { job: Job }) {
         {!job.invoice_number && (
           <p className="-mt-2 text-center text-xs text-muted-foreground">Gets the next invoice number the first time.</p>
         )}
+        {job.invoice_number && hasInvoiceCopy && (
+          <Button variant="ghost" className="-mt-2" onClick={() => setInvoiceDrawer('link')}>
+            <Link2 /> Link for the customer
+          </Button>
+        )}
 
-        <AttachmentStrip entityType="job" entityId={job.id} kind="photo" title="Photos" />
+        <PhotoSection entityType="job" entityId={job.id} albums />
 
         {!settled && (
           <Card>
@@ -354,6 +366,13 @@ function JobView({ job }: { job: Job }) {
       <LaborDrawer job={job} open={laborOpen} onOpenChange={setLaborOpen} />
       <PaymentDrawer job={job} payment={payment?.row} open={payment !== null} onClose={() => setPayment(null)} />
       <SharesDrawer target={target} open={editingShares} onOpenChange={setEditingShares} />
+      <InvoiceDrawer
+        jobId={job.id}
+        open={invoiceDrawer !== null}
+        invoice={invoiceDrawer === 'made' ? made : null}
+        title={`Invoice ${(invoiceDrawer === 'made' && made?.number) || job.invoice_number || ''}`}
+        onClose={() => setInvoiceDrawer(null)}
+      />
     </>
   );
 }

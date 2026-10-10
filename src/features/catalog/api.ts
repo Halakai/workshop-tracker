@@ -1,4 +1,4 @@
-// The editable lists: item categories, units, brands, cost types and tool categories.
+// The editable lists: item categories, units, brands, cost types, tool categories and photo albums.
 // Everyone can add entries; only admins can rename or delete them (enforced by RLS).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
@@ -10,8 +10,9 @@ export type UnitEntry = Tables<'units'>;
 export type Brand = Tables<'brands'>;
 export type ExpenseCategory = Tables<'expense_categories'>;
 export type ToolCategory = Tables<'tool_categories'>;
+export type PhotoAlbum = Tables<'photo_albums'>;
 
-export type ListTable = 'item_categories' | 'units' | 'brands' | 'expense_categories' | 'tool_categories';
+export type ListTable = 'item_categories' | 'units' | 'brands' | 'expense_categories' | 'tool_categories' | 'photo_albums';
 
 export const catalogKeys: Record<ListTable, readonly string[]> = {
   item_categories: ['item_categories'],
@@ -19,6 +20,7 @@ export const catalogKeys: Record<ListTable, readonly string[]> = {
   brands: ['brands'],
   expense_categories: ['expense_categories'],
   tool_categories: ['tool_categories'],
+  photo_albums: ['photo_albums'],
 };
 
 export function useCategories() {
@@ -86,6 +88,30 @@ export function useAddToolCategory() {
   return useMutation({
     mutationFn: async (values: TablesInsert<'tool_categories'>) => {
       const { data, error } = await supabase.from('tool_categories').insert(values).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function usePhotoAlbums() {
+  return useQuery({
+    queryKey: catalogKeys.photo_albums,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.from('photo_albums').select('*').order('sort_order').order('name');
+      if (error) throw error;
+      return data;
+    },
+  });
+}
+
+export function useAddPhotoAlbum() {
+  const invalidate = useInvalidate('photo_albums');
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { data, error } = await supabase.from('photo_albums').insert({ name: name.trim() }).select().single();
       if (error) throw error;
       return data;
     },

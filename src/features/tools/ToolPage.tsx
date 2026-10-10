@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { useProfileNames } from '@/features/auth/profiles';
 import { useAccountLabels } from '@/features/money/api';
 import { AttachmentStrip } from '@/features/files/AttachmentStrip';
+import { PhotoGallery, PhotoSection } from '@/features/files/Photos';
 import { useRememberVisit } from '@/features/home/recent';
 import { useRemoveToolPayment, useSaveTool, useTool, useToolHistory, type Tool } from './api';
 import { ConditionDrawer, GoneDrawer, LendDrawer, PaymentDrawer } from './ToolDrawers';
@@ -73,6 +74,7 @@ function ToolView({ tool }: { tool: Tool }) {
         }
       />
       <PageBody>
+        <PhotoGallery entityType="tool" entityId={tool.id} className="-mx-4 -mt-4 sm:mx-0 sm:mt-0 sm:rounded-xl" />
         <Card>
           <CardContent className="flex flex-col gap-3">
             <div className="flex flex-wrap items-center gap-2">
@@ -125,7 +127,7 @@ function ToolView({ tool }: { tool: Tool }) {
 
         <PaymentSection tool={tool} onPay={() => setAction('pay')} />
 
-        <AttachmentStrip entityType="tool" entityId={tool.id} kind="photo" title="Photos" />
+        <PhotoSection entityType="tool" entityId={tool.id} />
         <AttachmentStrip entityType="tool" entityId={tool.id} kind="receipt" title="Receipt, warranty & manual" allowPdf />
 
         <History tool={tool} />

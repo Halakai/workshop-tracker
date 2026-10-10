@@ -8,6 +8,7 @@ import { useProfiles } from '@/features/auth/profiles';
 import { useSettlement, useShares, useUndoSettlement } from '@/features/settlement/api';
 import { SharesDrawer } from '@/features/settlement/SharesDrawer';
 import { AttachmentStrip } from '@/features/files/AttachmentStrip';
+import { PhotoGallery, PhotoSection } from '@/features/files/Photos';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { Button } from '@/components/ui/button';
@@ -110,6 +111,20 @@ function CarView({ car }: { car: Car }) {
         }
       />
       <PageBody>
+        {/* photos first, like a marketplace ad */}
+        <PhotoGallery
+          entityType="car"
+          entityId={car.id}
+          albums
+          className="-mx-4 -mt-4 sm:mx-0 sm:mt-0 sm:rounded-xl"
+          empty={(upload, pending) => (
+            <div className="-mx-4 -mt-4 flex flex-col items-center gap-3 bg-muted px-4 py-6 text-center sm:mx-0 sm:mt-0 sm:rounded-xl">
+              <CarLogo make={car.make} className="size-14" />
+              <p className="text-sm text-muted-foreground">{pending > 0 ? 'Uploading…' : 'No photos yet.'}</p>
+              {upload}
+            </div>
+          )}
+        />
         <div className="flex flex-wrap items-center gap-2">
           <CarLogo make={car.make} className="size-10" />
           <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-sm font-semibold">{car.ref}</span>
@@ -243,7 +258,7 @@ function CarView({ car }: { car: Car }) {
           </CardContent>
         </Card>
 
-        <AttachmentStrip entityType="car" entityId={car.id} kind="photo" title="Photos" />
+        <PhotoSection entityType="car" entityId={car.id} albums />
         <AttachmentStrip entityType="car" entityId={car.id} kind="receipt" title="Papers & receipts" allowPdf />
 
         {!settled && (

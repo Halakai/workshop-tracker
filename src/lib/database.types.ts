@@ -171,6 +171,7 @@ export type Database = {
       };
       attachments: {
         Row: {
+          album_id: string | null;
           created_at: string;
           created_by: string | null;
           drive_file_id: string;
@@ -179,6 +180,7 @@ export type Database = {
           entity_type: string;
           file_name: string;
           id: string;
+          is_cover: boolean;
           kind: string;
           mime_type: string;
           size_bytes: number | null;
@@ -186,6 +188,7 @@ export type Database = {
           updated_by: string | null;
         };
         Insert: {
+          album_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           drive_file_id: string;
@@ -194,6 +197,7 @@ export type Database = {
           entity_type: string;
           file_name: string;
           id?: string;
+          is_cover?: boolean;
           kind: string;
           mime_type: string;
           size_bytes?: number | null;
@@ -201,6 +205,7 @@ export type Database = {
           updated_by?: string | null;
         };
         Update: {
+          album_id?: string | null;
           created_at?: string;
           created_by?: string | null;
           drive_file_id?: string;
@@ -209,6 +214,7 @@ export type Database = {
           entity_type?: string;
           file_name?: string;
           id?: string;
+          is_cover?: boolean;
           kind?: string;
           mime_type?: string;
           size_bytes?: number | null;
@@ -216,6 +222,13 @@ export type Database = {
           updated_by?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "attachments_album_id_fkey";
+            columns: ["album_id"];
+            isOneToOne: false;
+            referencedRelation: "photo_albums";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "attachments_created_by_fkey";
             columns: ["created_by"];
@@ -1153,6 +1166,51 @@ export type Database = {
           },
         ];
       };
+      photo_albums: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "photo_albums_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "photo_albums_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -1898,6 +1956,10 @@ export type Database = {
       backup_tables: { Args: never; Returns: string[] };
       issue_invoice_number: { Args: { p_job_id: string }; Returns: string };
       keepalive: { Args: never; Returns: boolean };
+      move_photo_to_album: {
+        Args: { p_album_id: string; p_attachment_id: string };
+        Returns: undefined;
+      };
       post_stock_movement: {
         Args: {
           p_allocations?: Json;
@@ -1968,6 +2030,10 @@ export type Database = {
           p_occurred_on: string;
         };
         Returns: string;
+      };
+      set_cover_photo: {
+        Args: { p_attachment_id: string; p_cover?: boolean };
+        Returns: undefined;
       };
       set_car_shares: {
         Args: { p_car_id: string; p_shares: Json };
