@@ -112,6 +112,9 @@ export function minimalTransfers(held: Map<string, Cents>, targets: Map<string, 
   return transfers;
 }
 
+const COST_CATEGORIES = new Set(['car_purchase', 'car_part', 'car_cost', 'job_part']);
+const RECEIPT_CATEGORIES = new Set(['car_sale', 'job_payment']);
+
 export interface CarLedgerRow {
   category: string;
   from: string;
@@ -120,7 +123,7 @@ export interface CarLedgerRow {
 }
 
 /**
- * Who paid what for a car and who received its sale money, from the car's ledger rows.
+ * Who paid what for a car or job and who received its money, from its ledger rows.
  * Parts from stock count as paid by the wallet (stock belongs to the workshop).
  */
 export function carFunding(rows: readonly CarLedgerRow[], stockCents: Cents, walletAccountId: string) {
@@ -128,9 +131,12 @@ export function carFunding(rows: readonly CarLedgerRow[], stockCents: Cents, wal
   const receipts = new Map<string, Cents>();
   const add = (m: Map<string, Cents>, k: string, v: Cents) => m.set(k, (m.get(k) ?? 0) + v);
   for (const r of rows) {
-    if (r.category === 'car_purchase' || r.category === 'car_part' || r.category === 'car_cost') add(costs, r.from, r.amount);
-    if (r.category === 'car_sale') add(receipts, r.to, r.amount);
+    if (COST_CATEGORIES.has(r.category)) add(costs, r.from, r.amount);
+    if (RECEIPT_CATEGORIES.has(r.category)) add(receipts, r.to, r.amount);
   }
   if (stockCents !== 0) add(costs, walletAccountId, stockCents);
   return { costs, receipts };
 }
+
+/** Same rules for a job: bought parts are costs, the customer's payments are receipts. */
+export const jobFunding = carFunding;

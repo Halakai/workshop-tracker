@@ -106,7 +106,7 @@ function Settle({ car }: { car: Car }) {
     if (!computed) return;
     try {
       await record.mutateAsync(
-        toRecordSettlementArgs(car.id, computed.input, computed.result, date, computed.result.transfers.map((_, i) => !skipped.has(i))),
+        toRecordSettlementArgs({ carId: car.id }, computed.input, computed.result, date, computed.result.transfers.map((_, i) => !skipped.has(i))),
       );
       toast.success(`${car.ref} settled`);
       navigate(`/cars/${car.id}`, { replace: true });

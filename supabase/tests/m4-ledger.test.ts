@@ -198,7 +198,7 @@ async function settlementArgs(carId: string, mode: 'retain' | 'payout' = 'retain
     reimburse: true,
   };
   const result = settle(input);
-  return { args: toRecordSettlementArgs(carId, input, result, today), result };
+  return { args: toRecordSettlementArgs({ carId }, input, result, today), result };
 }
 
 describe('settling up a car', () => {

@@ -3,8 +3,10 @@
 import type { Json } from '@/lib/database.types';
 import type { SettlementInput, SettlementResult } from '@/domain/settlement';
 
+export type SettleTarget = { carId: string; jobId?: undefined } | { jobId: string; carId?: undefined };
+
 export function toRecordSettlementArgs(
-  carId: string,
+  target: SettleTarget,
   input: SettlementInput,
   result: SettlementResult,
   settledOn: string,
@@ -12,7 +14,8 @@ export function toRecordSettlementArgs(
 ) {
   const obj = (m: Map<string, number>) => Object.fromEntries(m) as Json;
   return {
-    p_car_id: carId,
+    p_car_id: target.carId,
+    p_job_id: target.jobId,
     p_payout_mode: input.mode,
     p_reimburse: input.reimburse,
     p_settled_on: settledOn,

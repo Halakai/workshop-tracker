@@ -232,3 +232,18 @@ describe('carFunding', () => {
     expect(Object.fromEntries(receipts)).toEqual({ [YOU]: 150000, [W]: 50000 });
   });
 });
+
+describe('jobFunding', () => {
+  it('bought parts are costs, payments are receipts, stock is the wallet', () => {
+    const { costs, receipts } = carFunding(
+      [
+        { category: 'job_part', from: YOU, to: 'ext', amount: 4000 },
+        { category: 'job_payment', from: 'ext', to: FRIEND, amount: 13500 },
+      ],
+      3000,
+      W,
+    );
+    expect(Object.fromEntries(costs)).toEqual({ [YOU]: 4000, [W]: 3000 });
+    expect(Object.fromEntries(receipts)).toEqual({ [FRIEND]: 13500 });
+  });
+});

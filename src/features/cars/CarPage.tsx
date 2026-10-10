@@ -80,7 +80,7 @@ function CarView({ car }: { car: Car }) {
 
   const entries = useMemo<Entry[]>(() => {
     const list: Entry[] = [
-      ...(money.data ?? []).filter((r) => r.category !== 'car_sale').map((row) => ({ kind: 'money' as const, row, date: row.occurred_on, created: row.created_at })),
+      ...(money.data ?? []).filter((r) => ['car_purchase', 'car_part', 'car_cost'].includes(r.category)).map((row) => ({ kind: 'money' as const, row, date: row.occurred_on, created: row.created_at })),
       ...(stock.data ?? []).map((row) => ({ kind: 'stock' as const, row, date: row.occurred_on, created: row.created_at })),
     ];
     return list.sort((a, b) => b.date.localeCompare(a.date) || b.created.localeCompare(a.created));
