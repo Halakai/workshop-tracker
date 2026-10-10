@@ -1,9 +1,9 @@
 // Pure helpers for the files function (no Deno APIs, so they are unit-tested with Vitest).
 
-export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction';
+export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool';
 export type FileKind = 'photo' | 'receipt' | 'invoice' | 'document';
 
-export const ENTITY_TYPES: readonly EntityType[] = ['car', 'job', 'stock_movement', 'transaction'];
+export const ENTITY_TYPES: readonly EntityType[] = ['car', 'job', 'stock_movement', 'transaction', 'tool'];
 export const FILE_KINDS: readonly FileKind[] = ['photo', 'receipt', 'invoice', 'document'];
 
 export const ROOT_FOLDER_NAME = 'Workshop Tracker';
@@ -41,17 +41,36 @@ export interface JobInfo {
   createdYear: number;
 }
 
+export interface ToolInfo {
+  id: string;
+  code: string;
+  name: string;
+}
+
 /**
  * The chain of folders (root first) a file goes into:
  *   Workshop Tracker/Cars/2012 Škoda Octavia ZG1234AB (CAR-001)/Photos | Receipts
  *   Workshop Tracker/Jobs/2026/JOB-001 Marko ZG-123-AB
  *   Workshop Tracker/Invoices/2026
  *   Workshop Tracker/Receipts/2026          (stock purchases, workshop expenses)
+ *   Workshop Tracker/Tools/T-001 Impact wrench   (photos, receipts, manuals)
  */
 export function folderChain(
-  target: { type: 'car'; car: CarInfo; kind: FileKind } | { type: 'job'; job: JobInfo; kind: FileKind } | { type: 'other'; year: number },
+  target:
+    | { type: 'car'; car: CarInfo; kind: FileKind }
+    | { type: 'job'; job: JobInfo; kind: FileKind }
+    | { type: 'tool'; tool: ToolInfo }
+    | { type: 'other'; year: number },
 ): FolderSpec[] {
   const root: FolderSpec = { key: 'root', name: ROOT_FOLDER_NAME, parent: null };
+  if (target.type === 'tool') {
+    const { tool } = target;
+    return [
+      root,
+      { key: 'tools', name: 'Tools', parent: 'root' },
+      { key: `tool:${tool.id}`, name: cleanName(`${tool.code} ${tool.name}`), parent: 'tools' },
+    ];
+  }
   if (target.type === 'car') {
     const { car } = target;
     const carName = cleanName(`${[car.year, car.make, car.model, car.plate].filter(Boolean).join(' ')} (${car.ref})`);

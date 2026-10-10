@@ -9,11 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentProfile } from '@/features/auth/profiles';
 import { useItems } from '@/features/inventory/api';
-import { useBrands, useCategories, useExpenseCategories, useUnits, type Brand } from './api';
-import { AddCategoryDrawer, AddExpenseCategoryDrawer, AddUnitDrawer, EditEntryDrawer, type EditTarget } from './EntryDrawers';
+import { useTools } from '@/features/tools/api';
+import { useBrands, useCategories, useExpenseCategories, useToolCategories, useUnits, type Brand } from './api';
+import { AddCategoryDrawer, AddExpenseCategoryDrawer, AddToolCategoryDrawer, AddUnitDrawer, EditEntryDrawer, type EditTarget } from './EntryDrawers';
 import { AddBrandDrawer } from './AddBrandDrawer';
 
-/** Categories, units and brands. Everyone can add; admins can rename and delete. */
+/** Car makes, categories, units, brands, cost types and tool categories. Everyone can add; admins can rename and delete. */
 export function ListsPage() {
   const me = useCurrentProfile();
   const isAdmin = me.role === 'admin';
@@ -21,6 +22,8 @@ export function ListsPage() {
   const units = useUnits();
   const brands = useBrands();
   const items = useItems();
+  const tools = useTools();
+  const toolCategories = useToolCategories();
   const expenseCategories = useExpenseCategories();
   const expenseUsage = useQuery({
     queryKey: ['expense-category-usage'],
@@ -32,20 +35,25 @@ export function ListsPage() {
       return map;
     },
   });
-  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'cost' | null>(null);
+  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'cost' | 'tool-category' | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
 
   const usage = useMemo(() => {
-    const count = (key: 'category_id' | 'unit_id' | 'brand_id') => {
+    const count = (ids: (string | null)[]) => {
       const map = new Map<string, number>();
-      for (const i of items.data ?? []) {
-        const id = i[key];
-        if (id) map.set(id, (map.get(id) ?? 0) + 1);
-      }
+      for (const id of ids) if (id) map.set(id, (map.get(id) ?? 0) + 1);
       return map;
     };
-    return { categories: count('category_id'), units: count('unit_id'), brands: count('brand_id') };
-  }, [items.data]);
+    const itemRows = items.data ?? [];
+    const toolRows = tools.data ?? [];
+    return {
+      categories: count(itemRows.map((i) => i.category_id)),
+      units: count(itemRows.map((i) => i.unit_id)),
+      // brands are shared by items and tools
+      brands: count([...itemRows.map((i) => i.brand_id), ...toolRows.map((t) => t.brand_id)]),
+      toolCategories: count(toolRows.map((t) => t.category_id)),
+    };
+  }, [items.data, tools.data]);
 
   return (
     <>
@@ -98,9 +106,25 @@ export function ListsPage() {
               title={b.name}
               badge={b.code}
               usedBy={usage.brands.get(b.id) ?? 0}
+              usedLabel="use"
               onEdit={isAdmin ? () => setEditing({ table: 'brands', entry: b, usedBy: usage.brands.get(b.id) ?? 0 }) : undefined}
             />
           ))}
+        </Section>
+
+        <Section title="Tool categories" onAdd={() => setAdding('tool-category')} loading={toolCategories.isPending}>
+          {toolCategories.data?.map((c) => {
+            const used = usage.toolCategories.get(c.id) ?? 0;
+            return (
+              <Row
+                key={c.id}
+                title={c.name}
+                usedBy={used}
+                usedLabel="tool"
+                onEdit={isAdmin ? () => setEditing({ table: 'tool_categories', entry: c, usedBy: used }) : undefined}
+              />
+            );
+          })}
         </Section>
 
         <Section title="Cost types" onAdd={() => setAdding('cost')} loading={expenseCategories.isPending}>
@@ -123,6 +147,7 @@ export function ListsPage() {
       <AddCategoryDrawer open={adding === 'category'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddUnitDrawer open={adding === 'unit'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddBrandDrawer open={adding === 'brand'} onOpenChange={(o) => !o && setAdding(null)} />
+      <AddToolCategoryDrawer open={adding === 'tool-category'} onOpenChange={(o) => !o && setAdding(null)} />
       <EditEntryDrawer target={editing} onClose={() => setEditing(null)} />
     </>
   );

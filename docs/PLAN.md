@@ -1,6 +1,6 @@
 # Workshop Tracker: plan
 
-Status: **approved 10.10.2026, M1–M7 built and deployed; first round of changes after testing done (R1)**.
+Status: **approved 10.10.2026, M1–M7 built and deployed; changes after testing done (R1, R2)**.
 Your answers are recorded in §9 and worked into the sections below. Changes made along the way:
 - categories, units and brands became editable lists;
 - part numbers became unique auto-generated IDs;
@@ -14,6 +14,11 @@ R1 (after the first test round, 10.10.2026):
 - backups can be restored (`admin_restore()`, all or nothing; people are matched to today's users);
 - a car catalogue (makes with logos, models, generations, engines) feeds type-ahead on the car and job forms and
   grows with what is typed; customers' cars gained generation, year and engine.
+
+R2 (10.10.2026):
+- tools & equipment (Inventory → Tools): tool IDs `T-001`, categories list, owner (workshop or a partner), place,
+  condition, lending, "gone" (kept on record), purchase and warranty, photos and receipts in Drive; a workshop
+  tool's purchase can go into Money as a workshop expense (`save_tool_payment()`, cost type Tools).
 
 ---
 

@@ -5,6 +5,7 @@ import {
   Car,
   ChevronRight,
   DatabaseBackup,
+  Hammer,
   MinusCircle,
   Package,
   Receipt,
@@ -38,6 +39,9 @@ import { BuyDrawer } from '@/features/inventory/BuyDrawer';
 import { useJobs } from '@/features/jobs/api';
 import { useSettings } from '@/features/settings/api';
 import { activityLink, useActivity } from '@/features/activity/api';
+import { useTools } from '@/features/tools/api';
+import { ToolBadges } from '@/features/tools/ToolBadges';
+import { lentSince } from '@/domain/tools';
 import { useMoneyFlow } from './api';
 import { MoneyChart } from './MoneyChart';
 import { readRecent } from './recent';
@@ -52,6 +56,7 @@ export function HomePage() {
   const cars = useCars();
   const jobs = useJobs();
   const settings = useSettings();
+  const tools = useTools();
   const today = todayIso();
   const flow = useMoneyFlow(`${lastMonths(12, today)[0]}-01`);
   const [quick, setQuick] = useState<Quick>(null);
@@ -61,6 +66,14 @@ export function HomePage() {
   const lowStock = useMemo(() => (items.data ?? []).filter(itemIsLow), [items.data]);
   const activeCars = useMemo(() => (cars.data ?? []).filter((c) => !isClosed(c.status as CarStatus)), [cars.data]);
   const openJobs = useMemo(() => (jobs.data ?? []).filter((j) => j.status !== 'paid'), [jobs.data]);
+  // lent out or not working: longest away first, then the ones needing repair
+  const toolsToWatch = useMemo(
+    () =>
+      (tools.data ?? [])
+        .filter((t) => !t.gone_on && (t.lent_to || t.condition !== 'good'))
+        .sort((a, b) => (a.lent_on ?? '9999').localeCompare(b.lent_on ?? '9999')),
+    [tools.data],
+  );
   const lastExport = settings.data?.last_export_at;
   const backupDue = me.role === 'admin' && settings.isSuccess && (!lastExport || Date.now() - new Date(lastExport).getTime() > 30 * 86_400_000);
 
@@ -97,7 +110,7 @@ export function HomePage() {
           className="flex h-12 items-center gap-3 rounded-xl border bg-card px-4 text-muted-foreground shadow-xs active:bg-muted"
         >
           <Search className="size-5" />
-          <span className="truncate">Search cars, jobs, parts, contacts…</span>
+          <span className="truncate">Search cars, jobs, parts, tools, contacts…</span>
         </Link>
 
         <div className="grid grid-cols-5 gap-1.5">
@@ -192,7 +205,7 @@ export function HomePage() {
 
         <MoneyChart rows={flow.data} today={today} />
 
-        <RecentlyOpened cars={cars.data} jobs={jobs.data} items={items.data} />
+        <RecentlyOpened cars={cars.data} jobs={jobs.data} items={items.data} tools={tools.data} />
 
         {activeCars.length > 0 && (
           <Card>
@@ -290,6 +303,39 @@ export function HomePage() {
           </Card>
         )}
 
+        {toolsToWatch.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Hammer className="size-5 text-primary" /> Tools lent out or needing repair ({toolsToWatch.length})
+              </CardTitle>
+              <CardAction>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/inventory/tools">All tools</Link>
+                </Button>
+              </CardAction>
+            </CardHeader>
+            <CardContent>
+              <ul className="flex flex-col divide-y">
+                {toolsToWatch.slice(0, 6).map((t) => (
+                  <li key={t.id}>
+                    <Link to={`/inventory/tools/${t.id}`} className="flex items-center gap-2 py-2">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate font-medium">{t.name}</span>
+                        <span className="block truncate text-xs text-muted-foreground">
+                          {t.lent_to && t.lent_on ? `${t.lent_to} has it ${lentSince(t.lent_on, today)}` : t.code}
+                        </span>
+                      </span>
+                      <ToolBadges tool={{ ...t, lent_to: null }} className="shrink-0" />
+                      <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
         <RecentActivity />
       </PageBody>
 
@@ -353,10 +399,12 @@ function RecentlyOpened({
   cars,
   jobs,
   items,
+  tools,
 }: {
   cars: ReturnType<typeof useCars>['data'];
   jobs: ReturnType<typeof useJobs>['data'];
   items: ReturnType<typeof useItems>['data'];
+  tools: ReturnType<typeof useTools>['data'];
 }) {
   const [visits] = useState(readRecent);
   const entries = useMemo(() => {
@@ -368,13 +416,16 @@ function RecentlyOpened({
       } else if (v.kind === 'job') {
         const j = jobs?.find((x) => x.id === v.id);
         if (j) list.push({ key: `job:${j.id}`, to: `/jobs/${j.id}`, icon: Wrench, title: j.customer?.name ?? j.ref, sub: j.ref });
+      } else if (v.kind === 'tool') {
+        const t = tools?.find((x) => x.id === v.id);
+        if (t) list.push({ key: `tool:${t.id}`, to: `/inventory/tools/${t.id}`, icon: Hammer, title: t.name, sub: t.code });
       } else {
         const i = items?.find((x) => x.id === v.id);
         if (i) list.push({ key: `item:${i.id}`, to: `/inventory/${i.id}`, icon: Package, title: i.name, sub: i.part_number });
       }
     }
     return list.slice(0, 8);
-  }, [visits, cars, jobs, items]);
+  }, [visits, cars, jobs, items, tools]);
 
   if (entries.length === 0) return null;
   return (

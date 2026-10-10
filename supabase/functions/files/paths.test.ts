@@ -25,6 +25,14 @@ describe('Drive folders', () => {
     expect(folderChain({ type: 'job', job, kind: 'invoice' }).map((f) => f.key)).toEqual(['root', 'invoices', 'invoices/2026']);
   });
 
+  it('gives every tool its own folder', () => {
+    expect(folderChain({ type: 'tool', tool: { id: 't1', code: 'T-001', name: 'Impact wrench 1/2"' } }).map((f) => f.name)).toEqual([
+      'Workshop Tracker',
+      'Tools',
+      'T-001 Impact wrench 1 2',
+    ]);
+  });
+
   it('puts other receipts by year', () => {
     expect(folderChain({ type: 'other', year: 2026 }).map((f) => f.key)).toEqual(['root', 'receipts', 'receipts/2026']);
   });

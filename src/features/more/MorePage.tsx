@@ -19,7 +19,7 @@ export function MorePage() {
     { to: '/money', label: 'Money', description: 'Wallet, expenses, deposits, transfers', icon: Wallet },
     { to: '/partners', label: 'Partners', description: 'Who put in what, balances', icon: Handshake },
     { to: '/contacts', label: 'Contacts', description: 'Sellers, buyers and customers', icon: BookUser },
-    { to: '/lists', label: 'Lists', description: 'Car makes & models, categories, units, brands, cost types', icon: ListChecks },
+    { to: '/lists', label: 'Lists', description: 'Car makes & models, categories, units, brands, cost types, tool categories', icon: ListChecks },
     { to: '/account', label: 'My account', description: 'Name and password', icon: UserRound },
     ...(me.role === 'admin'
       ? [

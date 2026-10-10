@@ -1,8 +1,8 @@
-// "Recently opened" on the dashboard: the last cars, jobs and items this person opened on this device.
+// "Recently opened" on the dashboard: the last cars, jobs, items and tools this person opened on this device.
 // A per-device convenience, so it lives in localStorage (and the app works fine without it).
 import { useEffect } from 'react';
 
-export type RecentKind = 'car' | 'job' | 'item';
+export type RecentKind = 'car' | 'job' | 'item' | 'tool';
 export interface RecentVisit {
   kind: RecentKind;
   id: string;

@@ -196,6 +196,11 @@ async function folderChainFor(entityType: EntityType, entityId: string, kind: Fi
       kind,
     });
   }
+  if (entityType === 'tool') {
+    const { data: tool } = await admin.from('tools').select('id, code, name').eq('id', entityId).maybeSingle();
+    if (!tool) throw new HttpError(404, 'Tool not found');
+    return folderChain({ type: 'tool', tool });
+  }
   // stock purchases and other money: receipts by year; a car's money goes into the car's folder
   if (entityType === 'transaction') {
     const { data: txn } = await admin.from('transactions').select('id, car_id, job_id, occurred_on').eq('id', entityId).maybeSingle();

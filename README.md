@@ -20,6 +20,7 @@ shared workshop wallet and settling up between partners.
 | M6 | Google Drive uploads | ✅ done |
 | M7 | Dashboard, low-stock alerts, export, polish | ✅ done |
 | R1 | After testing: dashboard with charts, search, Inventory rename, back button, restoring backups, car catalogue with logos | ✅ done |
+| R2 | Tools & equipment we own (Inventory → Tools) | ✅ done |
 
 ## The app at a glance
 
@@ -31,17 +32,19 @@ shared workshop wallet and settling up between partners.
     and this year's profit (cars sold and jobs paid this year);
   - **Money in & out**: a bar chart per month (6 or 12 months; tap a month) and what the money went on and came
     from, for a month, the year or the last 12 months. Moves between the wallet and partners aren't counted;
-  - **recently opened** cars, jobs and items (remembered on each phone);
-  - cars in progress, open and unpaid jobs, low stock, and recent activity (who did what, when).
+  - **recently opened** cars, jobs, items and tools (remembered on each phone);
+  - cars in progress, open and unpaid jobs, low stock, tools lent out or needing repair, and recent activity (who
+    did what, when).
 - **Search** finds cars (make, model, plate, VIN, car ID), jobs (customer, work, plate, invoice number), inventory
-  (name, part number, brand, shelf), contacts (name, phone) and money entries (description, who, amount). Case,
-  accents and spaces or dashes in plates and IDs don't matter: `zg123ab` finds `ZG 123-AB`.
+  (name, part number, brand, shelf), tools (name, tool ID, brand, serial number, who has it), contacts (name, phone)
+  and money entries (description, who, amount). Case, accents and spaces or dashes in plates and IDs don't matter:
+  `zg123ab` finds `ZG 123-AB`.
 - **Bottom bar:** Home · Inventory (red badge = items to buy) · Cars · Jobs · More.
 - **Back arrows** go back to wherever you came from.
 - **More:**
   - Money and Partners;
   - Contacts (sellers, buyers, customers, with tap-to-call);
-  - Lists (car makes & models, categories, units, brands, cost types);
+  - Lists (car makes & models, categories, units, brands, cost types, tool categories);
   - My account;
   - admin only: Users & partners, Workshop settings (invoice header, Google Drive test), Backup & restore.
 
@@ -71,6 +74,26 @@ shared workshop wallet and settling up between partners.
   New categories and units are added only on that page. A new **brand** can also be typed straight into an item.
   Only an admin can rename or delete entries, and an entry that is still used can't be deleted. Brand names are
   case-sensitive.
+
+### Tools & equipment
+
+Inventory has two tabs: **Parts & supplies** (the stock above) and **Tools**, for the things we own and don't use
+up: hand and power tools, the compressor, lifts, the scanner…
+
+- Each tool gets a **tool ID** (`T-001`, filled in automatically, editable, unique), a **category** (a list under
+  More → Lists, added only there), brand (the same brands list as parts) and model, serial number, how many, and
+  where it's kept (type-ahead from the places already used).
+- **Belongs to:** the workshop, or a partner (their own tool kept in the workshop stays theirs).
+- **Lend** records who has it and since when; **Back** when it returns. **Condition:** works, needs repair or broken.
+  **Gone** (sold, lost, stolen, thrown away, given away) takes it off the list but keeps it on record, with
+  "We have it again" to undo. All of this shows in the tool's history and in recent activity.
+- **Purchase:** date, price, shop and warranty end. For a workshop tool, "Bought with workshop money" puts the price
+  into **Money** as a workshop expense (cost type *Tools*, split by default profit shares, paid by the wallet or a
+  partner). Changing the price, date or shop later updates that entry. "Take out of Money" on the tool's page
+  deletes it again, and so does deleting the entry in Money. Older tools can be added without touching Money.
+- Photos and receipts, warranty cards or manuals (PDF too) go into Google Drive: `Workshop Tracker/Tools/T-001 …`.
+- The list filters by lent out, needing repair, owner, category and "no longer have", and shows what the tools on
+  screen cost together.
 
 ## How cars work (short)
 

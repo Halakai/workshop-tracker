@@ -14,6 +14,10 @@ const StockListPage = lazy(() => stock().then((m) => ({ default: m.StockListPage
 const ItemPage = lazy(() => stock().then((m) => ({ default: m.ItemPage })));
 const ItemFormPage = lazy(() => stock().then((m) => ({ default: m.ItemFormPage })));
 const ShoppingListPage = lazy(() => stock().then((m) => ({ default: m.ShoppingListPage })));
+const tools = () => import('@/features/tools/pages');
+const ToolsListPage = lazy(() => tools().then((m) => ({ default: m.ToolsListPage })));
+const ToolPage = lazy(() => tools().then((m) => ({ default: m.ToolPage })));
+const ToolFormPage = lazy(() => tools().then((m) => ({ default: m.ToolFormPage })));
 const CarsListPage = lazy(() => cars().then((m) => ({ default: m.CarsListPage })));
 const CarPage = lazy(() => cars().then((m) => ({ default: m.CarPage })));
 const CarFormPage = lazy(() => cars().then((m) => ({ default: m.CarFormPage })));
@@ -53,6 +57,11 @@ export const router = createHashRouter([
           { path: 'inventory', element: <StockListPage /> },
           { path: 'inventory/new', element: <ItemFormPage /> },
           { path: 'inventory/shopping-list', element: <ShoppingListPage /> },
+          // tools live under inventory, so the Inventory tab stays highlighted
+          { path: 'inventory/tools', element: <ToolsListPage /> },
+          { path: 'inventory/tools/new', element: <ToolFormPage /> },
+          { path: 'inventory/tools/:id', element: <ToolPage /> },
+          { path: 'inventory/tools/:id/edit', element: <ToolFormPage /> },
           { path: 'inventory/:id', element: <ItemPage /> },
           { path: 'inventory/:id/edit', element: <ItemFormPage /> },
           // old links and bookmarks (the section used to be called Stock)

@@ -4,7 +4,7 @@ import { errorMessage } from '@/lib/errors';
 import { resizeToJpeg } from '@/lib/image';
 import type { Tables } from '@/lib/database.types';
 
-export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction';
+export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool';
 export type FileKind = 'photo' | 'receipt' | 'invoice' | 'document';
 export type Attachment = Tables<'attachments'>;
 
