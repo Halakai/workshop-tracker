@@ -1,0 +1,105 @@
+name: CI & deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Typecheck, unit tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  rls:
+    name: RLS & permissions (local Supabase)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Start a throwaway local Supabase and apply all migrations
+        run: npx supabase start -x studio,imgproxy,logflare,vector,mailpit,realtime,storage-api,supavisor
+      - name: Export local URL and keys
+        run: |
+          npx supabase status -o env > "$RUNNER_TEMP/supabase.env"
+          set -a; . "$RUNNER_TEMP/supabase.env"; set +a
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_PUBLISHABLE_KEY=${PUBLISHABLE_KEY:-$ANON_KEY}" >> "$GITHUB_ENV"
+          echo "SUPABASE_SECRET_KEY=${SECRET_KEY:-$SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
+      - run: npm run test:rls
+      - name: Generated database types match the migrations
+        if: always()
+        run: |
+          npx supabase gen types typescript --local --schema public > "$RUNNER_TEMP/database.types.ts"
+          cp "$RUNNER_TEMP/database.types.ts" generated-database.types.ts
+          diff -u src/lib/database.types.ts "$RUNNER_TEMP/database.types.ts"
+      - name: Upload generated types (to copy into src/lib if the check fails)
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: database-types
+          path: generated-database.types.ts
+          if-no-files-found: ignore
+      - name: Edge Function logs
+        if: failure()
+        run: docker logs $(docker ps -q --filter name=supabase_edge_runtime) 2>&1 | tail -100 || true
+
+  build-pages:
+    name: Build for GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: [check, rls]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+          # Repository → Settings → Secrets and variables → Actions → Variables (both are safe to be public)
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: build-pages
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
