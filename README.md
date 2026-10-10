@@ -42,9 +42,10 @@ workshop wallet and settling up between partners.
 - **Part number** = the item's unique ID: category code + brand code + number, e.g. `FLD-CAST-001`. It is
   filled in automatically and can be edited. Uniqueness ignores upper/lower case. The maker's own number goes in
   **Manufacturer ref**.
-- **Categories, units and brands** are lists (More → Categories, units & brands). Everyone can add entries
-  (typing a new brand on an item adds it). Only an admin can rename or delete them, and an entry that is still
-  used can't be deleted. Brand names are case-sensitive.
+- **Categories, units and brands** are lists (More → Categories, units & brands). Everyone can add entries there.
+  New categories and units are added only on that page. A new **brand** can also be typed straight into an item.
+  Only an admin can rename or delete entries, and an entry that is still used can't be deleted. Brand names are
+  case-sensitive.
 
 ## Things to know## Things to know
 

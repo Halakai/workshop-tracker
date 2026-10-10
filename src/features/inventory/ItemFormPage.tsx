@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Archive, ArchiveRestore, Loader2, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Archive, ArchiveRestore, Loader2, RefreshCw, Trash2 } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { SuffixInput } from '@/components/SuffixInput';
 import { SuggestionInput } from '@/components/SuggestionInput';
@@ -18,7 +18,6 @@ import { milliToDb, milliToInput, parseQuantity, toMilli } from '@/domain/quanti
 import { deriveCode, nextPartNumber, partNumberPrefix, partNumberTaken } from '@/domain/codes';
 import { syncErrorMessage } from '@/lib/errors';
 import { ensureBrand, useBrands, useCategories, useUnits } from '@/features/catalog/api';
-import { AddCategoryDrawer, AddUnitDrawer } from '@/features/catalog/EntryDrawers';
 import { useDeleteItem, useItem, useItemMovements, useItems, useSaveItem, type Item } from './api';
 
 const schema = z.object({
@@ -63,8 +62,6 @@ function ItemForm({ item }: { item?: Item }) {
   const brands = useBrands().data ?? [];
   const movements = useItemMovements(item?.id);
   const hasMovements = (movements.data?.length ?? 0) > 0;
-  const [addingCategory, setAddingCategory] = useState(false);
-  const [addingUnit, setAddingUnit] = useState(false);
   // new items: the part number follows category + brand until you type your own
   const [partNumberEdited, setPartNumberEdited] = useState(Boolean(item));
 
@@ -183,18 +180,13 @@ function ItemForm({ item }: { item?: Item }) {
                 control={form.control}
                 name="category_id"
                 render={({ field }) => (
-                  <div className="flex flex-wrap gap-2">
-                    <ToggleGroup type="single" variant="outline" spacing={2} className="flex flex-wrap" value={field.value} onValueChange={(v) => v && field.onChange(v)}>
-                      {categories.map((c) => (
-                        <ToggleGroupItem key={c.id} value={c.id} className={chipClass}>
-                          {c.name}
-                        </ToggleGroupItem>
-                      ))}
-                    </ToggleGroup>
-                    <Button type="button" variant="ghost" onClick={() => setAddingCategory(true)}>
-                      <Plus /> New
-                    </Button>
-                  </div>
+                  <ToggleGroup type="single" variant="outline" spacing={2} className="flex flex-wrap" value={field.value} onValueChange={(v) => v && field.onChange(v)}>
+                    {categories.map((c) => (
+                      <ToggleGroupItem key={c.id} value={c.id} className={chipClass}>
+                        {c.name}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
                 )}
               />
               <FieldError errors={[form.formState.errors.category_id]} />
@@ -206,33 +198,33 @@ function ItemForm({ item }: { item?: Item }) {
                 control={form.control}
                 name="unit_id"
                 render={({ field }) => (
-                  <div className="flex flex-wrap gap-2">
-                    <ToggleGroup
-                      type="single"
-                      variant="outline"
-                      spacing={2}
-                      className="flex flex-wrap"
-                      value={field.value}
-                      disabled={hasMovements}
-                      onValueChange={(v) => v && field.onChange(v)}
-                    >
-                      {units.map((u) => (
-                        <ToggleGroupItem key={u.id} value={u.id} className={chipClass}>
-                          {u.name}
-                        </ToggleGroupItem>
-                      ))}
-                    </ToggleGroup>
-                    {!hasMovements && (
-                      <Button type="button" variant="ghost" onClick={() => setAddingUnit(true)}>
-                        <Plus /> New
-                      </Button>
-                    )}
-                  </div>
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    spacing={2}
+                    className="flex flex-wrap"
+                    value={field.value}
+                    disabled={hasMovements}
+                    onValueChange={(v) => v && field.onChange(v)}
+                  >
+                    {units.map((u) => (
+                      <ToggleGroupItem key={u.id} value={u.id} className={chipClass}>
+                        {u.name}
+                      </ToggleGroupItem>
+                    ))}
+                  </ToggleGroup>
                 )}
               />
               {hasMovements && <FieldDescription>The unit is fixed once stock has been recorded.</FieldDescription>}
               <FieldError errors={[form.formState.errors.unit_id]} />
             </Field>
+            <FieldDescription className="-mt-3">
+              Missing a category or unit? Add it under{' '}
+              <Link to="/lists" className="text-primary underline">
+                More → Categories, units &amp; brands
+              </Link>
+              .
+            </FieldDescription>
 
             <Field data-invalid={!!form.formState.errors.brand}>
               <FieldLabel htmlFor="item-brand">Brand</FieldLabel>
@@ -323,17 +315,6 @@ function ItemForm({ item }: { item?: Item }) {
           </div>
         )}
       </PageBody>
-
-      <AddCategoryDrawer
-        open={addingCategory}
-        onOpenChange={setAddingCategory}
-        onAdded={(c) => form.setValue('category_id', c.id, { shouldValidate: true })}
-      />
-      <AddUnitDrawer
-        open={addingUnit}
-        onOpenChange={setAddingUnit}
-        onAdded={(u) => form.setValue('unit_id', u.id, { shouldValidate: true })}
-      />
     </>
   );
 }
