@@ -48,21 +48,61 @@ export function issueDelta(stock: StockLevel, qty: Milli): StockDelta {
 }
 
 /**
- * A stock count: the counted quantity replaces what the app thought we had.
- * Going up is valued at the current average cost; if the stock was empty, `unitCostIfEmpty`
- * (cents per unit) is required, e.g. for opening stock.
+ * Adding stock without a purchase (found, counted more): valued at the current average cost;
+ * if the stock was empty, `unitCostIfEmpty` (cents per unit) is required, e.g. for opening stock.
  */
+export function increaseDelta(stock: StockLevel, qty: Milli, unitCostIfEmpty?: Cents): StockDelta {
+  assertLevel(stock);
+  if (qty <= 0) throw new StockError('Quantity must be more than 0');
+  if (stock.qty > 0) return { qty, value: mulDivRound(stock.value, qty, stock.qty) };
+  if (unitCostIfEmpty === undefined || unitCostIfEmpty < 0) {
+    throw new StockError('Enter what one unit is worth');
+  }
+  return { qty, value: mulDivRound(unitCostIfEmpty, qty, MILLI_PER_UNIT) };
+}
+
+/** A stock count: the counted quantity replaces what the app thought we had. */
 export function countDelta(stock: StockLevel, counted: Milli, unitCostIfEmpty?: Cents): StockDelta {
   assertLevel(stock);
   if (counted < 0) throw new StockError('Count can’t be negative');
   const diff = counted - stock.qty;
   if (diff === 0) throw new StockError('The count matches the stock – nothing to correct');
-  if (diff < 0) return issueDelta(stock, -diff);
-  if (stock.qty > 0) return { qty: diff, value: mulDivRound(stock.value, diff, stock.qty) };
-  if (unitCostIfEmpty === undefined || unitCostIfEmpty < 0) {
-    throw new StockError('Enter what one unit is worth');
+  return diff < 0 ? issueDelta(stock, -diff) : increaseDelta(stock, diff, unitCostIfEmpty);
+}
+
+/**
+ * Ways to correct stock without buying or using it:
+ *   count   – enter what is on the shelf (the difference is booked)
+ *   damaged – enter how much was damaged (taken out)
+ *   lost    – enter how much is missing (taken out)
+ *   found   – enter how much turned up (added)
+ */
+export type AdjustMode = 'count' | 'damaged' | 'lost' | 'found';
+
+export function adjustmentDelta(stock: StockLevel, mode: AdjustMode, amount: Milli, unitCostIfEmpty?: Cents): StockDelta {
+  switch (mode) {
+    case 'count':
+      return countDelta(stock, amount, unitCostIfEmpty);
+    case 'damaged':
+    case 'lost':
+      return issueDelta(stock, amount);
+    case 'found':
+      return increaseDelta(stock, amount, unitCostIfEmpty);
   }
-  return { qty: diff, value: mulDivRound(unitCostIfEmpty, diff, MILLI_PER_UNIT) };
+}
+
+/** The reason stored with the correction. */
+export function adjustmentReason(mode: AdjustMode, stock: StockLevel): string {
+  switch (mode) {
+    case 'count':
+      return stock.qty === 0 ? 'Opening stock' : 'Stock count';
+    case 'damaged':
+      return 'Damaged';
+    case 'lost':
+      return 'Lost';
+    case 'found':
+      return 'Found';
+  }
 }
 
 export function applyDelta(stock: StockLevel, delta: StockDelta): StockLevel {
@@ -145,22 +185,21 @@ export function buildOverheadUse(args: {
   };
 }
 
-export function buildCount(args: {
+export function buildAdjustment(args: {
   stock: StockLevel;
-  counted: Milli;
+  mode: AdjustMode;
+  amount: Milli;
   unitCostIfEmpty?: Cents;
-  reason: string;
   shares: Share[];
   occurredOn: string;
   note?: string;
 }): MovementInput {
-  if (!args.reason.trim()) throw new StockError('Give a reason for the correction');
-  const delta = countDelta(args.stock, args.counted, args.unitCostIfEmpty);
+  const delta = adjustmentDelta(args.stock, args.mode, args.amount, args.unitCostIfEmpty);
   return {
     type: 'adjustment',
     delta,
     occurredOn: args.occurredOn,
-    reason: args.reason.trim(),
+    reason: adjustmentReason(args.mode, args.stock),
     note: args.note,
     allocations: allocateByShares(delta.value, args.shares),
   };

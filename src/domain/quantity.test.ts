@@ -43,7 +43,7 @@ describe('quantities', () => {
   it('respects options', () => {
     expect(parseQuantity('0', { allowZero: true })).toBe(0);
     expect(parseQuantity('-1.5', { allowNegative: true })).toBe(-1500);
-    expect(parseQuantity('2', { unit: 'pcs' })).toBe(2000);
-    expect(parseQuantity('2.5', { unit: 'pcs' })).toBeNull();
+    expect(parseQuantity('2', { wholeOnly: true })).toBe(2000);
+    expect(parseQuantity('2.5', { wholeOnly: true })).toBeNull();
   });
 });

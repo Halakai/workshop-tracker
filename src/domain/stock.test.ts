@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   applyDelta,
   averageUnitCost,
-  buildCount,
+  buildAdjustment,
   buildOverheadUse,
   buildPurchase,
+  adjustmentDelta,
   countDelta,
   isLowStock,
   issueDelta,
@@ -148,12 +149,35 @@ describe('movement builders', () => {
     expect(buildOverheadUse({ stock: { qty: 1000, value: 0 }, qty: 1000, shares: half, occurredOn: '2026-10-10' }).allocations).toEqual([]);
   });
 
-  it('a count needs a reason and is split by shares', () => {
-    expect(() =>
-      buildCount({ stock: { qty: 2000, value: 1000 }, counted: 1000, reason: ' ', shares: half, occurredOn: '2026-10-10' }),
-    ).toThrow('reason');
-    const m = buildCount({ stock: { qty: 2000, value: 1001 }, counted: 3000, reason: 'Found a box', shares: half, occurredOn: '2026-10-10' });
-    expect(m.delta).toEqual({ qty: 1000, value: 501 });
+  it('adjustments are split by shares and add up to the value change', () => {
+    const m = buildAdjustment({ stock: { qty: 2000, value: 1001 }, mode: 'found', amount: 1000, shares: half, occurredOn: '2026-10-10' });
+    expect(m).toMatchObject({ type: 'adjustment', reason: 'Found', delta: { qty: 1000, value: 501 } });
     expect(m.allocations.reduce((s, a) => s + a.amount, 0)).toBe(501);
+  });
+});
+
+describe('adjustment modes', () => {
+  const stock = { qty: 3000, value: 5400 }; // 3 L at 18.00€/L
+
+  it('damaged and lost take the entered amount out at average cost', () => {
+    expect(adjustmentDelta(stock, 'damaged', 1235)).toEqual({ qty: -1235, value: -2223 });
+    expect(adjustmentDelta(stock, 'lost', 3000)).toEqual({ qty: -3000, value: -5400 });
+    expect(() => adjustmentDelta(stock, 'lost', 3500)).toThrow('Not enough');
+  });
+
+  it('found adds the entered amount at average cost, or at a unit cost when empty', () => {
+    expect(adjustmentDelta(stock, 'found', 500)).toEqual({ qty: 500, value: 900 });
+    expect(adjustmentDelta({ qty: 0, value: 0 }, 'found', 2000, 450)).toEqual({ qty: 2000, value: 900 });
+    expect(() => adjustmentDelta({ qty: 0, value: 0 }, 'found', 2000)).toThrow('worth');
+  });
+
+  it('count takes the counted total', () => {
+    expect(adjustmentDelta(stock, 'count', 2000)).toEqual({ qty: -1000, value: -1800 });
+  });
+
+  it('stores a readable reason; counting an empty item is opening stock', () => {
+    expect(buildAdjustment({ stock: { qty: 0, value: 0 }, mode: 'count', amount: 4000, unitCostIfEmpty: 550, shares: half, occurredOn: '2026-10-10' }).reason).toBe('Opening stock');
+    expect(buildAdjustment({ stock, mode: 'count', amount: 1000, shares: half, occurredOn: '2026-10-10' }).reason).toBe('Stock count');
+    expect(buildAdjustment({ stock, mode: 'damaged', amount: 1000, shares: half, occurredOn: '2026-10-10' }).reason).toBe('Damaged');
   });
 });

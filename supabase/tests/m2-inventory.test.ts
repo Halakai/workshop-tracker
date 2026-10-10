@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { anonClient, createAuthUser, service, signIn, testEmail, type Client } from './helpers';
+import { anonClient, createAuthUser, service, signIn, testEmail, uniqueText, type Client } from './helpers';
 import { toPostStockMovementArgs, STALE_STOCK } from '@/features/inventory/rpc';
-import { buildCount, buildOverheadUse, buildPurchase, issueDelta, type MovementInput } from '@/domain/stock';
+import { buildAdjustment, buildOverheadUse, buildPurchase, issueDelta, type MovementInput } from '@/domain/stock';
 import { toMilli } from '@/domain/quantity';
 
 let memberId: string;
@@ -12,6 +12,8 @@ let externalAccount: string;
 let asMember: Client;
 let asOutsider: Client;
 let shares: { id: string; bp: number }[];
+let categoryId: string;
+let unitIds: Record<string, string>;
 
 beforeAll(async () => {
   const memberEmail = testEmail('stock-member');
@@ -35,12 +37,21 @@ beforeAll(async () => {
   walletAccount = accounts!.find((a) => a.kind === 'wallet')!.id;
   externalAccount = accounts!.find((a) => a.kind === 'external')!.id;
 
+  const { data: categories } = await service.from('item_categories').select('id, code');
+  categoryId = categories!.find((c) => c.code === 'FLD')!.id;
+  const { data: units } = await service.from('units').select('id, name');
+  unitIds = Object.fromEntries(units!.map((u) => [u.name, u.id]));
+
   asMember = await signIn(memberEmail);
   asOutsider = await signIn(outsiderEmail);
 });
 
 async function newItem(name: string, unit: 'pcs' | 'L' = 'L') {
-  const { data, error } = await asMember.from('items').insert({ name, unit, category: 'fluid' }).select().single();
+  const { data, error } = await asMember
+    .from('items')
+    .insert({ name, unit_id: unitIds[unit], category_id: categoryId, part_number: uniqueText('T') })
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }
@@ -211,20 +222,33 @@ describe('workshop use and corrections', () => {
     expect(res.error?.message).toMatch(/don't add up/);
   });
 
-  it('a stock count needs a reason; opening stock uses an entered unit cost', async () => {
+  it('a correction needs a reason; opening stock uses an entered unit cost', async () => {
     const item = await newItem('Bulbs H7', 'pcs');
+    const empty = { qty: 0, value: 0 };
     const noReason = await post(asMember, item.id, {
-      ...buildCount({ stock: { qty: 0, value: 0 }, counted: 4000, unitCostIfEmpty: 550, reason: 'x', shares, occurredOn: today }),
+      ...buildAdjustment({ stock: empty, mode: 'count', amount: 4000, unitCostIfEmpty: 550, shares, occurredOn: today }),
       reason: '',
     });
     expect(noReason.error).not.toBeNull();
 
-    const opening = buildCount({ stock: { qty: 0, value: 0 }, counted: 4000, unitCostIfEmpty: 550, reason: 'Opening stock', shares, occurredOn: today });
+    const opening = buildAdjustment({ stock: empty, mode: 'count', amount: 4000, unitCostIfEmpty: 550, shares, occurredOn: today });
     const res = await post(asMember, item.id, opening);
     expect(res.error).toBeNull();
     expect((await readItem(item.id)).stock).toEqual({ qty: 4000, value: 2200 });
     const { data: allocations } = await service.from('allocations').select('amount_cents').eq('stock_movement_id', res.data!);
     expect(allocations?.reduce((s, a) => s + a.amount_cents, 0)).toBe(2200);
+
+    const damaged = await post(asMember, item.id, buildAdjustment({ stock: (await readItem(item.id)).stock, mode: 'damaged', amount: 1000, shares, occurredOn: today }));
+    expect(damaged.error).toBeNull();
+    expect((await readItem(item.id)).stock).toEqual({ qty: 3000, value: 1650 });
+    const { data: movement } = await service.from('stock_movements').select('reason').eq('id', damaged.data!).single();
+    expect(movement?.reason).toBe('Damaged');
+  });
+
+  it('whole-number units refuse fractions', async () => {
+    const item = await newItem('Bolts', 'pcs');
+    const res = await post(asMember, item.id, buildPurchase({ qty: 1500, totalCost: 100, paidBy: walletAccount, occurredOn: today }));
+    expect(res.error?.message).toMatch(/whole pcs/);
   });
 
   it('using everything up leaves exactly zero value', async () => {

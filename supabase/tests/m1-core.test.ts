@@ -256,10 +256,24 @@ describe('admin', () => {
   });
 
   it('can never leave the app without an active admin', async () => {
-    const demote = await adminUsers(asAdmin, { action: 'set_role', user_id: adminId, role: 'member' });
-    expect(demote.status).toBe(409);
-    const disableSelf = await adminUsers(asAdmin, { action: 'set_active', user_id: adminId, active: false });
-    expect(disableSelf.status).toBe(409);
+    // other test files create admins too: make this one the only active admin for the check
+    const { data: others } = await service
+      .from('profiles')
+      .update({ is_active: false })
+      .eq('role', 'admin')
+      .eq('is_active', true)
+      .neq('id', adminId)
+      .select('id');
+    try {
+      const demote = await adminUsers(asAdmin, { action: 'set_role', user_id: adminId, role: 'member' });
+      expect(demote.status).toBe(409);
+      const disableSelf = await adminUsers(asAdmin, { action: 'set_active', user_id: adminId, active: false });
+      expect(disableSelf.status).toBe(409);
+    } finally {
+      if (others?.length) {
+        await service.from('profiles').update({ is_active: true }).in('id', others.map((o) => o.id));
+      }
+    }
   });
 
   it('disabling a member cuts off their access immediately; enabling restores it', async () => {

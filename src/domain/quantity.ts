@@ -1,10 +1,8 @@
 // Quantities are handled as integer THOUSANDTHS of a unit ("milli"): 4.5 L → 4500.
 // The database stores numeric(12,3), so three decimals are exact and no float math is needed.
+// Units come from the editable units list; a unit can require whole numbers (e.g. pcs).
 export type Milli = number;
 export const MILLI_PER_UNIT = 1000;
-
-export type Unit = 'pcs' | 'L' | 'ml' | 'kg' | 'm';
-export const UNITS: Unit[] = ['pcs', 'L', 'ml', 'kg', 'm'];
 
 /** Value from the database (numeric arrives as a JSON number, e.g. 4.5) → milli. */
 export function toMilli(value: number | string): Milli {
@@ -27,7 +25,7 @@ export function milliToInput(milli: Milli): string {
 }
 
 /** "4.5 L", "12 pcs", "-0.25 kg". */
-export function formatQuantity(milli: Milli, unit?: Unit): string {
+export function formatQuantity(milli: Milli, unit?: string): string {
   const number = milliToInput(milli).replace(/^(-?)(\d+)/, (_, sign: string, int: string) =>
     sign + int.replace(/\B(?=(\d{3})+(?!\d))/g, ' '),
   );
@@ -36,11 +34,11 @@ export function formatQuantity(milli: Milli, unit?: Unit): string {
 
 /**
  * Parses typed quantities: "4.5", "4,5", "12", "0.25". Up to 3 decimals.
- * Pieces must be whole numbers. Returns null if invalid.
+ * With `wholeOnly` (e.g. pieces) only whole numbers are accepted. Returns null if invalid.
  */
 export function parseQuantity(
   input: string,
-  options: { unit?: Unit; allowZero?: boolean; allowNegative?: boolean } = {},
+  options: { wholeOnly?: boolean; allowZero?: boolean; allowNegative?: boolean } = {},
 ): Milli | null {
   let s = input.trim().replace(/[\s ]/g, '');
   let negative = false;
@@ -54,7 +52,7 @@ export function parseQuantity(
   if (!Number.isSafeInteger(milli)) return null;
   if (negative && !options.allowNegative) return null;
   if (milli === 0 && !options.allowZero) return null;
-  if (options.unit === 'pcs' && milli % MILLI_PER_UNIT !== 0) return null;
+  if (options.wholeOnly && milli % MILLI_PER_UNIT !== 0) return null;
   return negative ? -milli : milli;
 }
 

@@ -33,6 +33,12 @@ export function testEmail(name: string) {
   return `${name}-${runId}@test.local`;
 }
 
+let seq = 0;
+/** Unique text for this test run (part numbers, brand names …). */
+export function uniqueText(prefix: string) {
+  return `${prefix}-${runId}-${++seq}`.toUpperCase();
+}
+
 export async function createAuthUser(email: string): Promise<string> {
   const { data, error } = await service.auth.admin.createUser({ email, password: PASSWORD, email_confirm: true });
   if (error) throw error;
