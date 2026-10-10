@@ -1,6 +1,7 @@
 import { NavLink } from 'react-router';
 import { Car, House, Menu, Package, Wrench, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useLowStockItems } from '@/features/inventory/api';
 
 interface NavItem {
   to: string;
@@ -9,15 +10,15 @@ interface NavItem {
   badge?: number;
 }
 
-const items: NavItem[] = [
-  { to: '/', label: 'Home', icon: House },
-  { to: '/stock', label: 'Stock', icon: Package },
-  { to: '/cars', label: 'Cars', icon: Car },
-  { to: '/jobs', label: 'Jobs', icon: Wrench },
-  { to: '/more', label: 'More', icon: Menu },
-];
-
 export function BottomNav() {
+  const lowStock = useLowStockItems().length;
+  const items: NavItem[] = [
+    { to: '/', label: 'Home', icon: House },
+    { to: '/stock', label: 'Stock', icon: Package, badge: lowStock },
+    { to: '/cars', label: 'Cars', icon: Car },
+    { to: '/jobs', label: 'Jobs', icon: Wrench },
+    { to: '/more', label: 'More', icon: Menu },
+  ];
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur supports-backdrop-filter:bg-background/85">
       <ul className="mx-auto grid max-w-2xl grid-cols-5">

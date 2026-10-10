@@ -12,13 +12,28 @@ workshop wallet and settling up between partners.
 
 | Milestone | What | State |
 |---|---|---|
-| M1 | Scaffold, sign-in, admin user management, CI + Pages deploy | in progress |
-| M2 | Inventory and stock movements | |
+| M1 | Scaffold, sign-in, admin user management, CI + Pages deploy | ✅ done |
+| M2 | Inventory and stock movements | ✅ done |
 | M3 | Cars and their costs | |
 | M4 | Wallet, ledger and settling up | |
 | M5 | Customer jobs and PDF invoices | |
 | M6 | Google Drive uploads | |
 | M7 | Dashboard, low-stock alerts, export, polish | |
+
+## How stock works (short)
+
+- Every item's quantity changes **only** through movements: **Buy**, **Use**, **Count** (and, from M3/M5, use on a
+  car or job and return to stock). Each movement records who added it and when.
+- Stock is valued at the **moving weighted average** cost. "Used 4.5 L of oil" costs 4.5 × the average price per
+  litre, and when an item runs out, its remaining value goes with the last use, so rounding never adds up.
+- **Buy** records who paid (the wallet or a partner) as an expense in the ledger.
+- **Use in the workshop** (overhead, e.g. brake cleaner or gloves) and **Count** corrections are split between the
+  partners by their default profit shares.
+- **Undo** works on an item's latest movement and restores exactly the previous state, including the payment.
+  Correct older mistakes with a **Count**.
+- An item shows up on the **shopping list** and in the red badge when it is at or below its minimum.
+- **Starting out:** add the item, then tap **Count**, enter what's on the shelf and what one unit is worth
+  ("Opening stock").
 
 ## Things to know
 

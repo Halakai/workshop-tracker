@@ -84,6 +84,156 @@ export type Database = {
           },
         ];
       };
+      allocations: {
+        Row: {
+          amount_cents: number;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          occurred_on: string;
+          partner_id: string;
+          stock_movement_id: string | null;
+          transaction_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          amount_cents: number;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          occurred_on: string;
+          partner_id: string;
+          stock_movement_id?: string | null;
+          transaction_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          amount_cents?: number;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          occurred_on?: string;
+          partner_id?: string;
+          stock_movement_id?: string | null;
+          transaction_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "allocations_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_partner_id_fkey";
+            columns: ["partner_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_stock_movement_id_fkey";
+            columns: ["stock_movement_id"];
+            isOneToOne: false;
+            referencedRelation: "stock_movements";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_transaction_id_fkey";
+            columns: ["transaction_id"];
+            isOneToOne: false;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "allocations_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      items: {
+        Row: {
+          archived_at: string | null;
+          brand: string | null;
+          category: Database["public"]["Enums"]["item_category"];
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          location: string | null;
+          min_qty: number;
+          name: string;
+          notes: string | null;
+          part_number: string | null;
+          qty_on_hand: number;
+          stock_value_cents: number;
+          unit: Database["public"]["Enums"]["item_unit"];
+          updated_at: string;
+          updated_by: string | null;
+          version: number;
+        };
+        Insert: {
+          archived_at?: string | null;
+          brand?: string | null;
+          category?: Database["public"]["Enums"]["item_category"];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          location?: string | null;
+          min_qty?: number;
+          name: string;
+          notes?: string | null;
+          part_number?: string | null;
+          qty_on_hand?: number;
+          stock_value_cents?: number;
+          unit?: Database["public"]["Enums"]["item_unit"];
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
+        Update: {
+          archived_at?: string | null;
+          brand?: string | null;
+          category?: Database["public"]["Enums"]["item_category"];
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          location?: string | null;
+          min_qty?: number;
+          name?: string;
+          notes?: string | null;
+          part_number?: string | null;
+          qty_on_hand?: number;
+          stock_value_cents?: number;
+          unit?: Database["public"]["Enums"]["item_unit"];
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "items_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "items_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
@@ -204,18 +354,228 @@ export type Database = {
           },
         ];
       };
+      stock_movements: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          item_id: string;
+          note: string | null;
+          occurred_on: string;
+          qty_delta: number;
+          reason: string | null;
+          seq: number;
+          supplier: string | null;
+          transaction_id: string | null;
+          type: Database["public"]["Enums"]["movement_type"];
+          updated_at: string;
+          updated_by: string | null;
+          value_delta_cents: number;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          item_id: string;
+          note?: string | null;
+          occurred_on?: string;
+          qty_delta: number;
+          reason?: string | null;
+          seq?: never;
+          supplier?: string | null;
+          transaction_id?: string | null;
+          type: Database["public"]["Enums"]["movement_type"];
+          updated_at?: string;
+          updated_by?: string | null;
+          value_delta_cents: number;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          item_id?: string;
+          note?: string | null;
+          occurred_on?: string;
+          qty_delta?: number;
+          reason?: string | null;
+          seq?: never;
+          supplier?: string | null;
+          transaction_id?: string | null;
+          type?: Database["public"]["Enums"]["movement_type"];
+          updated_at?: string;
+          updated_by?: string | null;
+          value_delta_cents?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_movements_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_movements_transaction_id_fkey";
+            columns: ["transaction_id"];
+            isOneToOne: true;
+            referencedRelation: "transactions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_movements_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      transactions: {
+        Row: {
+          amount_cents: number;
+          category: string;
+          counterparty: string | null;
+          created_at: string;
+          created_by: string | null;
+          currency: string;
+          description: string | null;
+          from_account_id: string;
+          id: string;
+          kind: Database["public"]["Enums"]["txn_kind"];
+          occurred_on: string;
+          to_account_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          amount_cents: number;
+          category: string;
+          counterparty?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          description?: string | null;
+          from_account_id: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["txn_kind"];
+          occurred_on?: string;
+          to_account_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          amount_cents?: number;
+          category?: string;
+          counterparty?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          currency?: string;
+          description?: string | null;
+          from_account_id?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["txn_kind"];
+          occurred_on?: string;
+          to_account_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "transactions_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_from_account_id_fkey";
+            columns: ["from_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_to_account_id_fkey";
+            columns: ["to_account_id"];
+            isOneToOne: false;
+            referencedRelation: "accounts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
-      [_ in never]: never;
+      item_last_purchases: {
+        Row: {
+          item_id: string | null;
+          occurred_on: string | null;
+          qty: number | null;
+          supplier: string | null;
+          total_cents: number | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "items";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Functions: {
       admin_set_default_shares: {
         Args: { p_actor: string; p_shares: Json };
         Returns: undefined;
       };
+      post_stock_movement: {
+        Args: {
+          p_allocations?: Json;
+          p_expected_version: number;
+          p_item_id: string;
+          p_note?: string;
+          p_occurred_on?: string;
+          p_paid_by?: string;
+          p_qty_delta: number;
+          p_reason?: string;
+          p_supplier?: string;
+          p_type: Database["public"]["Enums"]["movement_type"];
+          p_value_delta_cents: number;
+        };
+        Returns: string;
+      };
+      undo_stock_movement: {
+        Args: { p_movement_id: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       account_kind: "wallet" | "partner" | "external";
+      item_category: "part" | "consumable" | "fluid" | "other";
+      item_unit: "pcs" | "L" | "ml" | "kg" | "m";
+      movement_type:
+        | "purchase"
+        | "use_car"
+        | "use_job"
+        | "overhead"
+        | "adjustment"
+        | "return";
+      txn_kind: "deposit" | "withdrawal" | "expense" | "income" | "transfer";
       user_role: "admin" | "member";
     };
     CompositeTypes: {
@@ -345,6 +705,17 @@ export const Constants = {
   public: {
     Enums: {
       account_kind: ["wallet", "partner", "external"],
+      item_category: ["part", "consumable", "fluid", "other"],
+      item_unit: ["pcs", "L", "ml", "kg", "m"],
+      movement_type: [
+        "purchase",
+        "use_car",
+        "use_job",
+        "overhead",
+        "adjustment",
+        "return",
+      ],
+      txn_kind: ["deposit", "withdrawal", "expense", "income", "transfer"],
       user_role: ["admin", "member"],
     },
   },
