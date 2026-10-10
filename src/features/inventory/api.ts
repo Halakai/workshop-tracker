@@ -6,8 +6,18 @@ import { toMilli } from '@/domain/quantity';
 import { isLowStock, type MovementInput, type StockLevel } from '@/domain/stock';
 import { STALE_STOCK, toPostStockMovementArgs } from './rpc';
 
-export type Item = Tables<'items'>;
+export type ItemRow = Tables<'items'>;
 export type Movement = Tables<'stock_movements'>;
+
+/** Items always come with their category, unit and brand. */
+const ITEM_SELECT = '*, category:item_categories(id, name, code), unit:units(id, name, whole_only), brand:brands(id, name, code)';
+
+async function fetchItems() {
+  const { data, error } = await supabase.from('items').select(ITEM_SELECT).order('name');
+  if (error) throw error;
+  return data;
+}
+export type Item = Awaited<ReturnType<typeof fetchItems>>[number];
 export type MovementWithPayment = Movement & { transaction: { from_account_id: string } | null };
 
 export const inventoryKeys = {
@@ -17,11 +27,11 @@ export const inventoryKeys = {
   suppliers: ['suppliers'] as const,
 };
 
-export function stockOf(item: Pick<Item, 'qty_on_hand' | 'stock_value_cents'>): StockLevel {
+export function stockOf(item: Pick<ItemRow, 'qty_on_hand' | 'stock_value_cents'>): StockLevel {
   return { qty: toMilli(item.qty_on_hand), value: item.stock_value_cents };
 }
 
-export function itemIsLow(item: Item): boolean {
+export function itemIsLow(item: ItemRow): boolean {
   return !item.archived_at && isLowStock(toMilli(item.qty_on_hand), toMilli(item.min_qty));
 }
 
@@ -29,11 +39,7 @@ export function itemIsLow(item: Item): boolean {
 export function useItems() {
   return useQuery({
     queryKey: inventoryKeys.items,
-    queryFn: async () => {
-      const { data, error } = await supabase.from('items').select('*').order('name');
-      if (error) throw error;
-      return data;
-    },
+    queryFn: fetchItems,
   });
 }
 
@@ -96,15 +102,26 @@ export function useSaveItem() {
     mutationFn: async (args: { id?: string; values: TablesUpdate<'items'> }) => {
       if (args.id) {
         const { data, error } = await supabase.from('items').update(args.values).eq('id', args.id).select().single();
-        if (error) throw error;
+        if (error) throw partNumberError(error);
         return data;
       }
       const { data, error } = await supabase.from('items').insert(args.values as TablesInsert<'items'>).select().single();
-      if (error) throw error;
+      if (error) throw partNumberError(error);
       return data;
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: inventoryKeys.items }),
+    // saving can add a new brand on the way
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: inventoryKeys.items }),
+        queryClient.invalidateQueries({ queryKey: ['brands'] }),
+      ]),
   });
+}
+
+function partNumberError(error: { code?: string; message: string }) {
+  return error.code === '23505' && error.message.includes('part_number')
+    ? new Error('This part number is already used by another item.')
+    : error;
 }
 
 export function useDeleteItem() {
@@ -138,7 +155,7 @@ function invalidateStock(queryClient: ReturnType<typeof useQueryClient>, itemId:
 export function usePostMovement() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ itemId, build }: { itemId: string; build: (item: Item) => MovementInput }) => {
+    mutationFn: async ({ itemId, build }: { itemId: string; build: (item: ItemRow) => MovementInput }) => {
       for (let attempt = 0; ; attempt++) {
         const { data: item, error } = await supabase.from('items').select('*').eq('id', itemId).single();
         if (error) throw error;
@@ -165,4 +182,9 @@ export function useUndoMovement() {
     },
     onSettled: (_data, _error, movement) => invalidateStock(queryClient, movement.item_id),
   });
+}
+
+/** The item's unit symbol and whether it only takes whole numbers. */
+export function unitOf(item: Item): { name: string; wholeOnly: boolean } {
+  return { name: item.unit?.name ?? '', wholeOnly: item.unit?.whole_only ?? false };
 }

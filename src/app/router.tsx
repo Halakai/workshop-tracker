@@ -11,6 +11,7 @@ import { StockListPage } from '@/features/inventory/StockListPage';
 import { ItemPage } from '@/features/inventory/ItemPage';
 import { ItemFormPage } from '@/features/inventory/ItemFormPage';
 import { ShoppingListPage } from '@/features/inventory/ShoppingListPage';
+import { ListsPage } from '@/features/catalog/ListsPage';
 
 // HashRouter: URLs look like …/workshop-tracker/#/cars/123, which always works on GitHub Pages.
 export const router = createHashRouter([
@@ -31,6 +32,7 @@ export const router = createHashRouter([
           { path: 'jobs', element: <ComingSoonPage title="Jobs" milestone="M5" /> },
           { path: 'more', element: <MorePage /> },
           { path: 'account', element: <AccountPage /> },
+          { path: 'lists', element: <ListsPage /> },
           {
             element: <RequireAdmin />,
             children: [{ path: 'users', element: <UsersPage /> }],

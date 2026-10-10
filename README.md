@@ -22,20 +22,31 @@ workshop wallet and settling up between partners.
 
 ## How stock works (short)
 
-- Every item's quantity changes **only** through movements: **Buy**, **Use**, **Count** (and, from M3/M5, use on a
-  car or job and return to stock). Each movement records who added it and when.
+- Every item's quantity changes **only** through movements: **Buy**, **Use**, **Adjust** (and, from M3/M5, use
+  on a car or job and return to stock). Each movement records who added it and when.
+- **Adjust** has four modes:
+  - **Count:** enter what's on the shelf; the difference is booked. On an empty item this is "Opening stock".
+  - **Damaged** and **Lost:** enter how much; it's taken out.
+  - **Found:** enter how much; it's added.
 - Stock is valued at the **moving weighted average** cost. "Used 4.5 L of oil" costs 4.5 × the average price per
   litre, and when an item runs out, its remaining value goes with the last use, so rounding never adds up.
 - **Buy** records who paid (the wallet or a partner) as an expense in the ledger.
-- **Use in the workshop** (overhead, e.g. brake cleaner or gloves) and **Count** corrections are split between the
-  partners by their default profit shares.
+- **Use in the workshop** (overhead, e.g. brake cleaner or gloves) and **Adjust** corrections are split between
+  the partners by their default profit shares.
 - **Undo** works on an item's latest movement and restores exactly the previous state, including the payment.
-  Correct older mistakes with a **Count**.
+  Correct older mistakes with **Adjust**.
 - An item shows up on the **shopping list** and in the red badge when it is at or below its minimum.
-- **Starting out:** add the item, then tap **Count**, enter what's on the shelf and what one unit is worth
-  ("Opening stock").
 
-## Things to know
+### Part numbers, categories, units, brands
+
+- **Part number** = the item's unique ID: category code + brand code + number, e.g. `FLD-CAST-001`. It is
+  filled in automatically and can be edited. Uniqueness ignores upper/lower case. The maker's own number goes in
+  **Manufacturer ref**.
+- **Categories, units and brands** are lists (More → Categories, units & brands). Everyone can add entries
+  (typing a new brand on an item adds it). Only an admin can rename or delete them, and an entry that is still
+  used can't be deleted. Brand names are case-sensitive.
+
+## Things to know## Things to know
 
 - **The repo is public**, because GitHub Pages on a private repo needs a paid plan. The code contains no secrets, and
   the publishable key is meant to be public. Your data lives only in Supabase, protected by Row Level Security.
@@ -141,3 +152,6 @@ CI checks that `src/lib/database.types.ts` matches the migrations.
 - Members can't change roles, shares or settings. Admin actions go through the `admin-users` Edge Function, which
   checks that the caller is an active admin before using the secret key.
 - `created_by` and `updated_by` are set by the database from the user's token, so they can't be faked.
+- Stock and money rows can only be written through a few database functions (`post_stock_movement`,
+  `undo_stock_movement`, …). They run with elevated rights on purpose, check membership first and validate every
+  number. Supabase's advisor lists them as a warning; that is expected.

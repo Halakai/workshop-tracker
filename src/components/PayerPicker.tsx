@@ -19,6 +19,7 @@ export function PayerPicker({
       id={id}
       type="single"
       variant="outline"
+      spacing={2}
       className="flex w-full flex-wrap"
       value={value ?? ''}
       onValueChange={(v) => v && onChange(v)}

@@ -3,9 +3,9 @@ import { ChevronRight, PartyPopper } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatMoney, mulDivRound } from '@/domain/money';
-import { MILLI_PER_UNIT, formatQuantity, toMilli, type Unit } from '@/domain/quantity';
+import { MILLI_PER_UNIT, formatQuantity, toMilli } from '@/domain/quantity';
 import { formatDate } from '@/domain/dates';
-import { useItems, useLastPurchases, useLowStockItems } from './api';
+import { unitOf, useItems, useLastPurchases, useLowStockItems } from './api';
 
 export function ShoppingListPage() {
   const items = useItems();
@@ -25,7 +25,7 @@ export function ShoppingListPage() {
         )}
         <ul className="flex flex-col divide-y overflow-hidden rounded-xl border">
           {low.map((item) => {
-            const unit = item.unit as Unit;
+            const unit = unitOf(item).name;
             const last = lastPurchases.data?.get(item.id);
             const lastQty = last?.qty != null ? toMilli(last.qty) : null;
             return (
@@ -33,6 +33,11 @@ export function ShoppingListPage() {
                 <Link to={`/stock/${item.id}`} className="flex items-center gap-3 px-4 py-3 active:bg-muted">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">{item.name}</p>
+                    <p className="font-mono text-xs text-muted-foreground">
+                      {item.part_number}
+                      {item.brand && ` · ${item.brand.name}`}
+                      {item.manufacturer_ref && ` · ${item.manufacturer_ref}`}
+                    </p>
                     <p className="text-sm">
                       <span className="font-semibold text-destructive">{formatQuantity(toMilli(item.qty_on_hand), unit)}</span>
                       <span className="text-muted-foreground"> of min {formatQuantity(toMilli(item.min_qty), unit)}</span>

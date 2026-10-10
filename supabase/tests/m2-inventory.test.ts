@@ -78,7 +78,14 @@ describe('items', () => {
   });
 
   it('quantity, value and version can never be written directly', async () => {
-    const insert = await asMember.from('items').insert({ name: 'Cheat', qty_on_hand: 100, stock_value_cents: 1 });
+    const insert = await asMember.from('items').insert({
+      name: 'Cheat',
+      category_id: categoryId,
+      unit_id: unitIds.pcs,
+      part_number: uniqueText('C'),
+      qty_on_hand: 100,
+      stock_value_cents: 1,
+    });
     expect(insert.error?.code).toBe('42501');
 
     const item = await newItem('Gloves', 'pcs');

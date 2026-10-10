@@ -19,19 +19,19 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { formatMoney } from '@/domain/money';
-import { formatQuantity, toMilli, type Unit } from '@/domain/quantity';
+import { formatQuantity, toMilli } from '@/domain/quantity';
 import { averageUnitCost } from '@/domain/stock';
 import { formatDate } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { usePayerOptions } from '@/features/money/accounts';
-import { CATEGORY_LABELS, MOVEMENT_LABELS } from './labels';
-import { itemIsLow, stockOf, useItem, useItemMovements, useUndoMovement, type Movement, type MovementWithPayment } from './api';
+import { MOVEMENT_LABELS } from './labels';
+import { itemIsLow, stockOf, unitOf, useItem, useItemMovements, useUndoMovement, type Movement, type MovementWithPayment } from './api';
 import { BuyDrawer } from './BuyDrawer';
 import { UseDrawer } from './UseDrawer';
-import { CountDrawer } from './CountDrawer';
+import { AdjustDrawer } from './AdjustDrawer';
 
-type Action = 'buy' | 'use' | 'count' | null;
+type Action = 'buy' | 'use' | 'adjust' | null;
 
 export function ItemPage() {
   const { id } = useParams();
@@ -62,7 +62,7 @@ export function ItemPage() {
   }
 
   const it = item.data;
-  const unit = it.unit as Unit;
+  const unit = unitOf(it).name;
   const stock = stockOf(it);
   const avg = averageUnitCost(stock);
   const low = itemIsLow(it);
@@ -83,6 +83,10 @@ export function ItemPage() {
       <PageBody>
         <Card>
           <CardContent className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-sm font-semibold tracking-wide">{it.part_number}</span>
+              {it.brand && <span className="font-medium">{it.brand.name}</span>}
+            </div>
             <div className="flex items-end justify-between gap-2">
               <div>
                 <p className="text-sm text-muted-foreground">In stock</p>
@@ -93,7 +97,7 @@ export function ItemPage() {
               <div className="flex flex-col items-end gap-1">
                 {low && <Badge variant="destructive">low stock</Badge>}
                 {it.archived_at && <Badge variant="secondary">archived</Badge>}
-                <Badge variant="outline">{CATEGORY_LABELS[it.category]}</Badge>
+                <Badge variant="outline">{it.category?.name}</Badge>
               </div>
             </div>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -101,8 +105,7 @@ export function ItemPage() {
               <Stat label="Stock value" value={formatMoney(stock.value)} />
               <Stat label="Minimum" value={toMilli(it.min_qty) > 0 ? formatQuantity(toMilli(it.min_qty), unit) : 'not set'} />
               {it.location && <Stat label="Location" value={it.location} />}
-              {it.brand && <Stat label="Brand" value={it.brand} />}
-              {it.part_number && <Stat label="Part number" value={it.part_number} />}
+              {it.manufacturer_ref && <Stat label="Manufacturer ref" value={it.manufacturer_ref} />}
             </dl>
             {it.notes && <p className="text-sm whitespace-pre-wrap">{it.notes}</p>}
             <AddedBy by={it.created_by} at={it.created_at} />
@@ -112,7 +115,7 @@ export function ItemPage() {
         <div className="grid grid-cols-3 gap-2">
           <BigAction icon={ShoppingCart} label="Buy" onClick={() => setAction('buy')} />
           <BigAction icon={MinusCircle} label="Use" onClick={() => setAction('use')} disabled={stock.qty === 0} />
-          <BigAction icon={ClipboardCheck} label="Count" onClick={() => setAction('count')} />
+          <BigAction icon={ClipboardCheck} label="Adjust" onClick={() => setAction('adjust')} />
         </div>
 
         <section className="flex flex-col gap-2">
@@ -129,7 +132,7 @@ export function ItemPage() {
 
       <BuyDrawer item={it} open={action === 'buy'} onOpenChange={(o) => !o && setAction(null)} />
       <UseDrawer item={it} open={action === 'use'} onOpenChange={(o) => !o && setAction(null)} />
-      <CountDrawer item={it} open={action === 'count'} onOpenChange={(o) => !o && setAction(null)} />
+      <AdjustDrawer item={it} open={action === 'adjust'} onOpenChange={(o) => !o && setAction(null)} />
       <UndoDialog movement={undoing} unit={unit} onClose={() => setUndoing(null)} />
     </>
   );
@@ -170,7 +173,7 @@ function MovementRow({
   onUndo,
 }: {
   movement: MovementWithPayment;
-  unit: Unit;
+  unit: string;
   canUndo: boolean;
   onUndo: () => void;
 }) {
@@ -216,7 +219,7 @@ function MovementRow({
   );
 }
 
-function UndoDialog({ movement, unit, onClose }: { movement: Movement | null; unit: Unit; onClose: () => void }) {
+function UndoDialog({ movement, unit, onClose }: { movement: Movement | null; unit: string; onClose: () => void }) {
   const undo = useUndoMovement();
   if (!movement) return null;
   const { label } = MOVEMENT_LABELS[movement.type];

@@ -11,13 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { formatMoney } from '@/domain/money';
-import { MILLI_PER_UNIT, formatQuantity, milliToInput, parseQuantity, type Unit } from '@/domain/quantity';
+import { MILLI_PER_UNIT, formatQuantity, milliToInput, parseQuantity } from '@/domain/quantity';
 import { buildOverheadUse, issueDelta } from '@/domain/stock';
 import { sharesAreComplete } from '@/domain/shares';
 import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { useDefaultShares } from '@/features/money/accounts';
-import { stockOf, usePostMovement, type Item } from './api';
+import { stockOf, unitOf, usePostMovement, type Item } from './api';
 
 export function UseDrawer({ item, open, onOpenChange }: { item: Item; open: boolean; onOpenChange: (o: boolean) => void }) {
   return (
@@ -28,7 +28,7 @@ export function UseDrawer({ item, open, onOpenChange }: { item: Item; open: bool
 }
 
 function UseForm({ item, onDone }: { item: Item; onDone: () => void }) {
-  const unit = item.unit as Unit;
+  const unit = unitOf(item);
   const stock = stockOf(item);
   const shares = useDefaultShares();
   const post = usePostMovement();
@@ -38,24 +38,24 @@ function UseForm({ item, onDone }: { item: Item; onDone: () => void }) {
       z.object({
         qty: z
           .string()
-          .refine((v) => parseQuantity(v, { unit }) !== null, unit === 'pcs' ? 'Whole pieces, more than 0' : 'Enter how much')
-          .refine((v) => (parseQuantity(v, { unit }) ?? 0) <= stock.qty, `Only ${formatQuantity(stock.qty, unit)} in stock`),
+          .refine((v) => parseQuantity(v, { wholeOnly: unit.wholeOnly }) !== null, unit.wholeOnly ? 'Whole numbers, more than 0' : 'Enter how much')
+          .refine((v) => (parseQuantity(v, { wholeOnly: unit.wholeOnly }) ?? 0) <= stock.qty, `Only ${formatQuantity(stock.qty, unit.name)} in stock`),
         date: z.string(),
         note: z.string().max(500),
       }),
-    [unit, stock.qty],
+    [unit.wholeOnly, unit.name, stock.qty],
   );
   type Values = z.infer<typeof schema>;
   const form = useForm<Values>({
     resolver: zodResolver(schema),
-    defaultValues: { qty: unit === 'pcs' && stock.qty >= MILLI_PER_UNIT ? '1' : '', date: todayIso(), note: '' },
+    defaultValues: { qty: unit.wholeOnly && stock.qty >= MILLI_PER_UNIT ? '1' : '', date: todayIso(), note: '' },
   });
 
-  const qty = parseQuantity(form.watch('qty'), { unit });
+  const qty = parseQuantity(form.watch('qty'), { wholeOnly: unit.wholeOnly });
   const cost = qty !== null && qty <= stock.qty ? -issueDelta(stock, qty).value : null;
 
   const onSubmit = form.handleSubmit(async (v) => {
-    const qtyMilli = parseQuantity(v.qty, { unit })!;
+    const qtyMilli = parseQuantity(v.qty, { wholeOnly: unit.wholeOnly })!;
     if (!sharesAreComplete(shares)) {
       toast.error('Default profit shares don’t add up to 100 %. An admin can fix this under More → Users & partners.');
       return;
@@ -65,7 +65,7 @@ function UseForm({ item, onDone }: { item: Item; onDone: () => void }) {
         itemId: item.id,
         build: (fresh) => buildOverheadUse({ stock: stockOf(fresh), qty: qtyMilli, shares, occurredOn: v.date, note: v.note }),
       });
-      toast.success(`Used ${formatQuantity(qtyMilli, unit)} ${item.name}`);
+      toast.success(`Used ${formatQuantity(qtyMilli, unit.name)} ${item.name}`);
       onDone();
     } catch (e) {
       toast.error(syncErrorMessage(e));
@@ -73,7 +73,7 @@ function UseForm({ item, onDone }: { item: Item; onDone: () => void }) {
   });
 
   if (stock.qty === 0) {
-    return <p className="pb-4 text-muted-foreground">Nothing in stock. Record a purchase or a stock count first.</p>;
+    return <p className="pb-4 text-muted-foreground">Nothing in stock. Record a purchase or adjust the stock first.</p>;
   }
 
   return (
@@ -81,10 +81,10 @@ function UseForm({ item, onDone }: { item: Item; onDone: () => void }) {
       <FieldGroup>
         <Field data-invalid={!!form.formState.errors.qty}>
           <FieldLabel htmlFor="use-qty">How much?</FieldLabel>
-          <SuffixInput id="use-qty" suffix={unit} autoFocus {...form.register('qty')} />
+          <SuffixInput id="use-qty" suffix={unit.name} autoFocus {...form.register('qty')} />
           <div className="flex flex-wrap gap-2">
             <Button type="button" variant="outline" size="sm" onClick={() => form.setValue('qty', milliToInput(stock.qty), { shouldValidate: true })}>
-              All ({formatQuantity(stock.qty, unit)})
+              All ({formatQuantity(stock.qty, unit.name)})
             </Button>
           </div>
           <FieldError errors={[form.formState.errors.qty]} />

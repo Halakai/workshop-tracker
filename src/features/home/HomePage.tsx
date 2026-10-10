@@ -3,9 +3,9 @@ import { AlertTriangle, Car, ChevronRight, Package, Users, Wrench } from 'lucide
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PageBody, PageHeader } from '@/components/PageHeader';
-import { formatQuantity, toMilli, type Unit } from '@/domain/quantity';
+import { formatQuantity, toMilli } from '@/domain/quantity';
 import { useCurrentProfile } from '@/features/auth/profiles';
-import { useLowStockItems } from '@/features/inventory/api';
+import { unitOf, useLowStockItems } from '@/features/inventory/api';
 
 // The full dashboard (wallet, partners, cars in progress, quick actions) comes in M7.
 export function HomePage() {
@@ -44,7 +44,7 @@ export function HomePage() {
                     <Link to={`/stock/${item.id}`} className="flex items-center justify-between gap-2 py-2">
                       <span className="truncate">{item.name}</span>
                       <span className="flex items-center gap-1 text-sm font-semibold text-destructive tabular-nums">
-                        {formatQuantity(toMilli(item.qty_on_hand), item.unit as Unit)}
+                        {formatQuantity(toMilli(item.qty_on_hand), unitOf(item).name)}
                         <ChevronRight className="size-4 text-muted-foreground" />
                       </span>
                     </Link>

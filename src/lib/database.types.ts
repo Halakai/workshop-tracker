@@ -159,70 +159,187 @@ export type Database = {
           },
         ];
       };
+      brands: {
+        Row: {
+          code: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "brands_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "brands_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      item_categories: {
+        Row: {
+          code: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          code: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "item_categories_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "item_categories_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       items: {
         Row: {
           archived_at: string | null;
-          brand: string | null;
-          category: Database["public"]["Enums"]["item_category"];
+          brand_id: string | null;
+          category_id: string;
           created_at: string;
           created_by: string | null;
           id: string;
           location: string | null;
+          manufacturer_ref: string | null;
           min_qty: number;
           name: string;
           notes: string | null;
-          part_number: string | null;
+          part_number: string;
           qty_on_hand: number;
           stock_value_cents: number;
-          unit: Database["public"]["Enums"]["item_unit"];
+          unit_id: string;
           updated_at: string;
           updated_by: string | null;
           version: number;
         };
         Insert: {
           archived_at?: string | null;
-          brand?: string | null;
-          category?: Database["public"]["Enums"]["item_category"];
+          brand_id?: string | null;
+          category_id: string;
           created_at?: string;
           created_by?: string | null;
           id?: string;
           location?: string | null;
+          manufacturer_ref?: string | null;
           min_qty?: number;
           name: string;
           notes?: string | null;
-          part_number?: string | null;
+          part_number: string;
           qty_on_hand?: number;
           stock_value_cents?: number;
-          unit?: Database["public"]["Enums"]["item_unit"];
+          unit_id: string;
           updated_at?: string;
           updated_by?: string | null;
           version?: number;
         };
         Update: {
           archived_at?: string | null;
-          brand?: string | null;
-          category?: Database["public"]["Enums"]["item_category"];
+          brand_id?: string | null;
+          category_id?: string;
           created_at?: string;
           created_by?: string | null;
           id?: string;
           location?: string | null;
+          manufacturer_ref?: string | null;
           min_qty?: number;
           name?: string;
           notes?: string | null;
-          part_number?: string | null;
+          part_number?: string;
           qty_on_hand?: number;
           stock_value_cents?: number;
-          unit?: Database["public"]["Enums"]["item_unit"];
+          unit_id?: string;
           updated_at?: string;
           updated_by?: string | null;
           version?: number;
         };
         Relationships: [
           {
+            foreignKeyName: "items_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "items_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "item_categories";
+            referencedColumns: ["id"];
+          },
+          {
             foreignKeyName: "items_created_by_fkey";
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "items_unit_id_fkey";
+            columns: ["unit_id"];
+            isOneToOne: false;
+            referencedRelation: "units";
             referencedColumns: ["id"];
           },
           {
@@ -517,6 +634,54 @@ export type Database = {
           },
         ];
       };
+      units: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+          whole_only: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          whole_only?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          whole_only?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "units_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "units_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       item_last_purchases: {
@@ -566,8 +731,6 @@ export type Database = {
     };
     Enums: {
       account_kind: "wallet" | "partner" | "external";
-      item_category: "part" | "consumable" | "fluid" | "other";
-      item_unit: "pcs" | "L" | "ml" | "kg" | "m";
       movement_type:
         | "purchase"
         | "use_car"
@@ -705,8 +868,6 @@ export const Constants = {
   public: {
     Enums: {
       account_kind: ["wallet", "partner", "external"],
-      item_category: ["part", "consumable", "fluid", "other"],
-      item_unit: ["pcs", "L", "ml", "kg", "m"],
       movement_type: [
         "purchase",
         "use_car",

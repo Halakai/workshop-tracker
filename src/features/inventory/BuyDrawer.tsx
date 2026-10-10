@@ -10,14 +10,15 @@ import { PayerPicker } from '@/components/PayerPicker';
 import { DateField } from '@/components/DateField';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { SuggestionInput } from '@/components/SuggestionInput';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { formatMoney, mulDivRound, parseMoney } from '@/domain/money';
-import { MILLI_PER_UNIT, formatQuantity, parseQuantity, type Unit } from '@/domain/quantity';
+import { MILLI_PER_UNIT, formatQuantity, parseQuantity } from '@/domain/quantity';
 import { applyDelta, averageUnitCost, buildPurchase } from '@/domain/stock';
 import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { getLastPayer, setLastPayer, usePayerOptions } from '@/features/money/accounts';
-import { stockOf, useLastPurchases, usePostMovement, useSuppliers, type Item } from './api';
+import { stockOf, unitOf, useLastPurchases, usePostMovement, useSuppliers, type Item } from './api';
 
 export function BuyDrawer({ item, open, onOpenChange }: { item: Item; open: boolean; onOpenChange: (o: boolean) => void }) {
   return (
@@ -28,7 +29,7 @@ export function BuyDrawer({ item, open, onOpenChange }: { item: Item; open: bool
 }
 
 function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
-  const unit = item.unit as Unit;
+  const unit = unitOf(item);
   const payers = usePayerOptions();
   const suppliers = useSuppliers();
   const lastPurchase = useLastPurchases().data?.get(item.id);
@@ -38,7 +39,7 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
     () =>
       z
         .object({
-          qty: z.string().refine((v) => parseQuantity(v, { unit }) !== null, unit === 'pcs' ? 'Whole pieces, more than 0' : 'Enter how much'),
+          qty: z.string().refine((v) => parseQuantity(v, { wholeOnly: unit.wholeOnly }) !== null, unit.wholeOnly ? 'Whole numbers, more than 0' : 'Enter how much'),
           total: z.string().refine((v) => parseMoney(v) !== null, 'Enter the total price (0 if it was free)'),
           paidBy: z.string().nullable(),
           supplier: z.string().max(120),
@@ -46,7 +47,7 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
           note: z.string().max(500),
         })
         .refine((v) => parseMoney(v.total) === 0 || Boolean(v.paidBy), { path: ['paidBy'], message: 'Who paid?' }),
-    [unit],
+    [unit.wholeOnly],
   );
   type Values = z.infer<typeof schema>;
 
@@ -70,7 +71,7 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
     }
   }, [payers, lastPayer, form]);
 
-  const qty = parseQuantity(form.watch('qty'), { unit });
+  const qty = parseQuantity(form.watch('qty'), { wholeOnly: unit.wholeOnly });
   const total = parseMoney(form.watch('total'));
   const preview =
     qty !== null && total !== null
@@ -81,7 +82,7 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
       : null;
 
   const onSubmit = form.handleSubmit(async (v) => {
-    const qtyMilli = parseQuantity(v.qty, { unit })!;
+    const qtyMilli = parseQuantity(v.qty, { wholeOnly: unit.wholeOnly })!;
     const totalCents = parseMoney(v.total)!;
     try {
       await post.mutateAsync({
@@ -97,7 +98,7 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
           }),
       });
       if (v.paidBy) setLastPayer(v.paidBy);
-      toast.success(`Added ${formatQuantity(qtyMilli, unit)} ${item.name}`);
+      toast.success(`Added ${formatQuantity(qtyMilli, unit.name)} ${item.name}`);
       onDone();
     } catch (e) {
       toast.error(syncErrorMessage(e));
@@ -110,7 +111,7 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
         <div className="grid grid-cols-2 gap-3">
           <Field data-invalid={!!form.formState.errors.qty}>
             <FieldLabel htmlFor="buy-qty">Quantity</FieldLabel>
-            <SuffixInput id="buy-qty" suffix={unit} autoFocus {...form.register('qty')} />
+            <SuffixInput id="buy-qty" suffix={unit.name} autoFocus {...form.register('qty')} />
             <FieldError errors={[form.formState.errors.qty]} />
           </Field>
           <Field data-invalid={!!form.formState.errors.total}>
@@ -121,7 +122,7 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
         </div>
         {preview && (
           <p className="-mt-3 text-sm text-muted-foreground">
-            {formatMoney(preview.unitPrice)} per {unit}
+            {formatMoney(preview.unitPrice)} per {unit.name}
             {preview.newAverage !== null && <> · new average {formatMoney(preview.newAverage)}</>}
           </p>
         )}
@@ -136,10 +137,13 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
         </Field>
         <Field>
           <FieldLabel htmlFor="buy-supplier">Supplier</FieldLabel>
-          <Input id="buy-supplier" list="supplier-suggestions" autoComplete="off" {...form.register('supplier')} />
-          <datalist id="supplier-suggestions">
-            {suppliers.data?.map((s) => <option key={s} value={s} />)}
-          </datalist>
+          <Controller
+            control={form.control}
+            name="supplier"
+            render={({ field }) => (
+              <SuggestionInput id="buy-supplier" value={field.value} onChange={field.onChange} options={suppliers.data ?? []} />
+            )}
+          />
         </Field>
         <Field>
           <FieldLabel htmlFor="buy-date">Date</FieldLabel>

@@ -6,16 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatQuantity, toMilli, type Unit } from '@/domain/quantity';
+import { formatQuantity, toMilli } from '@/domain/quantity';
 import { cn } from '@/lib/utils';
-import { CATEGORY_PLURALS, type ItemCategory } from './labels';
-import { itemIsLow, useItems, useLowStockItems, type Item } from './api';
+import { useCategories } from '@/features/catalog/api';
+import { itemIsLow, unitOf, useItems, useLowStockItems, type Item } from './api';
 
-type Filter = 'all' | 'low' | 'archived' | ItemCategory;
+/** 'all' | 'low' | 'archived' | a category id */
+type Filter = string;
 
 function matches(item: Item, query: string): boolean {
   if (!query) return true;
-  const haystack = [item.name, item.brand, item.part_number, item.location].filter(Boolean).join(' ').toLowerCase();
+  const haystack = [item.name, item.brand?.name, item.part_number, item.manufacturer_ref, item.location, item.category?.name]
+    .filter(Boolean)
+    .join(' ')
+    .toLowerCase();
   return query
     .toLowerCase()
     .split(/\s+/)
@@ -24,6 +28,7 @@ function matches(item: Item, query: string): boolean {
 
 export function StockListPage() {
   const items = useItems();
+  const categories = useCategories();
   const lowCount = useLowStockItems().length;
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
@@ -34,7 +39,7 @@ export function StockListPage() {
         if (filter === 'archived') return item.archived_at && matches(item, query);
         if (item.archived_at) return false;
         if (filter === 'low' && !itemIsLow(item)) return false;
-        if (filter !== 'all' && filter !== 'low' && item.category !== filter) return false;
+        if (filter !== 'all' && filter !== 'low' && item.category_id !== filter) return false;
         return matches(item, query);
       }),
     [items.data, filter, query],
@@ -43,7 +48,7 @@ export function StockListPage() {
   const filters: { value: Filter; label: string }[] = [
     { value: 'all', label: 'All' },
     { value: 'low', label: lowCount ? `Low (${lowCount})` : 'Low' },
-    ...(Object.keys(CATEGORY_PLURALS) as ItemCategory[]).map((c) => ({ value: c, label: CATEGORY_PLURALS[c] })),
+    ...(categories.data ?? []).map((c) => ({ value: c.id, label: c.name })),
     { value: 'archived', label: 'Archived' },
   ];
 
@@ -117,7 +122,7 @@ export function StockListPage() {
         <ul className="flex flex-col divide-y overflow-hidden rounded-xl border">
           {visible.map((item) => {
             const low = itemIsLow(item);
-            const details = [item.brand, item.part_number, item.location && `📍 ${item.location}`].filter(Boolean).join(' · ');
+            const details = [item.part_number, item.brand?.name, item.location && `📍 ${item.location}`].filter(Boolean).join(' · ');
             return (
               <li key={item.id}>
                 <Link to={`/stock/${item.id}`} className="flex min-h-16 items-center gap-3 px-4 py-3 active:bg-muted">
@@ -127,7 +132,7 @@ export function StockListPage() {
                   </div>
                   <div className="text-right">
                     <p className={cn('font-semibold tabular-nums', low && 'text-destructive')}>
-                      {formatQuantity(toMilli(item.qty_on_hand), item.unit as Unit)}
+                      {formatQuantity(toMilli(item.qty_on_hand), unitOf(item).name)}
                     </p>
                     {low && <Badge variant="destructive">low</Badge>}
                   </div>
