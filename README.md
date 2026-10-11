@@ -21,7 +21,7 @@ shared workshop wallet and settling up between partners.
 | M7 | Dashboard, low-stock alerts, export, polish | ✅ done |
 | R1 | After testing: dashboard with charts, search, Inventory rename, back button, restoring backups, car catalogue with logos | ✅ done |
 | R2 | Tools & equipment we own (Inventory → Tools) | ✅ done |
-| R3 | Photo gallery on cars, albums (Before/After), cover photos for tools and parts, invoice links | ✅ done |
+| R3 | Photo gallery on cars, albums (Before/After), favorite photos for tools and parts, invoice links | ✅ done |
 
 ## The app at a glance
 
@@ -165,8 +165,9 @@ up: hand and power tools, the compressor, lifts, the scanner…
   - **Albums** (cars and jobs): pick *Before*, *After* or another album above the photos to see only those; new
     photos go into the album picked. **+ Album** adds one (a shared list; admins rename or delete under More →
     Lists). In full screen, a photo can be moved to another album.
-  - **Cover photo:** in full screen, *Set as cover*. It is shown first, and as the picture in the tools and parts
-    lists. Without one, the first photo is used.
+  - **Favorite photo:** in full screen, *Make favorite* (★). It is shown first, and as the picture in the tools and
+    parts lists; without a favorite the list shows an icon. Only the favorite gets a small preview in Drive's
+    `.thumbs` folder (the previous favorite's preview is removed).
   - Every invoice PDF is also copied to Drive.
 
 ## Car makes and models (catalogue)
@@ -283,7 +284,8 @@ The setup it needs:
   - Invoices: `Invoices/<year>`
   - Tools: `Tools/<T-001 name>`; parts and supplies: `Inventory/<part number name>`
   - Other receipts: `Receipts/<year>`
-  - Previews: `.thumbs`
+  - Previews of favorite photos (for the lists): `.thumbs`. Workshop settings → "Remove extra previews" clears
+    the ones older uploads made for every photo.
 - The database stores only which file belongs to which record. The Supabase Edge Function `files` talks to Google
   using a refresh token for your account.
 

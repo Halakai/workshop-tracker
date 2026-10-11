@@ -2035,10 +2035,6 @@ export type Database = {
         Args: { p_car_id: string; p_shares: Json };
         Returns: undefined;
       };
-      set_cover_photo: {
-        Args: { p_attachment_id: string; p_cover?: boolean };
-        Returns: undefined;
-      };
       set_job_shares: {
         Args: { p_job_id: string; p_shares: Json };
         Returns: undefined;

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { ChevronRight, Package, Plus, Search, ShoppingCart } from 'lucide-react';
-import { useCoverThumbs } from '@/features/files/api';
+import { useFavoriteThumbs } from '@/features/files/api';
 import { Thumb } from '@/features/files/Photos';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ export function StockListPage() {
   const items = useItems();
   const categories = useCategories();
   const lowCount = useLowStockItems().length;
-  const thumbs = useCoverThumbs('item');
+  const thumbs = useFavoriteThumbs('item');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
 
