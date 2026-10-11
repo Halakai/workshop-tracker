@@ -1,0 +1,67 @@
+name: Website & app to GitHub Pages
+
+# Builds the app (dist/app) and the public website (dist/, from the published content) and deploys both.
+# Runs after CI passes on main (ci.yml calls it) and when someone presses Publish in the app: the files function
+# starts it with GITHUB_PUBLISH_TOKEN (see README → Website).
+on:
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build app and website
+    runs-on: ubuntu-latest
+    # a newer publish makes an older, unfinished one pointless
+    concurrency:
+      group: pages-build
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build the app
+        run: npx vite build
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+          # Repository → Settings → Secrets and variables → Actions → Variables (both are safe to be public)
+          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
+      - name: Website photos resized by earlier builds
+        uses: actions/cache@v6
+        with:
+          path: .site-cache
+          key: site-photos-${{ github.run_id }}
+          restore-keys: site-photos-
+      - name: Build the website from the published content
+        run: node scripts/build-site.mjs --live
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/
+          SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+          # the same value is a Supabase Edge Function secret; it can only read what is published
+          SITE_BUILD_TOKEN: ${{ secrets.SITE_BUILD_TOKEN }}
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    concurrency:
+      group: pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

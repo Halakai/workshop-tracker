@@ -65,41 +65,13 @@ jobs:
         if: failure()
         run: docker logs $(docker ps -q --filter name=supabase_edge_runtime) 2>&1 | tail -100 || true
 
-  build-pages:
-    name: Build for GitHub Pages
+  pages:
+    name: Build and deploy
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: [check, rls]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: npm
-      - run: npm ci
-      - run: npm run build
-        env:
-          BASE_PATH: /${{ github.event.repository.name }}/
-          # Repository → Settings → Secrets and variables → Actions → Variables (both are safe to be public)
-          VITE_SUPABASE_URL: ${{ vars.SUPABASE_URL }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.SUPABASE_PUBLISHABLE_KEY }}
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: dist
-
-  deploy-pages:
-    name: Deploy to GitHub Pages
-    needs: build-pages
-    runs-on: ubuntu-latest
+    uses: ./.github/workflows/pages.yml
+    secrets: inherit
     permissions:
+      contents: read
       pages: write
       id-token: write
-    concurrency:
-      group: pages
-      cancel-in-progress: false
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v5

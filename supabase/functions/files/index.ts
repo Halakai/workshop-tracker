@@ -9,8 +9,15 @@
 //   POST /files/delete   { id }  → moves the file to Drive's trash                        (signed-in member)
 //   POST /files/health   checks the Google connection                                     (signed-in admin)
 //
+// The public website (docs/PLAN.md §10):
+//   GET  /files/site-data        → what the website shows (website_snapshot())              (build token)
+//   GET  /files/site-photo/:id   → a photo that is on the website, full size                (build token)
+//   POST /files/site-publish     → starts the website build on GitHub (pages.yml)           (signed-in member)
+//   POST /files/site-status      → the latest website build: running / done / failed         (signed-in member)
+//
 // Secrets (Supabase → Edge Functions → Secrets): GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET,
-// GOOGLE_REFRESH_TOKEN, FILE_URL_SIGNING_SECRET.
+// GOOGLE_REFRESH_TOKEN, FILE_URL_SIGNING_SECRET; for the website SITE_BUILD_TOKEN (the same value is a GitHub
+// Actions secret) and GITHUB_PUBLISH_TOKEN (a GitHub token that may start this repo's workflows).
 import { createAdminClient, verifyAuth } from 'npm:@supabase/server@1/core';
 import {
   ALLOWED_MIME,
@@ -407,6 +414,83 @@ async function health(req: Request) {
   return Response.json({ ok: !info.trashed, message: info.trashed ? 'The “Workshop Tracker” folder is in the Drive trash.' : `Connected. Files go to “${info.name}” in your Drive.` });
 }
 
+// ---------------------------------------------------------------------------
+// The public website
+// ---------------------------------------------------------------------------
+/** The website build (GitHub Actions) proves itself with SITE_BUILD_TOKEN; it only ever gets published content. */
+function requireBuildToken(req: Request) {
+  const expected = Deno.env.get('SITE_BUILD_TOKEN');
+  if (!expected) throw new HttpError(503, 'SITE_BUILD_TOKEN is not set.');
+  const given = (req.headers.get('authorization') ?? '').replace(/^Bearer\s+/i, '');
+  if (!timingSafeEqual(given, expected)) throw new HttpError(401, 'Not allowed');
+}
+
+async function siteData(req: Request) {
+  requireBuildToken(req);
+  const { data, error } = await admin.rpc('website_snapshot');
+  if (error) throw error;
+  return Response.json(data, { headers: { 'Cache-Control': 'no-store' } });
+}
+
+async function sitePhoto(req: Request, id: string) {
+  requireBuildToken(req);
+  const { data, error } = await admin.rpc('website_photo', { p_attachment_id: id });
+  if (error) throw error;
+  const row = data?.[0];
+  if (!row) throw new HttpError(404, 'Not a photo on the website');
+  const res = await drive(`/files/${row.drive_file_id}?alt=media`);
+  if (res.status === 404) throw new HttpError(404, 'The file is no longer in Google Drive');
+  if (!res.ok) throw new HttpError(502, 'Google Drive did not return the file');
+  return new Response(res.body, { headers: { 'Content-Type': row.mime_type, 'Cache-Control': 'no-store' } });
+}
+
+const PUBLISH_WORKFLOW = 'pages.yml';
+
+async function github(path: string, init: RequestInit = {}) {
+  const token = Deno.env.get('GITHUB_PUBLISH_TOKEN');
+  if (!token) throw new HttpError(503, 'Publishing isn’t set up yet: GITHUB_PUBLISH_TOKEN is missing (README → Website).');
+  const repo = Deno.env.get('GITHUB_REPO') ?? 'Halakai/workshop-tracker';
+  const res = await fetch(`https://api.github.com/repos/${repo}${path}`, {
+    ...init,
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${token}`,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'workshop-tracker',
+      ...(init.headers ?? {}),
+    },
+  });
+  if (res.status === 401 || res.status === 403) {
+    throw new HttpError(503, 'GitHub refused the publish token (expired, or without “Actions: Read and write”). README → Website.');
+  }
+  return res;
+}
+
+async function sitePublish(req: Request) {
+  const userId = await requireMember(req);
+  const res = await github(`/actions/workflows/${PUBLISH_WORKFLOW}/dispatches`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref: 'main' }),
+  });
+  if (!res.ok) {
+    console.error('dispatch failed', res.status, await res.text());
+    throw new HttpError(502, `GitHub didn’t start the website build (${res.status}). Try again in a minute.`);
+  }
+  await admin.from('activity_log').insert({ actor_id: userId, entity_type: 'website', action: 'publish', summary: 'Published the website' });
+  return Response.json({ ok: true });
+}
+
+async function siteStatus(req: Request) {
+  await requireMember(req);
+  const res = await github(`/actions/workflows/${PUBLISH_WORKFLOW}/runs?branch=main&per_page=1`);
+  if (!res.ok) throw new HttpError(502, `Couldn’t ask GitHub how the website build went (${res.status}).`);
+  const run = (await res.json()).workflow_runs?.[0];
+  return Response.json(
+    run ? { status: run.status, conclusion: run.conclusion, started: run.run_started_at ?? run.created_at, updated: run.updated_at, url: run.html_url } : null,
+  );
+}
+
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -420,6 +504,9 @@ async function route(req: Request): Promise<Response> {
     if (req.method === 'GET' && viewMatch) return await view(req, viewMatch[1]);
     const invoiceMatch = /^\/invoice\/([0-9a-f-]{36})$/i.exec(path);
     if (req.method === 'GET' && invoiceMatch) return await invoice(req, invoiceMatch[1]);
+    if (req.method === 'GET' && path === '/site-data') return await siteData(req);
+    const sitePhotoMatch = /^\/site-photo\/([0-9a-f-]{36})$/i.exec(path);
+    if (req.method === 'GET' && sitePhotoMatch) return await sitePhoto(req, sitePhotoMatch[1]);
     if (req.method !== 'POST') throw new HttpError(405, 'Use POST');
     switch (path) {
       case '/upload':
@@ -432,6 +519,10 @@ async function route(req: Request): Promise<Response> {
         return await remove(req);
       case '/health':
         return await health(req);
+      case '/site-publish':
+        return await sitePublish(req);
+      case '/site-status':
+        return await siteStatus(req);
       default:
         throw new HttpError(404, 'Unknown route');
     }

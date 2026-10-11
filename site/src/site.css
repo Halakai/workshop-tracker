@@ -1,0 +1,46 @@
+/* The public website (dark, like the app). Only the files in site/src are scanned for classes. */
+@import 'tailwindcss' source(none);
+@source './';
+@import '@fontsource-variable/geist';
+
+@theme {
+  --font-sans: 'Geist Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --color-bg: #0c0f14;
+  --color-card: #141920;
+  --color-line: #252c36;
+  --color-fg: #f1f3f5;
+  --color-muted: #a3acb6;
+  --color-accent: #e8590c;
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+[data-track]::-webkit-scrollbar {
+  display: none;
+}
+
+dialog[data-lightbox]::backdrop {
+  background: #000;
+}
+
+[data-weekdays].is-today {
+  color: var(--color-fg);
+  font-weight: 600;
+}
+[data-weekdays].is-today dt::after {
+  content: ' •';
+  color: var(--color-accent);
+}
+
+[data-open-now].is-open {
+  background: color-mix(in srgb, #22c55e 18%, transparent);
+  color: #4ade80;
+}
+[data-open-now].is-closed {
+  background: color-mix(in srgb, #ef4444 15%, transparent);
+  color: #f87171;
+}

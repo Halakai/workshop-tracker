@@ -16,5 +16,5 @@
     "paths": { "@/*": ["./src/*"] },
     "types": ["node", "vite/client", "vite-plugin-pwa/client", "vite-plugin-pwa/react"]
   },
-  "include": ["src", "vite.config.ts", "vitest.integration.config.ts", "supabase/tests"]
+  "include": ["src", "site/src", "vite.config.ts", "vitest.integration.config.ts", "supabase/tests"]
 }

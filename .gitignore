@@ -12,3 +12,6 @@ supabase/.branches
 supabase/.temp
 supabase/.env
 supabase/functions/.env
+
+# resized website photos (scripts/build-site.mjs)
+.site-cache
