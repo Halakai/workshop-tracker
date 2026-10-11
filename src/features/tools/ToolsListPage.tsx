@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router';
 import { ChevronRight, Hammer, Plus, Search } from 'lucide-react';
-import { useCoverThumbs } from '@/features/files/api';
+import { useFavoriteThumbs } from '@/features/files/api';
 import { Thumb } from '@/features/files/Photos';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
@@ -37,7 +37,7 @@ export function ToolsListPage() {
   const tools = useTools();
   const categories = useToolCategories();
   const names = useProfileNames();
-  const thumbs = useCoverThumbs('tool');
+  const thumbs = useFavoriteThumbs('tool');
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
 

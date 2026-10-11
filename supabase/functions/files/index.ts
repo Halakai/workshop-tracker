@@ -1,6 +1,8 @@
 // Photos and receipts in the admin's Google Drive (scope drive.file: the app only sees files it created).
 //
-//   POST /files/upload   multipart: file, thumb?, entity_type, entity_id, kind, label?, album_id?   (signed-in member)
+//   POST /files/upload   multipart: file, entity_type, entity_id, kind, label?, album_id?   (signed-in member)
+//   POST /files/favorite multipart: id, favorite=1|0, thumb?  → the record's favorite photo (signed-in member)
+//   POST /files/prune-thumbs  → trashes previews of photos that aren't a favorite        (signed-in admin)
 //   POST /files/sign     { ids: [...] } → signed view links                             (signed-in member)
 //   GET  /files/view/:id?v=thumb|full&exp=…&sig=…  → streams the file from Drive          (signed link)
 //   POST /files/invoice-link  { job_id } → a link for the customer, valid for a year       (signed-in member)
@@ -159,6 +161,16 @@ function timingSafeEqual(a: string, b: string) {
   return diff === 0;
 }
 
+/**
+ * Where browsers reach this function. Behind Supabase's proxy the function sees its own address as http://, and
+ * phones may block http:// pictures inside the https:// app, so links use the project's public https address.
+ */
+function publicBase(req: Request) {
+  const configured = Deno.env.get('SUPABASE_URL');
+  const origin = configured?.startsWith('https://') ? configured : new URL(req.url).origin;
+  return `${origin.replace(/\/+$/, '')}/functions/v1/files`;
+}
+
 async function signedUrl(base: string, id: string, variant: 'thumb' | 'full', exp: number) {
   const sig = await hmac(signingPayload(id, variant, exp));
   return `${base}/view/${id}?v=${variant}&exp=${exp}&sig=${sig}`;
@@ -228,7 +240,6 @@ async function upload(req: Request) {
   const form = await req.formData().catch(() => null);
   if (!form) throw new HttpError(400, 'Send the file as multipart/form-data');
   const file = form.get('file');
-  const thumb = form.get('thumb');
   const entityType = String(form.get('entity_type') ?? '') as EntityType;
   const entityId = String(form.get('entity_id') ?? '');
   const kind = String(form.get('kind') ?? '') as FileKind;
@@ -248,11 +259,8 @@ async function upload(req: Request) {
 
   const chain = await folderChainFor(entityType, entityId, kind);
   const name = fileNameFor(new Date().toISOString().slice(0, 10), label, file.name, file.type);
+  // no preview here: only a favorite photo gets one (see favorite())
   const stored = await uploadInto(chain, file, name, file.type);
-  let thumbId: string | null = null;
-  if (thumb instanceof File && thumb.size > 0 && thumb.size < 512 * 1024) {
-    thumbId = (await uploadInto(THUMBS_FOLDER, thumb, `${stored.id}.jpg`, 'image/jpeg')).id;
-  }
 
   const { data, error } = await admin
     .from('attachments')
@@ -261,7 +269,6 @@ async function upload(req: Request) {
       entity_id: entityId,
       kind,
       drive_file_id: stored.id,
-      drive_thumb_id: thumbId,
       file_name: name,
       mime_type: file.type,
       size_bytes: stored.size,
@@ -279,7 +286,7 @@ async function sign(req: Request) {
   const body = await req.json().catch(() => null);
   const ids: string[] = Array.isArray(body?.ids) ? body.ids.filter((x: unknown) => typeof x === 'string').slice(0, 200) : [];
   const { data: rows } = await admin.from('attachments').select('id, drive_thumb_id, mime_type').in('id', ids.length ? ids : ['00000000-0000-0000-0000-000000000000']);
-  const base = `${new URL(req.url).origin}/functions/v1/files`;
+  const base = publicBase(req);
   const exp = linkExpiry(new Date());
   const links: Record<string, { thumb: string | null; full: string }> = {};
   for (const r of rows ?? []) {
@@ -322,7 +329,7 @@ async function invoiceLink(req: Request) {
   if (!copy) throw new HttpError(404, 'No invoice copy in Google Drive yet. Make the invoice first.');
   const exp = invoiceLinkExpiry(new Date());
   const sig = await hmac(invoicePayload(jobId, exp));
-  return Response.json({ url: `${new URL(req.url).origin}/functions/v1/files/invoice/${jobId}?exp=${exp}&sig=${sig}`, expires: exp });
+  return Response.json({ url: `${publicBase(req)}/invoice/${jobId}?exp=${exp}&sig=${sig}`, expires: exp });
 }
 
 async function invoice(req: Request, jobId: string) {
@@ -354,23 +361,82 @@ async function invoice(req: Request, jobId: string) {
   });
 }
 
+/** To Drive's trash (recoverable there for 30 days); a file that is already gone is fine. */
+async function trashInDrive(driveId: string) {
+  const res = await drive(`/files/${driveId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ trashed: true }),
+  });
+  if (!res.ok && res.status !== 404) throw new HttpError(502, 'Google Drive refused to delete the file');
+}
+
 async function remove(req: Request) {
   await requireMember(req);
   const body = await req.json().catch(() => null);
   const id = typeof body?.id === 'string' ? body.id : '';
   const { data: row } = await admin.from('attachments').select('id, drive_file_id, drive_thumb_id').eq('id', id).maybeSingle();
   if (!row) throw new HttpError(404, 'File not found');
-  for (const driveId of [row.drive_file_id, row.drive_thumb_id].filter(Boolean) as string[]) {
-    // to Drive's trash (recoverable for 30 days); a file already gone is fine
-    const res = await drive(`/files/${driveId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trashed: true }),
-    });
-    if (!res.ok && res.status !== 404) throw new HttpError(502, 'Google Drive refused to delete the file');
-  }
+  for (const driveId of [row.drive_file_id, row.drive_thumb_id].filter(Boolean) as string[]) await trashInDrive(driveId);
   await admin.from('attachments').delete().eq('id', row.id);
   return Response.json({ ok: true });
+}
+
+/**
+ * Makes a photo the favorite of its car / job / tool / item (shown first, and as the picture in the lists), or
+ * takes that back. Only the favorite keeps a small preview in .thumbs: the app sends one along, and the previous
+ * favorite's preview goes to the Drive trash.
+ */
+async function favorite(req: Request) {
+  await requireMember(req);
+  const form = await req.formData().catch(() => null);
+  const id = String(form?.get('id') ?? '');
+  const on = form?.get('favorite') === '1';
+  const thumb = form?.get('thumb');
+  if (!/^[0-9a-f-]{36}$/i.test(id)) throw new HttpError(400, 'Which photo?');
+  const { data: photo } = await admin
+    .from('attachments')
+    .select('id, entity_type, entity_id, kind, drive_file_id, drive_thumb_id')
+    .eq('id', id)
+    .maybeSingle();
+  if (!photo) throw new HttpError(404, 'Photo not found');
+  if (photo.kind !== 'photo') throw new HttpError(400, 'Only a photo can be the favorite');
+
+  if (!on) {
+    if (photo.drive_thumb_id) await trashInDrive(photo.drive_thumb_id);
+    await admin.from('attachments').update({ is_cover: false, drive_thumb_id: null }).eq('id', photo.id);
+    return Response.json({ ok: true });
+  }
+
+  let thumbId: string | null = photo.drive_thumb_id;
+  if (!thumbId && thumb instanceof File && thumb.size > 0 && thumb.size < 512 * 1024) {
+    thumbId = (await uploadInto(THUMBS_FOLDER, thumb, `${photo.drive_file_id}.jpg`, 'image/jpeg')).id;
+  }
+  // the record's other photos stop being the favorite and lose their preview
+  const { data: others } = await admin
+    .from('attachments')
+    .select('id, drive_thumb_id')
+    .eq('entity_type', photo.entity_type)
+    .eq('entity_id', photo.entity_id)
+    .neq('id', photo.id)
+    .or('is_cover.eq.true,drive_thumb_id.not.is.null');
+  for (const o of others ?? []) if (o.drive_thumb_id) await trashInDrive(o.drive_thumb_id);
+  if (others?.length) await admin.from('attachments').update({ is_cover: false, drive_thumb_id: null }).in('id', others.map((o) => o.id));
+  const { error } = await admin.from('attachments').update({ is_cover: true, drive_thumb_id: thumbId }).eq('id', photo.id);
+  if (error) throw error;
+  return Response.json({ ok: true });
+}
+
+/** Moves the previews of photos that aren't a favorite to the Drive trash (older uploads made one for every photo). */
+async function pruneThumbs(req: Request) {
+  await requireMember(req, true);
+  const { data: rows } = await admin.from('attachments').select('id, drive_thumb_id').eq('is_cover', false).not('drive_thumb_id', 'is', null).limit(150);
+  for (const r of rows ?? []) {
+    await trashInDrive(r.drive_thumb_id!);
+    await admin.from('attachments').update({ drive_thumb_id: null }).eq('id', r.id);
+  }
+  const { count } = await admin.from('attachments').select('id', { count: 'exact', head: true }).eq('is_cover', false).not('drive_thumb_id', 'is', null);
+  return Response.json({ removed: rows?.length ?? 0, left: count ?? 0 });
 }
 
 async function health(req: Request) {
@@ -411,6 +477,10 @@ async function route(req: Request): Promise<Response> {
         return await invoiceLink(req);
       case '/delete':
         return await remove(req);
+      case '/favorite':
+        return await favorite(req);
+      case '/prune-thumbs':
+        return await pruneThumbs(req);
       case '/health':
         return await health(req);
       default:

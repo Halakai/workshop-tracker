@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { anonClient, createAuthUser, service, signIn, testEmail, uniqueText, type Client } from './helpers';
+import { createAuthUser, service, signIn, testEmail, uniqueText, url, type Client } from './helpers';
 
 let asAdmin: Client;
 let asMember: Client;
@@ -46,7 +46,25 @@ async function covers(entityId: string) {
   return data!.map((r) => r.id);
 }
 
-describe('cover photo', () => {
+/** POST to the files function as this person (null: signed out). */
+async function files(client: Client | null, path: string, body: FormData) {
+  const headers: Record<string, string> = { apikey: process.env.SUPABASE_PUBLISHABLE_KEY! };
+  if (client) {
+    const { data } = await client.auth.getSession();
+    if (data.session) headers.Authorization = `Bearer ${data.session.access_token}`;
+  }
+  const res = await fetch(`${url}/functions/v1/files${path}`, { method: 'POST', headers, body });
+  return { status: res.status, body: await res.json().catch(() => null) };
+}
+
+function favoriteForm(id: string, on: boolean) {
+  const form = new FormData();
+  form.append('id', id);
+  form.append('favorite', on ? '1' : '0');
+  return form;
+}
+
+describe('favorite photo (set by the files function)', () => {
   it('one per record: choosing another moves it, and it can be taken back', async () => {
     const car = crypto.randomUUID();
     const a = await addFile(car);
@@ -55,27 +73,32 @@ describe('cover photo', () => {
     const c = await addFile(otherCar);
     await service.from('attachments').update({ is_cover: true }).eq('id', c.id);
 
-    expect((await asMember.rpc('set_cover_photo', { p_attachment_id: a.id })).error).toBeNull();
+    expect((await files(asMember, '/favorite', favoriteForm(a.id, true))).status).toBe(200);
     expect(await covers(car)).toEqual([a.id]);
-    expect((await asMember.rpc('set_cover_photo', { p_attachment_id: b.id })).error).toBeNull();
+    expect((await files(asMember, '/favorite', favoriteForm(b.id, true))).status).toBe(200);
     expect(await covers(car)).toEqual([b.id]);
-    // another car's cover stays
+    // another car's favorite stays
     expect(await covers(otherCar)).toEqual([c.id]);
-    expect((await asMember.rpc('set_cover_photo', { p_attachment_id: b.id, p_cover: false })).error).toBeNull();
+    expect((await files(asMember, '/favorite', favoriteForm(b.id, false))).status).toBe(200);
     expect(await covers(car)).toEqual([]);
   });
 
   it('only photos, only members, and never by writing the table directly', async () => {
     const car = crypto.randomUUID();
     const receipt = await addFile(car, 'receipt');
-    expect((await asMember.rpc('set_cover_photo', { p_attachment_id: receipt.id })).error?.message).toMatch(/Only a photo/);
+    expect((await files(asMember, '/favorite', favoriteForm(receipt.id, true))).status).toBe(400);
     expect((await service.from('attachments').update({ is_cover: true }).eq('id', receipt.id)).error).not.toBeNull();
 
     const photo = await addFile(car);
-    expect((await anonClient().rpc('set_cover_photo', { p_attachment_id: photo.id })).error).not.toBeNull();
+    expect((await files(null, '/favorite', favoriteForm(photo.id, true))).status).toBe(401);
     const direct = await asMember.from('attachments').update({ is_cover: true }).eq('id', photo.id);
     expect(direct.error?.code).toBe('42501');
     expect(await covers(car)).toEqual([]);
+  });
+
+  it('cleaning up old previews is for admins', async () => {
+    expect((await files(asMember, '/prune-thumbs', new FormData())).status).toBe(403);
+    expect(await files(asAdmin, '/prune-thumbs', new FormData())).toEqual({ status: 200, body: { removed: 0, left: 0 } });
   });
 });
 
