@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanPhone, defaultWebsiteTitle, PHONE_PATTERN, phoneDigits, shortTime, slugify, SLUG_PATTERN, uniqueSlug } from './website';
+import { albumSide, beforeAfterPairs, cleanPhone, defaultWebsiteTitle, PHONE_PATTERN, phoneDigits, shortTime, slugify, SLUG_PATTERN, uniqueSlug } from './website';
 
 describe('slugify', () => {
   it('makes a lowercase address name without accents', () => {
@@ -51,5 +51,24 @@ describe('shortTime', () => {
   it('drops the seconds', () => {
     expect(shortTime('08:00:00')).toBe('08:00');
     expect(shortTime(null)).toBe('');
+  });
+});
+
+describe('before / after', () => {
+  it('knows the Before and After albums, also in Croatian', () => {
+    expect(albumSide('Before')).toBe('before');
+    expect(albumSide(' poslije ')).toBe('after');
+    expect(albumSide('Engine')).toBeNull();
+    expect(albumSide(null)).toBeNull();
+  });
+
+  it('pairs the 1st Before photo with the 1st After photo, and so on', () => {
+    const photos = ['b1', 'x', 'a1', 'b2', 'a2', 'b3'].map((id) => ({ id, side: id[0] === 'b' ? 'before' : id[0] === 'a' ? 'after' : null }) as const);
+    const pairs = beforeAfterPairs(photos, (p) => p.side);
+    expect(pairs.map(([b, a]) => [b.id, a.id])).toEqual([
+      ['b1', 'a1'],
+      ['b2', 'a2'],
+    ]);
+    expect(beforeAfterPairs(photos.filter((p) => p.side !== 'after'), (p) => p.side)).toEqual([]);
   });
 });

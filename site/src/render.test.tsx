@@ -68,6 +68,19 @@ describe('renderSite', () => {
     expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
   });
 
+  it('makes a before/after slider for each pair from the Before and After albums', () => {
+    const golf = page(pages, 'auti/vw-golf-ii-gti-1989/index.html');
+    const marker = 'data-pair="true"';
+    expect(golf.split(marker)).toHaveLength(3);
+    expect(golf).toContain('1 / 2');
+    // the 1st Before photo with the 1st After photo
+    const first = golf.slice(golf.indexOf(marker), golf.indexOf(marker, golf.indexOf(marker) + 1));
+    expect(first).toContain('/f/golf-before.webp');
+    expect(first).toContain('/f/golf-after.webp');
+    // no albums: no slider
+    expect(page(pages, 'auti/bmw-3-series-e46-330d-2003/index.html')).not.toContain('data-pairs');
+  });
+
   it('pages built from sample data are not indexed', () => {
     expect(page(renderSite(sample, { ...ctx, preview: true }), 'index.html')).toContain('<meta name="robots" content="noindex"/>');
     expect(page(pages, 'index.html')).not.toContain('noindex');

@@ -67,6 +67,19 @@ for (const compare of document.querySelectorAll<HTMLElement>('[data-compare]')) 
   set();
 }
 
+for (const box of document.querySelectorAll<HTMLElement>('[data-pairs]')) {
+  const pairs = [...box.querySelectorAll<HTMLElement>('[data-pair]')];
+  const counter = box.querySelector('[data-pair-counter]');
+  let shown = 0;
+  const show = (i: number) => {
+    shown = (i + pairs.length) % pairs.length;
+    pairs.forEach((p, k) => (p.hidden = k !== shown));
+    if (counter) counter.textContent = `${shown + 1} / ${pairs.length}`;
+  };
+  box.querySelector('[data-pair-prev]')?.addEventListener('click', () => show(shown - 1));
+  box.querySelector('[data-pair-next]')?.addEventListener('click', () => show(shown + 1));
+}
+
 // Opening hours: mark today's line and say whether the workshop is open now (in the workshop's time zone).
 for (const box of document.querySelectorAll<HTMLElement>('[data-hours]')) {
   const hours = JSON.parse(box.dataset.hours!) as { weekday: number; opens: string | null; closes: string | null }[];

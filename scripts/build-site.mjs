@@ -133,7 +133,7 @@ async function preparePhotos(ids) {
   return { photos, failed };
 }
 
-/** Photos the build couldn't get are left out of the pages (and out of the slider). */
+/** Photos the build couldn't get are left out of the pages (and so out of the before/after pairs). */
 function withoutPhotos(snapshot, failed) {
   if (failed.length === 0) return snapshot;
   const gone = new Set(failed);
@@ -141,12 +141,7 @@ function withoutPhotos(snapshot, failed) {
   return {
     ...snapshot,
     site_photos: keep(snapshot.site_photos),
-    cars: snapshot.cars.map((c) => ({
-      ...c,
-      photos: keep(c.photos),
-      before_photo_id: gone.has(c.before_photo_id) || gone.has(c.after_photo_id) ? null : c.before_photo_id,
-      after_photo_id: gone.has(c.before_photo_id) || gone.has(c.after_photo_id) ? null : c.after_photo_id,
-    })),
+    cars: snapshot.cars.map((c) => ({ ...c, photos: keep(c.photos) })),
   };
 }
 

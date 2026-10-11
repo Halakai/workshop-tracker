@@ -199,7 +199,13 @@ function PublishCard({ site }: { site: string }) {
   let line: ReactNode = null;
   if (running) line = <span className="flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> Publishing… usually 2–3 minutes.</span>;
   else if (status.error) line = <span className="text-muted-foreground">{status.error.message}</span>;
-  else if (run?.status === 'completed' && run.conclusion === 'success') line = <span className="text-success">Live since {formatDateTime(run.updated)}.</span>;
+  else if (run?.status === 'completed' && run.conclusion === 'success')
+    line = (
+      <>
+        <span className="text-success">Live since {formatDateTime(run.updated)}.</span>{' '}
+        <span className="text-muted-foreground">A phone that had the website open may show the old version for up to 10 minutes; Open always shows the new one.</span>
+      </>
+    );
   else if (run?.status === 'completed' && run.conclusion === 'cancelled') line = <span className="text-muted-foreground">The last publish was replaced by a newer one.</span>;
   else if (run?.status === 'completed')
     line = (
@@ -222,7 +228,8 @@ function PublishCard({ site }: { site: string }) {
             {publish.isPending ? <Loader2 className="animate-spin" /> : <Upload />} Publish
           </Button>
           <Button variant="outline" asChild>
-            <a href={site} target="_blank" rel="noreferrer">
+            {/* a new address after every publish, so the browser can't show a copy it kept from before */}
+            <a href={run?.updated ? `${site}?v=${Date.parse(run.updated) / 1000}` : site} target="_blank" rel="noreferrer">
               <ExternalLink /> Open
             </a>
           </Button>
