@@ -12,7 +12,7 @@ import { syncErrorMessage } from '@/lib/errors';
 import { albumCounts } from '@/domain/photos';
 import { usePhotoAlbums } from '@/features/catalog/api';
 import { AddPhotoAlbumDrawer } from '@/features/catalog/EntryDrawers';
-import { useDeleteAttachment, useMoveToAlbum, usePhotos, useSetFavorite, useUploadAttachment, type Attachment, type EntityType } from './api';
+import { useDeleteAttachment, useMoveToAlbum, usePhotos, useSetCover, useUploadAttachment, type Attachment, type EntityType } from './api';
 
 type Links = Record<string, { thumb: string | null; full: string }> | undefined;
 
@@ -218,7 +218,7 @@ export function PhotoViewer({
 }
 
 function ViewerBody({ photos, links, start, albums, onClose }: { photos: Attachment[]; links: Links; start: number; albums: boolean; onClose: () => void }) {
-  // keep the order the viewer opened with (choosing a favorite reorders the page, not what you're looking at)
+  // keep the order the viewer opened with (choosing a cover reorders the page, not what you're looking at)
   const [order] = useState(() => photos.map((p) => p.id));
   const shown = useMemo(() => {
     const byId = new Map(photos.map((p) => [p.id, p]));
@@ -227,7 +227,7 @@ function ViewerBody({ photos, links, start, albums, onClose }: { photos: Attachm
   const { ref, index, onScroll, go } = useSwipe(start);
   const current = shown[Math.min(index, shown.length - 1)];
   const albumList = usePhotoAlbums();
-  const setFavorite = useSetFavorite();
+  const setCover = useSetCover();
   const move = useMoveToAlbum();
   const remove = useDeleteAttachment();
   // the last photo was deleted
@@ -277,17 +277,17 @@ function ViewerBody({ photos, links, start, albums, onClose }: { photos: Attachm
           <Button
             variant="secondary"
             size="sm"
-            disabled={setFavorite.isPending}
+            disabled={setCover.isPending}
             onClick={async () => {
               try {
-                await setFavorite.mutateAsync({ photo: current, favorite: !current.is_cover, fullUrl: full });
+                await setCover.mutateAsync({ photo: current, cover: !current.is_cover });
                 toast.success(current.is_cover ? 'No longer the favorite' : 'Favorite: shown first, and as the picture in the list');
               } catch (e) {
                 toast.error(syncErrorMessage(e));
               }
             }}
           >
-            {setFavorite.isPending ? <Loader2 className="animate-spin" /> : <Star className={cn(current.is_cover && 'fill-current text-amber-500')} />}
+            <Star className={cn(current.is_cover && 'fill-current text-amber-500')} />
             {current.is_cover ? 'Favorite' : 'Make favorite'}
           </Button>
           {albums && (
@@ -447,7 +447,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
   );
 }
 
-/** A small square favorite photo for list rows; the icon when there is none. */
+/** A small square cover photo for list rows; the icon when there is none. */
 export function Thumb({ url, icon: Icon, className }: { url: string | undefined; icon: typeof Camera; className?: string }) {
   return (
     <span className={cn('flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted', className)}>

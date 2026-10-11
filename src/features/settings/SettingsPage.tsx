@@ -15,8 +15,7 @@ import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui
 import { imageToPngDataUrl } from '@/lib/image';
 import { syncErrorMessage } from '@/lib/errors';
 import { useSettings, useUpdateSettings, type Settings } from './api';
-import { useDriveHealth, usePruneThumbs } from '@/features/files/api';
-import { ConfirmButton } from '@/components/ConfirmButton';
+import { useDriveHealth } from '@/features/files/api';
 import { HardDrive } from 'lucide-react';
 
 const schema = z.object({
@@ -169,7 +168,6 @@ function SettingsForm({ settings }: { settings: Settings }) {
 
 function DriveCard() {
   const health = useDriveHealth();
-  const prune = usePruneThumbs();
   return (
     <Card>
       <CardHeader>
@@ -182,30 +180,6 @@ function DriveCard() {
         </Button>
         {health.data && <p className={health.data.ok ? 'text-success' : 'text-destructive'}>{health.data.message}</p>}
         {health.isError && <p className="text-destructive">{health.error.message}</p>}
-        <div className="mt-2 flex flex-col gap-2 border-t pt-3">
-          <p className="text-muted-foreground">
-            The <span className="font-mono">.thumbs</span> folder holds small previews of favorite photos only. Photos uploaded before 11.10.2026 each got
-            one; this moves those extra previews to the Drive trash.
-          </p>
-          <ConfirmButton
-            variant="outline"
-            className="self-start"
-            disabled={prune.isPending}
-            title="Remove the extra previews?"
-            description="Previews of photos that aren't a favorite go to the Google Drive trash (recoverable there for 30 days). The photos themselves stay."
-            confirmLabel="Remove"
-            onConfirm={async () => {
-              try {
-                const removed = await prune.mutateAsync();
-                toast.success(removed === 0 ? 'Nothing to remove' : `Removed ${removed} preview${removed === 1 ? '' : 's'}`);
-              } catch (e) {
-                toast.error((e as Error).message);
-              }
-            }}
-          >
-            {prune.isPending ? <Loader2 className="animate-spin" /> : <Trash2 />} Remove extra previews
-          </ConfirmButton>
-        </div>
       </CardContent>
     </Card>
   );
