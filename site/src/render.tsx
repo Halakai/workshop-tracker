@@ -3,6 +3,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { T, pick, type Lang, type Texts } from './i18n';
+import { beforeAfterPairs } from '../../src/domain/website';
 import {
   carPath,
   clip,
@@ -668,6 +669,36 @@ function Compare({ v, before, after }: { v: View; before: PhotoFiles; after: Pho
   );
 }
 
+/** One slider per before/after pair; with several pairs, ‹ 1 / 3 › switches between them. */
+function BeforeAfter({ v, pairs }: { v: View; pairs: [PhotoFiles, PhotoFiles][] }) {
+  const { t } = v;
+  return (
+    <div data-pairs>
+      {pairs.map(([before, after], i) => (
+        <div key={i} data-pair hidden={i > 0}>
+          <Compare v={v} before={before} after={after} />
+        </div>
+      ))}
+      <div className="mt-3 flex items-center justify-between gap-4 text-sm text-muted">
+        <span>{t.compareHint}</span>
+        {pairs.length > 1 && (
+          <span className="flex shrink-0 items-center gap-1">
+            <button type="button" data-pair-prev aria-label={t.previous} className="rounded-full border border-line p-2 text-fg hover:border-accent">
+              <ChevronLeftIcon className="size-5" />
+            </button>
+            <span data-pair-counter className="min-w-12 text-center tabular-nums">
+              1 / {pairs.length}
+            </span>
+            <button type="button" data-pair-next aria-label={t.next} className="rounded-full border border-line p-2 text-fg hover:border-accent">
+              <ChevronRightIcon className="size-5" />
+            </button>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CarPage({ v, car }: { v: View; car: SiteCar }) {
   const { s, ctx, lang, t } = v;
   const title = pick(lang, car.title_hr, car.title_en);
@@ -678,8 +709,8 @@ function CarPage({ v, car }: { v: View; car: SiteCar }) {
     .sort((a, b) => Number(b.favorite) - Number(a.favorite))
     .flatMap((ref) => (ctx.photos[ref.id] ? [{ ref, files: ctx.photos[ref.id] }] : []));
   const cover = coverOf(car.photos);
-  const before = car.before_photo_id ? ctx.photos[car.before_photo_id] : undefined;
-  const after = car.after_photo_id ? ctx.photos[car.after_photo_id] : undefined;
+  // the Before and After albums, paired in the order the photos were added (as the snapshot lists them)
+  const pairs = beforeAfterPairs(car.photos, (p) => p.album).map(([b, a]) => [ctx.photos[b.id], ctx.photos[a.id]] as [PhotoFiles, PhotoFiles]);
   const forSale = isForSale(car);
   const badge = carBadge(car, t);
   const path = carPath(ctx.base, lang, car.slug);
@@ -757,11 +788,10 @@ function CarPage({ v, car }: { v: View; car: SiteCar }) {
           </dl>
         )}
 
-        {before && after && (
+        {pairs.length > 0 && (
           <section className="mt-10">
             <h2 className="mb-4 text-2xl font-bold">{t.beforeAfter}</h2>
-            <Compare v={v} before={before} after={after} />
-            <p className="mt-2 text-sm text-muted">{t.compareHint}</p>
+            <BeforeAfter v={v} pairs={pairs} />
           </section>
         )}
 

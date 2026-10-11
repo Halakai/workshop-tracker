@@ -20,32 +20,114 @@
     "facebook_url": null
   },
   "site_photos": [
-    { "id": "site-1", "favorite": true },
-    { "id": "site-2", "favorite": false },
-    { "id": "site-3", "favorite": false }
+    {
+      "id": "site-1",
+      "favorite": true,
+      "album": null
+    },
+    {
+      "id": "site-2",
+      "favorite": false,
+      "album": null
+    },
+    {
+      "id": "site-3",
+      "favorite": false,
+      "album": null
+    }
   ],
   "contacts": [
-    { "name": "David", "phone": "+385 91 000 0001", "call": true, "whatsapp": true, "viber": false },
-    { "name": "Ivan", "phone": "+385 98 000 0002", "call": true, "whatsapp": false, "viber": true }
+    {
+      "name": "David",
+      "phone": "+385 91 000 0001",
+      "call": true,
+      "whatsapp": true,
+      "viber": false
+    },
+    {
+      "name": "Ivan",
+      "phone": "+385 98 000 0002",
+      "call": true,
+      "whatsapp": false,
+      "viber": true
+    }
   ],
   "services": [
-    { "title_hr": "Mehanika", "title_en": "Mechanics", "text_hr": "Servisi, kvačila, zupčasti remeni, remonti motora.", "text_en": "Servicing, clutches, timing belts, engine rebuilds." },
-    { "title_hr": "Limarija i lakiranje", "title_en": "Bodywork and paint", "text_hr": "Od sitnih ogrebotina do cijelog auta.", "text_en": "From small scratches to a full respray." },
-    { "title_hr": "Dijagnostika", "title_en": "Diagnostics", "text_hr": "Očitavanje grešaka i elektrika.", "text_en": null },
-    { "title_hr": "Priprema za tehnički", "title_en": "MOT preparation", "text_hr": null, "text_en": null }
+    {
+      "title_hr": "Mehanika",
+      "title_en": "Mechanics",
+      "text_hr": "Servisi, kvačila, zupčasti remeni, remonti motora.",
+      "text_en": "Servicing, clutches, timing belts, engine rebuilds."
+    },
+    {
+      "title_hr": "Limarija i lakiranje",
+      "title_en": "Bodywork and paint",
+      "text_hr": "Od sitnih ogrebotina do cijelog auta.",
+      "text_en": "From small scratches to a full respray."
+    },
+    {
+      "title_hr": "Dijagnostika",
+      "title_en": "Diagnostics",
+      "text_hr": "Očitavanje grešaka i elektrika.",
+      "text_en": null
+    },
+    {
+      "title_hr": "Priprema za tehnički",
+      "title_en": "MOT preparation",
+      "text_hr": null,
+      "text_en": null
+    }
   ],
   "reviews": [
-    { "author": "Marko, VW Golf IV", "stars": 5, "text_hr": "Brzo, pošteno i bez skrivenih troškova. Preporuka!", "text_en": "Quick, fair and no hidden costs. Recommended!" },
-    { "author": "Ana", "stars": 5, "text_hr": "Auto vozi kao nov.", "text_en": null }
+    {
+      "author": "Marko, VW Golf IV",
+      "stars": 5,
+      "text_hr": "Brzo, pošteno i bez skrivenih troškova. Preporuka!",
+      "text_en": "Quick, fair and no hidden costs. Recommended!"
+    },
+    {
+      "author": "Ana",
+      "stars": 5,
+      "text_hr": "Auto vozi kao nov.",
+      "text_en": null
+    }
   ],
   "hours": [
-    { "weekday": 1, "opens": "08:00", "closes": "16:00" },
-    { "weekday": 2, "opens": "08:00", "closes": "16:00" },
-    { "weekday": 3, "opens": "08:00", "closes": "16:00" },
-    { "weekday": 4, "opens": "08:00", "closes": "16:00" },
-    { "weekday": 5, "opens": "08:00", "closes": "16:00" },
-    { "weekday": 6, "opens": "09:00", "closes": "13:00" },
-    { "weekday": 7, "opens": null, "closes": null }
+    {
+      "weekday": 1,
+      "opens": "08:00",
+      "closes": "16:00"
+    },
+    {
+      "weekday": 2,
+      "opens": "08:00",
+      "closes": "16:00"
+    },
+    {
+      "weekday": 3,
+      "opens": "08:00",
+      "closes": "16:00"
+    },
+    {
+      "weekday": 4,
+      "opens": "08:00",
+      "closes": "16:00"
+    },
+    {
+      "weekday": 5,
+      "opens": "08:00",
+      "closes": "16:00"
+    },
+    {
+      "weekday": 6,
+      "opens": "09:00",
+      "closes": "13:00"
+    },
+    {
+      "weekday": 7,
+      "opens": null,
+      "closes": null
+    }
   ],
   "cars": [
     {
@@ -69,13 +151,27 @@
       "price_cents": 650000,
       "pinned": true,
       "photos": [
-        { "id": "bmw-1", "favorite": true },
-        { "id": "bmw-2", "favorite": false },
-        { "id": "bmw-3", "favorite": false },
-        { "id": "bmw-4", "favorite": false }
-      ],
-      "before_photo_id": null,
-      "after_photo_id": null
+        {
+          "id": "bmw-1",
+          "favorite": true,
+          "album": null
+        },
+        {
+          "id": "bmw-2",
+          "favorite": false,
+          "album": null
+        },
+        {
+          "id": "bmw-3",
+          "favorite": false,
+          "album": null
+        },
+        {
+          "id": "bmw-4",
+          "favorite": false,
+          "album": null
+        }
+      ]
     },
     {
       "id": "car-2",
@@ -98,12 +194,32 @@
       "price_cents": null,
       "pinned": false,
       "photos": [
-        { "id": "golf-before", "favorite": false },
-        { "id": "golf-after", "favorite": true },
-        { "id": "golf-3", "favorite": false }
-      ],
-      "before_photo_id": "golf-before",
-      "after_photo_id": "golf-after"
+        {
+          "id": "golf-before",
+          "favorite": false,
+          "album": "before"
+        },
+        {
+          "id": "golf-before-2",
+          "favorite": false,
+          "album": "before"
+        },
+        {
+          "id": "golf-3",
+          "favorite": false,
+          "album": null
+        },
+        {
+          "id": "golf-after",
+          "favorite": true,
+          "album": "after"
+        },
+        {
+          "id": "golf-after-2",
+          "favorite": false,
+          "album": "after"
+        }
+      ]
     },
     {
       "id": "car-3",
@@ -125,9 +241,13 @@
       "mileage_km": 241000,
       "price_cents": null,
       "pinned": false,
-      "photos": [{ "id": "skoda-1", "favorite": true }],
-      "before_photo_id": null,
-      "after_photo_id": null
+      "photos": [
+        {
+          "id": "skoda-1",
+          "favorite": true,
+          "album": null
+        }
+      ]
     },
     {
       "id": "car-4",
@@ -149,9 +269,7 @@
       "mileage_km": null,
       "price_cents": null,
       "pinned": false,
-      "photos": [],
-      "before_photo_id": null,
-      "after_photo_id": null
+      "photos": []
     }
   ]
 }

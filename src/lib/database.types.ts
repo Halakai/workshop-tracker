@@ -1895,8 +1895,6 @@ export type Database = {
       };
       website_cars: {
         Row: {
-          after_photo_id: string | null;
-          before_photo_id: string | null;
           car_id: string | null;
           created_at: string;
           created_by: string | null;
@@ -1920,8 +1918,6 @@ export type Database = {
           updated_by: string | null;
         };
         Insert: {
-          after_photo_id?: string | null;
-          before_photo_id?: string | null;
           car_id?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -1945,8 +1941,6 @@ export type Database = {
           updated_by?: string | null;
         };
         Update: {
-          after_photo_id?: string | null;
-          before_photo_id?: string | null;
           car_id?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -1970,20 +1964,6 @@ export type Database = {
           updated_by?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "website_cars_after_photo_id_fkey";
-            columns: ["after_photo_id"];
-            isOneToOne: false;
-            referencedRelation: "attachments";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "website_cars_before_photo_id_fkey";
-            columns: ["before_photo_id"];
-            isOneToOne: false;
-            referencedRelation: "attachments";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "website_cars_car_id_fkey";
             columns: ["car_id"];

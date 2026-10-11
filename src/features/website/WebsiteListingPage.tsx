@@ -17,13 +17,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
 import { formatMoney } from '@/domain/money';
 import { formatInteger } from '@/domain/quantity';
-import { defaultWebsiteTitle, SLUG_PATTERN, slugify, uniqueSlug } from '@/domain/website';
+import { albumSide, beforeAfterPairs, defaultWebsiteTitle, SLUG_PATTERN, slugify, uniqueSlug, type BeforeAfter } from '@/domain/website';
 import { syncErrorMessage } from '@/lib/errors';
 import { useGoBack } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 import { useCar } from '@/features/cars/api';
 import { useJob } from '@/features/jobs/api';
-import { usePhotos, type EntityType } from '@/features/files/api';
+import { usePhotos, type Attachment, type EntityType } from '@/features/files/api';
+import { usePhotoAlbums } from '@/features/catalog/api';
 import { publishWebsite, useDeleteWebsiteCar, useSaveWebsiteCar, useSetPhotoOnWebsite, useWebsiteCars, type WebsiteCar } from './api';
 import { websiteBase } from './links';
 import { LangToggle, type Lang } from './LangToggle';
@@ -135,8 +136,6 @@ const schema = z.object({
   pinned: z.boolean(),
   slug: z.string().trim().max(80).regex(SLUG_PATTERN, 'Only lowercase letters, digits and dashes, e.g. bmw-e46-330d'),
   photoIds: z.array(z.string()),
-  before_photo_id: z.string().nullable(),
-  after_photo_id: z.string().nullable(),
 });
 type Values = z.infer<typeof schema>;
 
@@ -168,17 +167,13 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
       pinned: listing?.pinned ?? false,
       slug: listing?.slug ?? uniqueSlug(slugify([title, subject.year].filter(Boolean).join(' ')), taken),
       photoIds: photos.filter((p) => p.on_website).map((p) => p.id),
-      before_photo_id: listing?.before_photo_id ?? null,
-      after_photo_id: listing?.after_photo_id ?? null,
     };
     // only once per listing: the photos may arrive later (synced below)
   }, [listing]);
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: defaults });
   const { errors } = form.formState;
-  const [isPublic, agreed, photoIds, beforeId, afterId] = useWatch({
-    control: form.control,
-    name: ['is_public', 'customer_agreed', 'photoIds', 'before_photo_id', 'after_photo_id'],
-  });
+  const [isPublic, agreed, photoIds] = useWatch({ control: form.control, name: ['is_public', 'customer_agreed', 'photoIds'] });
+  const albums = usePhotoAlbums();
 
   // when the photos arrive after the form, start from the ones already on the website (unless someone tapped already)
   const onWebsite = photos.filter((p) => p.on_website).map((p) => p.id).join(',');
@@ -187,15 +182,15 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
   }, [onWebsite, form]);
 
   const chosen = photos.filter((p) => photoIds.includes(p.id));
-  const togglePhoto = (id: string) => {
-    const next = photoIds.includes(id) ? photoIds.filter((x) => x !== id) : [...photoIds, id];
-    form.setValue('photoIds', next, { shouldDirty: true });
-    // a photo taken off the website can't stay in the slider
-    if (!next.includes(id)) {
-      if (beforeId === id) form.setValue('before_photo_id', null, { shouldDirty: true });
-      if (afterId === id) form.setValue('after_photo_id', null, { shouldDirty: true });
-    }
-  };
+  const setPhotos = (ids: string[]) => form.setValue('photoIds', ids, { shouldDirty: true });
+  const togglePhoto = (id: string) => setPhotos(photoIds.includes(id) ? photoIds.filter((x) => x !== id) : [...photoIds, id]);
+
+  // before/after comes from the Before and After albums (paired in the order the photos were added), as on the website
+  const albumName = new Map((albums.data ?? []).map((a) => [a.id, a.name]));
+  const sideOf = (p: Attachment): BeforeAfter | null => albumSide(p.album_id ? albumName.get(p.album_id) : null);
+  const byAdded = (list: Attachment[]) => [...list].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
+  const pairs = beforeAfterPairs(byAdded(chosen), sideOf);
+  const albumPhotos = photos.filter((p) => sideOf(p));
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (taken.includes(values.slug)) {
@@ -208,7 +203,6 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
     }
     const text = (v: string) => v || null;
     try {
-      // photos first: the slider may only use photos that are on the website
       for (const photo of photos) {
         const on = values.photoIds.includes(photo.id);
         if (photo.on_website !== on) await setOnWebsite.mutateAsync({ photo, on });
@@ -231,8 +225,6 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
           show_mileage: values.show_mileage,
           pinned: values.pinned,
           slug: values.slug,
-          before_photo_id: values.before_photo_id,
-          after_photo_id: values.after_photo_id,
         },
       });
       const wasPublic = listing?.is_public ?? false;
@@ -373,7 +365,19 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
             )}
 
             <FieldSet>
-              <FieldLegend>Photos on the website</FieldLegend>
+              <div className="flex items-center justify-between gap-2">
+                <FieldLegend className="mb-0">Photos on the website</FieldLegend>
+                {photos.length > 0 && (
+                  <span className="flex gap-1">
+                    <Button type="button" variant="outline" size="sm" disabled={chosen.length === photos.length} onClick={() => setPhotos(photos.map((p) => p.id))}>
+                      Select all
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" disabled={chosen.length === 0} onClick={() => setPhotos([])}>
+                      None
+                    </Button>
+                  </span>
+                )}
+              </div>
               <FieldDescription>
                 Tap to choose. {chosen.length} of {photos.length} chosen. Check them for licence plates and people first.
               </FieldDescription>
@@ -396,48 +400,49 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
                           <Check className="size-4" />
                         </span>
                       )}
+                      {sideOf(p) && (
+                        <span className="absolute bottom-1 left-1 rounded bg-black/65 px-1.5 py-0.5 text-[10px] font-semibold text-white uppercase">
+                          {sideOf(p) === 'before' ? 'Before' : 'After'}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
               </div>
             </FieldSet>
 
-            {chosen.length >= 2 && (
-              <FieldSet>
-                <FieldLegend>Before / after slider</FieldLegend>
-                <FieldDescription>Optional. Two photos from the same angle work best; visitors drag a line across to compare.</FieldDescription>
-                {(['before_photo_id', 'after_photo_id'] as const).map((name) => (
-                  <Controller
-                    key={name}
-                    control={form.control}
-                    name={name}
-                    render={({ field }) => (
-                      <div className="flex flex-col gap-1.5">
-                        <span className="text-sm font-medium">{name === 'before_photo_id' ? 'Before' : 'After'}</span>
-                        <div className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
-                          {chosen.map((p) => {
-                            const link = links?.[p.id];
-                            const on = field.value === p.id;
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                onClick={() => field.onChange(on ? null : p.id)}
-                                aria-pressed={on}
-                                className={cn('size-16 shrink-0 overflow-hidden rounded-lg bg-muted', on ? 'ring-3 ring-primary' : 'opacity-60')}
-                              >
-                                {link && <img src={link.thumb ?? link.full} alt="" loading="lazy" className="size-full object-cover" />}
-                              </button>
-                            );
-                          })}
-                        </div>
+            <FieldSet>
+              <FieldLegend>Before / after</FieldLegend>
+              {pairs.length > 0 ? (
+                <>
+                  <FieldDescription>
+                    {pairs.length === 1 ? 'One pair' : `${pairs.length} pairs`} from the Before and After albums: the 1st Before photo with the
+                    1st After photo, and so on, in the order they were added. On the website, visitors drag a line across to compare.
+                  </FieldDescription>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
+                    {pairs.map(([before, after], i) => (
+                      <div key={before.id} className="flex items-center gap-1">
+                        <span className="w-4 text-xs text-muted-foreground tabular-nums">{i + 1}</span>
+                        {[before, after].map((p) => {
+                          const link = links?.[p.id];
+                          return (
+                            <span key={p.id} className="aspect-square flex-1 overflow-hidden rounded-md bg-muted">
+                              {link && <img src={link.thumb ?? link.full} alt="" loading="lazy" className="size-full object-cover" />}
+                            </span>
+                          );
+                        })}
                       </div>
-                    )}
-                  />
-                ))}
-                {Boolean(beforeId) !== Boolean(afterId) && <p className="text-sm text-muted-foreground">Pick both photos for the slider to show.</p>}
-              </FieldSet>
-            )}
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <FieldDescription>
+                  {albumPhotos.length > 0
+                    ? 'Choose photos from both the Before and After albums above to get a before/after slider.'
+                    : `Put photos into the Before and After albums on the ${subject.kind} page to get a before/after slider.`}
+                </FieldDescription>
+              )}
+            </FieldSet>
 
             {checkbox('pinned', 'Show it first', 'Pinned cars come before the others on the website.')}
 

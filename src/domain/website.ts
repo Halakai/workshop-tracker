@@ -67,3 +67,20 @@ export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
 export function shortTime(time: string | null): string {
   return time ? time.slice(0, 5) : '';
 }
+
+export type BeforeAfter = 'before' | 'after';
+
+/** Which side of a before/after pair an album holds: the "Before" / "After" albums (also in Croatian). Same rule as website_snapshot(). */
+export function albumSide(albumName: string | null | undefined): BeforeAfter | null {
+  const name = albumName?.trim().toLowerCase();
+  if (name === 'before' || name === 'prije') return 'before';
+  if (name === 'after' || name === 'poslije') return 'after';
+  return null;
+}
+
+/** The before/after pairs: the 1st Before photo with the 1st After photo, and so on, in the order the photos were added. */
+export function beforeAfterPairs<T>(photos: readonly T[], side: (photo: T) => BeforeAfter | null): [T, T][] {
+  const before = photos.filter((p) => side(p) === 'before');
+  const after = photos.filter((p) => side(p) === 'after');
+  return before.slice(0, after.length).map((b, i) => [b, after[i]]);
+}
