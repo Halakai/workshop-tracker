@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { errorMessage } from '@/lib/errors';
 import { resizeToJpeg } from '@/lib/image';
-import { favoritePhotos, orderPhotos } from '@/domain/photos';
+import { coverPhotos, orderPhotos } from '@/domain/photos';
 import type { Tables } from '@/lib/database.types';
 
 export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool' | 'item';
@@ -49,17 +49,19 @@ export function useFileLinks(ids: string[]) {
 }
 
 /**
- * Photos are shrunk on the phone (max 2000 px, JPEG), so uploads stay well under the Edge Function's request
- * limit. PDFs go as they are. (Only a favorite photo gets a small preview: see useSetFavorite.)
+ * Photos are shrunk on the phone (max 2000 px, JPEG) with a small preview, so uploads stay
+ * well under the Edge Function's request limit. PDFs go as they are.
  */
-export async function prepareUpload(file: File): Promise<File> {
-  if (!file.type.startsWith('image/')) return file;
+export async function prepareUpload(file: File): Promise<{ file: File; thumb: Blob | null }> {
+  if (!file.type.startsWith('image/')) return { file, thumb: null };
   try {
     const big = await resizeToJpeg(file, 2000, 0.8);
-    return new File([big], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' });
+    const thumb = await resizeToJpeg(file, 320, 0.7);
+    const name = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    return { file: new File([big], name, { type: 'image/jpeg' }), thumb };
   } catch {
-    // e.g. a format the phone can't draw: send it as it is
-    return file;
+    // e.g. a format the phone can't draw: send it as it is, without a preview
+    return { file, thumb: null };
   }
 }
 
@@ -67,9 +69,10 @@ export function useUploadAttachment() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (args: { file: File; entityType: EntityType; entityId: string; kind: FileKind; label?: string; albumId?: string | null }) => {
-      const file = await prepareUpload(args.file);
+      const { file, thumb } = await prepareUpload(args.file);
       const form = new FormData();
       form.append('file', file);
+      if (thumb) form.append('thumb', thumb, 'thumb.jpg');
       form.append('entity_type', args.entityType);
       form.append('entity_id', args.entityId);
       form.append('kind', args.kind);
@@ -102,53 +105,19 @@ export function useDeleteAttachment() {
   });
 }
 
-/**
- * Makes a photo the record's favorite (shown first, and as the picture in the lists), or takes that back.
- * The favorite gets a small preview, made here from the photo; the previous favorite's preview is removed.
- */
-export function useSetFavorite() {
+/** Makes a photo the record's cover (shown first and in the lists), or takes that back. */
+export function useSetCover() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ photo, favorite, fullUrl }: { photo: Attachment; favorite: boolean; fullUrl?: string }) => {
-      const form = new FormData();
-      form.append('id', photo.id);
-      form.append('favorite', favorite ? '1' : '0');
-      if (favorite && fullUrl) {
-        try {
-          const original = await fetch(fullUrl).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))));
-          form.append('thumb', await resizeToJpeg(original, 320, 0.7), 'thumb.jpg');
-        } catch {
-          // without a preview the list shows the photo itself (a bit slower to load)
-        }
-      }
-      const { error } = await supabase.functions.invoke('files/favorite', { body: form });
-      if (error) throw new Error(await errorMessage(error));
+    mutationFn: async ({ photo, cover }: { photo: Attachment; cover: boolean }) => {
+      const { error } = await supabase.rpc('set_cover_photo', { p_attachment_id: photo.id, p_cover: cover });
+      if (error) throw error;
     },
     onSuccess: (_d, { photo }) =>
       Promise.all([
         queryClient.invalidateQueries({ queryKey: fileKeys.list(photo.entity_type as EntityType, photo.entity_id) }),
         queryClient.invalidateQueries({ queryKey: fileKeys.covers(photo.entity_type as EntityType) }),
-        // the favorite's preview link is new
-        queryClient.invalidateQueries({ queryKey: ['file-links'] }),
       ]),
-  });
-}
-
-/** Admins: moves the previews of photos that aren't a favorite to the Drive trash (older uploads made one for each). */
-export function usePruneThumbs() {
-  return useMutation({
-    mutationFn: async () => {
-      let removed = 0;
-      // the function does up to 150 per call
-      for (let round = 0; round < 20; round++) {
-        const { data, error } = await supabase.functions.invoke('files/prune-thumbs', { body: {} });
-        if (error) throw new Error(await errorMessage(error));
-        const result = data as { removed: number; left: number };
-        removed += result.removed;
-        if (result.left === 0 || result.removed === 0) break;
-      }
-      return removed;
-    },
   });
 }
 
@@ -164,7 +133,7 @@ export function useMoveToAlbum() {
   });
 }
 
-/** A record's photos, favorite first, with their view links. */
+/** A record's photos, cover first, with their view links. */
 export function usePhotos(entityType: EntityType, entityId: string | undefined) {
   const attachments = useAttachments(entityType, entityId);
   const photos = useMemo(
@@ -175,8 +144,8 @@ export function usePhotos(entityType: EntityType, entityId: string | undefined) 
   return { photos, links: links.data, isPending: attachments.isPending, error: attachments.error ?? links.error };
 }
 
-/** The favorite photo of every tool / item that has one, as small preview links (for the lists). */
-export function useFavoriteThumbs(entityType: EntityType) {
+/** The cover photo of every car / tool / item that has photos, as small preview links (for the lists). */
+export function useCoverThumbs(entityType: EntityType) {
   const covers = useQuery({
     queryKey: fileKeys.covers(entityType),
     staleTime: 5 * 60_000,
@@ -185,9 +154,10 @@ export function useFavoriteThumbs(entityType: EntityType) {
         .from('attachments')
         .select('id, entity_id, is_cover, created_at, album_id')
         .eq('entity_type', entityType)
-        .eq('is_cover', true);
+        .eq('kind', 'photo')
+        .like('mime_type', 'image/%');
       if (error) throw error;
-      return favoritePhotos(data);
+      return coverPhotos(data);
     },
   });
   const ids = [...(covers.data?.values() ?? [])].map((c) => c.id).slice(0, 200);

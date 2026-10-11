@@ -1,5 +1,5 @@
-// Photos of a record: the favorite comes first, then the rest in the order they were taken (uploaded).
-// Only a favorite is shown as the record's picture in the lists.
+// Photos of a record: the cover comes first, then the rest in the order they were taken (uploaded).
+// Without a chosen cover, the first photo is the cover (in lists and at the top of a page).
 
 export interface PhotoLike {
   id: string;
@@ -13,16 +13,19 @@ function byAge(a: PhotoLike, b: PhotoLike): number {
   return a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id);
 }
 
-/** Favorite first, then oldest to newest. */
+/** Cover first, then oldest to newest. */
 export function orderPhotos<T extends PhotoLike>(photos: readonly T[]): T[] {
   return [...photos].sort((a, b) => Number(b.is_cover) - Number(a.is_cover) || byAge(a, b));
 }
 
-/** Each record's favorite photo (records without one aren't in the map). */
-export function favoritePhotos<T extends PhotoLike>(photos: readonly T[]): Map<string, T> {
-  const favorites = new Map<string, T>();
-  for (const p of photos) if (p.is_cover) favorites.set(p.entity_id, p);
-  return favorites;
+/** Each record's cover: the chosen one, or else its first photo. */
+export function coverPhotos<T extends PhotoLike>(photos: readonly T[]): Map<string, T> {
+  const covers = new Map<string, T>();
+  for (const p of [...photos].sort(byAge)) {
+    const current = covers.get(p.entity_id);
+    if (!current || (p.is_cover && !current.is_cover)) covers.set(p.entity_id, p);
+  }
+  return covers;
 }
 
 /** How many photos each album holds (key null: photos in no album). */
