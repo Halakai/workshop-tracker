@@ -1,9 +1,9 @@
 // Pure helpers for the files function (no Deno APIs, so they are unit-tested with Vitest).
 
-export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool' | 'item';
+export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool' | 'item' | 'website';
 export type FileKind = 'photo' | 'receipt' | 'invoice' | 'document';
 
-export const ENTITY_TYPES: readonly EntityType[] = ['car', 'job', 'stock_movement', 'transaction', 'tool', 'item'];
+export const ENTITY_TYPES: readonly EntityType[] = ['car', 'job', 'stock_movement', 'transaction', 'tool', 'item', 'website'];
 export const FILE_KINDS: readonly FileKind[] = ['photo', 'receipt', 'invoice', 'document'];
 
 export const ROOT_FOLDER_NAME = 'Workshop Tracker';
@@ -61,6 +61,7 @@ export interface ItemInfo {
  *   Workshop Tracker/Receipts/2026          (stock purchases, workshop expenses)
  *   Workshop Tracker/Tools/T-001 Impact wrench   (photos, receipts, manuals)
  *   Workshop Tracker/Inventory/FLD-CAST-001 Engine oil 5W-30   (photos of parts and supplies)
+ *   Workshop Tracker/Website                ("about us" photos for the public website)
  */
 export function folderChain(
   target:
@@ -68,9 +69,11 @@ export function folderChain(
     | { type: 'job'; job: JobInfo; kind: FileKind }
     | { type: 'tool'; tool: ToolInfo }
     | { type: 'item'; item: ItemInfo }
+    | { type: 'website' }
     | { type: 'other'; year: number },
 ): FolderSpec[] {
   const root: FolderSpec = { key: 'root', name: ROOT_FOLDER_NAME, parent: null };
+  if (target.type === 'website') return [root, { key: 'website', name: 'Website', parent: 'root' }];
   if (target.type === 'item') {
     const { item } = target;
     return [

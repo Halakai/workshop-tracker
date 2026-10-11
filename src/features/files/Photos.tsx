@@ -2,7 +2,7 @@
 // and the photo section with albums (Before, After …). Files live in Google Drive (see ./api.ts).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { Camera, ChevronLeft, ChevronRight, ExternalLink, ImagePlus, Loader2, Plus, Star, Trash2, X } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, ExternalLink, Globe, ImagePlus, Loader2, Plus, Star, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmButton } from '@/components/ConfirmButton';
@@ -414,6 +414,11 @@ export function PhotoSection({
                 {p.is_cover && (
                   <span className="absolute top-1 left-1 flex size-6 items-center justify-center rounded-full bg-black/55" title="Favorite photo">
                     <Star className="size-3.5 fill-amber-400 text-amber-400" />
+                  </span>
+                )}
+                {p.on_website && (
+                  <span className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/55" title="On the website">
+                    <Globe className="size-3.5 text-white" />
                   </span>
                 )}
               </button>

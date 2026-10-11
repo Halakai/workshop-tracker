@@ -42,8 +42,12 @@ const ContactsPage = lazy(() => import('@/features/contacts/ContactsPage').then(
 const ExportPage = lazy(() => import('@/features/export/ExportPage').then((m) => ({ default: m.ExportPage })));
 const SearchPage = lazy(() => import('@/features/search/SearchPage').then((m) => ({ default: m.SearchPage })));
 const UsersPage = lazy(() => import('@/features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
+const website = () => import('@/features/website/pages');
+const WebsitePage = lazy(() => website().then((m) => ({ default: m.WebsitePage })));
+const CarWebsitePage = lazy(() => website().then((m) => ({ default: m.CarWebsitePage })));
+const JobWebsitePage = lazy(() => website().then((m) => ({ default: m.JobWebsitePage })));
 
-// HashRouter: URLs look like …/workshop-tracker/#/cars/123, which always works on GitHub Pages.
+// HashRouter: URLs look like …/workshop-tracker/app/#/cars/123, which always works on GitHub Pages.
 export const router = createHashRouter([
   { path: '/login', element: <LoginPage /> },
   {
@@ -71,6 +75,7 @@ export const router = createHashRouter([
           { path: 'cars/:id', element: <CarPage /> },
           { path: 'cars/:id/edit', element: <CarFormPage /> },
           { path: 'cars/:id/settle', element: <SettlePage /> },
+          { path: 'cars/:id/website', element: <CarWebsitePage /> },
           { path: 'money', element: <MoneyPage /> },
           { path: 'partners', element: <PartnersPage /> },
           { path: 'partners/:id', element: <PartnerPage /> },
@@ -79,6 +84,8 @@ export const router = createHashRouter([
           { path: 'jobs/:id', element: <JobPage /> },
           { path: 'jobs/:id/edit', element: <JobFormPage /> },
           { path: 'jobs/:id/settle', element: <JobSettlePage /> },
+          { path: 'jobs/:id/website', element: <JobWebsitePage /> },
+          { path: 'website', element: <WebsitePage /> },
           { path: 'more', element: <MorePage /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'lists', element: <ListsPage /> },

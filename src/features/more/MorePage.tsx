@@ -1,5 +1,5 @@
 import { Link } from 'react-router';
-import { BookUser, ChevronRight, DatabaseBackup, Handshake, ListChecks, LogOut, Settings, UserRound, Users, Wallet, type LucideIcon } from 'lucide-react';
+import { BookUser, ChevronRight, DatabaseBackup, Globe, Handshake, ListChecks, LogOut, Settings, UserRound, Users, Wallet, type LucideIcon } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { useCurrentProfile } from '@/features/auth/profiles';
@@ -20,6 +20,7 @@ export function MorePage() {
     { to: '/partners', label: 'Partners', description: 'Who put in what, balances', icon: Handshake },
     { to: '/contacts', label: 'Contacts', description: 'Sellers, buyers and customers', icon: BookUser },
     { to: '/lists', label: 'Lists', description: 'Car makes & models, categories, units, brands, cost types, photo albums, tool categories', icon: ListChecks },
+    { to: '/website', label: 'Website', description: 'What the public website shows: cars, texts, contacts, hours', icon: Globe },
     { to: '/account', label: 'My account', description: 'Name and password', icon: UserRound },
     ...(me.role === 'admin'
       ? [

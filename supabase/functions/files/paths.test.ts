@@ -48,6 +48,10 @@ describe('Drive folders', () => {
     expect(folderChain({ type: 'other', year: 2026 }).map((f) => f.key)).toEqual(['root', 'receipts', 'receipts/2026']);
   });
 
+  it('puts the website’s own photos in Website', () => {
+    expect(folderChain({ type: 'website' }).map((f) => f.name)).toEqual(['Workshop Tracker', 'Website']);
+  });
+
   it('every folder’s parent comes before it', () => {
     const chain = folderChain({ type: 'car', car, kind: 'photo' });
     chain.forEach((f, i) => {

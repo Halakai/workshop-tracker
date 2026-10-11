@@ -183,6 +183,7 @@ export type Database = {
           is_cover: boolean;
           kind: string;
           mime_type: string;
+          on_website: boolean;
           size_bytes: number | null;
           updated_at: string;
           updated_by: string | null;
@@ -200,6 +201,7 @@ export type Database = {
           is_cover?: boolean;
           kind: string;
           mime_type: string;
+          on_website?: boolean;
           size_bytes?: number | null;
           updated_at?: string;
           updated_by?: string | null;
@@ -217,6 +219,7 @@ export type Database = {
           is_cover?: boolean;
           kind?: string;
           mime_type?: string;
+          on_website?: boolean;
           size_bytes?: number | null;
           updated_at?: string;
           updated_by?: string | null;
@@ -1890,6 +1893,413 @@ export type Database = {
           },
         ];
       };
+      website_cars: {
+        Row: {
+          after_photo_id: string | null;
+          before_photo_id: string | null;
+          car_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          customer_agreed: boolean;
+          id: string;
+          is_public: boolean;
+          job_id: string | null;
+          pinned: boolean;
+          show_engine: boolean;
+          show_fuel: boolean;
+          show_mileage: boolean;
+          show_year: boolean;
+          slug: string;
+          story_en: string | null;
+          story_hr: string | null;
+          summary_en: string | null;
+          summary_hr: string | null;
+          title_en: string | null;
+          title_hr: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          after_photo_id?: string | null;
+          before_photo_id?: string | null;
+          car_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          customer_agreed?: boolean;
+          id?: string;
+          is_public?: boolean;
+          job_id?: string | null;
+          pinned?: boolean;
+          show_engine?: boolean;
+          show_fuel?: boolean;
+          show_mileage?: boolean;
+          show_year?: boolean;
+          slug: string;
+          story_en?: string | null;
+          story_hr?: string | null;
+          summary_en?: string | null;
+          summary_hr?: string | null;
+          title_en?: string | null;
+          title_hr: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          after_photo_id?: string | null;
+          before_photo_id?: string | null;
+          car_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          customer_agreed?: boolean;
+          id?: string;
+          is_public?: boolean;
+          job_id?: string | null;
+          pinned?: boolean;
+          show_engine?: boolean;
+          show_fuel?: boolean;
+          show_mileage?: boolean;
+          show_year?: boolean;
+          slug?: string;
+          story_en?: string | null;
+          story_hr?: string | null;
+          summary_en?: string | null;
+          summary_hr?: string | null;
+          title_en?: string | null;
+          title_hr?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "website_cars_after_photo_id_fkey";
+            columns: ["after_photo_id"];
+            isOneToOne: false;
+            referencedRelation: "attachments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_cars_before_photo_id_fkey";
+            columns: ["before_photo_id"];
+            isOneToOne: false;
+            referencedRelation: "attachments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_cars_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: true;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "website_cars_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: true;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_cars_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_cars_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: true;
+            referencedRelation: "job_summaries";
+            referencedColumns: ["job_id"];
+          },
+          {
+            foreignKeyName: "website_cars_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: true;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_cars_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      website_contacts: {
+        Row: {
+          call: boolean;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          phone: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+          viber: boolean;
+          whatsapp: boolean;
+        };
+        Insert: {
+          call?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          phone: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          viber?: boolean;
+          whatsapp?: boolean;
+        };
+        Update: {
+          call?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          phone?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          viber?: boolean;
+          whatsapp?: boolean;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "website_contacts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_contacts_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      website_hours: {
+        Row: {
+          closes: string | null;
+          opens: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          weekday: number;
+        };
+        Insert: {
+          closes?: string | null;
+          opens?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          weekday: number;
+        };
+        Update: {
+          closes?: string | null;
+          opens?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          weekday?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "website_hours_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      website_reviews: {
+        Row: {
+          author: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          sort_order: number;
+          stars: number | null;
+          text_en: string | null;
+          text_hr: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          author: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          sort_order?: number;
+          stars?: number | null;
+          text_en?: string | null;
+          text_hr: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          author?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          sort_order?: number;
+          stars?: number | null;
+          text_en?: string | null;
+          text_hr?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "website_reviews_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_reviews_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      website_services: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          sort_order: number;
+          text_en: string | null;
+          text_hr: string | null;
+          title_en: string | null;
+          title_hr: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          sort_order?: number;
+          text_en?: string | null;
+          text_hr?: string | null;
+          title_en?: string | null;
+          title_hr: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          sort_order?: number;
+          text_en?: string | null;
+          text_hr?: string | null;
+          title_en?: string | null;
+          title_hr?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "website_services_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_services_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      website_settings: {
+        Row: {
+          about_en: string | null;
+          about_hr: string | null;
+          created_at: string;
+          created_by: string | null;
+          facebook_url: string | null;
+          headline_en: string | null;
+          headline_hr: string | null;
+          hours_note_en: string | null;
+          hours_note_hr: string | null;
+          id: boolean;
+          instagram_url: string | null;
+          intro_en: string | null;
+          intro_hr: string | null;
+          map_url: string | null;
+          photos_id: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          about_en?: string | null;
+          about_hr?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          facebook_url?: string | null;
+          headline_en?: string | null;
+          headline_hr?: string | null;
+          hours_note_en?: string | null;
+          hours_note_hr?: string | null;
+          id?: boolean;
+          instagram_url?: string | null;
+          intro_en?: string | null;
+          intro_hr?: string | null;
+          map_url?: string | null;
+          photos_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          about_en?: string | null;
+          about_hr?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          facebook_url?: string | null;
+          headline_en?: string | null;
+          headline_hr?: string | null;
+          hours_note_en?: string | null;
+          hours_note_hr?: string | null;
+          id?: boolean;
+          instagram_url?: string | null;
+          intro_en?: string | null;
+          intro_hr?: string | null;
+          map_url?: string | null;
+          photos_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "website_settings_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_settings_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       car_summaries: {
@@ -2043,6 +2453,10 @@ export type Database = {
         Args: { p_job_id: string; p_shares: Json };
         Returns: undefined;
       };
+      set_photo_on_website: {
+        Args: { p_attachment_id: string; p_on: boolean };
+        Returns: undefined;
+      };
       undo_settlement: {
         Args: { p_car_id?: string; p_job_id?: string };
         Returns: undefined;
@@ -2051,6 +2465,14 @@ export type Database = {
         Args: { p_movement_id: string };
         Returns: undefined;
       };
+      website_photo: {
+        Args: { p_attachment_id: string };
+        Returns: {
+          drive_file_id: string;
+          mime_type: string;
+        }[];
+      };
+      website_snapshot: { Args: never; Returns: Json };
     };
     Enums: {
       account_kind: "wallet" | "partner" | "external";
