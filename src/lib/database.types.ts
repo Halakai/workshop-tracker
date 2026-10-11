@@ -2449,12 +2449,12 @@ export type Database = {
         Args: { p_attachment_id: string; p_cover?: boolean };
         Returns: undefined;
       };
-      set_photo_on_website: {
-        Args: { p_attachment_id: string; p_on: boolean };
-        Returns: undefined;
-      };
       set_job_shares: {
         Args: { p_job_id: string; p_shares: Json };
+        Returns: undefined;
+      };
+      set_photo_on_website: {
+        Args: { p_attachment_id: string; p_on: boolean };
         Returns: undefined;
       };
       undo_settlement: {
@@ -2467,7 +2467,10 @@ export type Database = {
       };
       website_photo: {
         Args: { p_attachment_id: string };
-        Returns: { drive_file_id: string; mime_type: string }[];
+        Returns: {
+          drive_file_id: string;
+          mime_type: string;
+        }[];
       };
       website_snapshot: { Args: never; Returns: Json };
     };
