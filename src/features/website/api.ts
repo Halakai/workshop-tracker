@@ -2,7 +2,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { errorMessage } from '@/lib/errors';
-import type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types';
+import type { Json, Tables, TablesInsert, TablesUpdate } from '@/lib/database.types';
 import { fileKeys, type Attachment, type EntityType } from '@/features/files/api';
 
 export const websiteKeys = {
@@ -11,6 +11,7 @@ export const websiteKeys = {
   list: (table: WebsiteList) => ['website', table] as const,
   cars: ['website-cars'] as const,
   status: ['website-status'] as const,
+  pairs: (websiteCarId: string) => ['website-pairs', websiteCarId] as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -205,11 +206,13 @@ export type WebsiteCarValues = Omit<TablesInsert<'website_cars'>, 'id' | 'car_id
 export function useSaveWebsiteCar() {
   const queryClient = useQueryClient();
   return useMutation({
+    /** returns the listing's id (a new listing gets one here) */
     mutationFn: async ({ id, target, values }: { id?: string; target: { car_id: string } | { job_id: string }; values: WebsiteCarValues }) => {
-      const { error } = id
-        ? await supabase.from('website_cars').update(values).eq('id', id)
-        : await supabase.from('website_cars').insert({ ...values, ...target });
+      const { data, error } = id
+        ? await supabase.from('website_cars').update(values).eq('id', id).select('id').single()
+        : await supabase.from('website_cars').insert({ ...values, ...target }).select('id').single();
       if (error) throw error;
+      return data.id;
     },
     onSuccess: () =>
       Promise.all([
@@ -245,5 +248,41 @@ export function useSetPhotoOnWebsite() {
       queryClient.setQueryData<Attachment[]>(key, (rows) => rows?.map((r) => (r.id === photo.id ? { ...r, on_website: on } : r)));
     },
     onSettled: (_d, _e, { photo }) => queryClient.invalidateQueries({ queryKey: fileKeys.list(photo.entity_type as EntityType, photo.entity_id) }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Before/after pairs: any two photos of the car or job, in the order picked
+// ---------------------------------------------------------------------------
+export interface PhotoPair {
+  before: string;
+  after: string;
+}
+
+export function useWebsitePairs(websiteCarId: string | undefined) {
+  return useQuery({
+    queryKey: websiteKeys.pairs(websiteCarId ?? ''),
+    enabled: Boolean(websiteCarId),
+    queryFn: async (): Promise<PhotoPair[]> => {
+      const { data, error } = await supabase
+        .from('website_pairs')
+        .select('before_photo_id, after_photo_id')
+        .eq('website_car_id', websiteCarId!)
+        .order('sort_order');
+      if (error) throw error;
+      return data.map((r) => ({ before: r.before_photo_id, after: r.after_photo_id }));
+    },
+  });
+}
+
+/** Replaces the listing's pairs with these. */
+export function useSetWebsitePairs() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ websiteCarId, pairs }: { websiteCarId: string; pairs: PhotoPair[] }) => {
+      const { error } = await supabase.rpc('set_website_pairs', { p_website_car_id: websiteCarId, p_pairs: pairs as unknown as Json });
+      if (error) throw error;
+    },
+    onSuccess: (_d, { websiteCarId }) => queryClient.invalidateQueries({ queryKey: websiteKeys.pairs(websiteCarId) }),
   });
 }

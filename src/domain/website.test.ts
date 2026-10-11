@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { albumSide, beforeAfterPairs, cleanPhone, defaultWebsiteTitle, PHONE_PATTERN, phoneDigits, shortTime, slugify, SLUG_PATTERN, uniqueSlug } from './website';
+import { albumSide, cleanPhone, defaultWebsiteTitle, PHONE_PATTERN, phoneDigits, shortTime, slugify, SLUG_PATTERN, uniqueSlug } from './website';
 
 describe('slugify', () => {
   it('makes a lowercase address name without accents', () => {
@@ -60,15 +60,5 @@ describe('before / after', () => {
     expect(albumSide(' poslije ')).toBe('after');
     expect(albumSide('Engine')).toBeNull();
     expect(albumSide(null)).toBeNull();
-  });
-
-  it('pairs the 1st Before photo with the 1st After photo, and so on', () => {
-    const photos = ['b1', 'x', 'a1', 'b2', 'a2', 'b3'].map((id) => ({ id, side: id[0] === 'b' ? 'before' : id[0] === 'a' ? 'after' : null }) as const);
-    const pairs = beforeAfterPairs(photos, (p) => p.side);
-    expect(pairs.map(([b, a]) => [b.id, a.id])).toEqual([
-      ['b1', 'a1'],
-      ['b2', 'a2'],
-    ]);
-    expect(beforeAfterPairs(photos.filter((p) => p.side !== 'after'), (p) => p.side)).toEqual([]);
   });
 });

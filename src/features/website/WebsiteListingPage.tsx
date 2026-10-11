@@ -17,7 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSet } from '@/components/ui/field';
 import { formatMoney } from '@/domain/money';
 import { formatInteger } from '@/domain/quantity';
-import { albumSide, beforeAfterPairs, defaultWebsiteTitle, SLUG_PATTERN, slugify, uniqueSlug, type BeforeAfter } from '@/domain/website';
+import { albumSide, defaultWebsiteTitle, SLUG_PATTERN, slugify, uniqueSlug, type BeforeAfter } from '@/domain/website';
 import { syncErrorMessage } from '@/lib/errors';
 import { useGoBack } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,18 @@ import { useCar } from '@/features/cars/api';
 import { useJob } from '@/features/jobs/api';
 import { usePhotos, type Attachment, type EntityType } from '@/features/files/api';
 import { usePhotoAlbums } from '@/features/catalog/api';
-import { publishWebsite, useDeleteWebsiteCar, useSaveWebsiteCar, useSetPhotoOnWebsite, useWebsiteCars, type WebsiteCar } from './api';
+import {
+  publishWebsite,
+  useDeleteWebsiteCar,
+  useSaveWebsiteCar,
+  useSetPhotoOnWebsite,
+  useSetWebsitePairs,
+  useWebsiteCars,
+  useWebsitePairs,
+  type PhotoPair,
+  type WebsiteCar,
+} from './api';
+import { PairsEditor } from './PairsEditor';
 import { websiteBase } from './links';
 import { LangToggle, type Lang } from './LangToggle';
 
@@ -94,7 +105,10 @@ export function JobWebsitePage() {
 
 function Loader({ pending, subject, back }: { pending: boolean; subject: Subject | null; back: string }) {
   const listings = useWebsiteCars();
-  if (pending || listings.isPending) {
+  const all = listings.data ?? [];
+  const listing = subject ? (all.find((w) => (subject.kind === 'car' ? w.car_id === subject.id : w.job_id === subject.id)) ?? null) : null;
+  const pairs = useWebsitePairs(listing?.id);
+  if (pending || listings.isPending || (listing && pairs.isPending)) {
     return (
       <>
         <PageHeader title="On the website" back={back} />
@@ -104,20 +118,20 @@ function Loader({ pending, subject, back }: { pending: boolean; subject: Subject
       </>
     );
   }
-  if (!subject || listings.isError) {
+  if (!subject || listings.isError || pairs.isError) {
     return (
       <>
         <PageHeader title="On the website" back={back} />
         <PageBody>
-          <p className="text-muted-foreground">{listings.error ? syncErrorMessage(listings.error) : 'This doesn’t exist (anymore).'}</p>
+          <p className="text-muted-foreground">
+            {listings.error || pairs.error ? syncErrorMessage(listings.error ?? pairs.error) : 'This doesn’t exist (anymore).'}
+          </p>
         </PageBody>
       </>
     );
   }
-  const all = listings.data ?? [];
-  const listing = all.find((w) => (subject.kind === 'car' ? w.car_id === subject.id : w.job_id === subject.id)) ?? null;
   const taken = all.filter((w) => w.id !== listing?.id).map((w) => w.slug);
-  return <ListingForm key={listing?.id ?? 'new'} subject={subject} listing={listing} taken={taken} />;
+  return <ListingForm key={listing?.id ?? 'new'} subject={subject} listing={listing} initialPairs={pairs.data ?? []} taken={taken} />;
 }
 
 const schema = z.object({
@@ -136,16 +150,18 @@ const schema = z.object({
   pinned: z.boolean(),
   slug: z.string().trim().max(80).regex(SLUG_PATTERN, 'Only lowercase letters, digits and dashes, e.g. bmw-e46-330d'),
   photoIds: z.array(z.string()),
+  pairs: z.array(z.object({ before: z.string(), after: z.string() })),
 });
 type Values = z.infer<typeof schema>;
 
-function ListingForm({ subject, listing, taken }: { subject: Subject; listing: WebsiteCar | null; taken: string[] }) {
+function ListingForm({ subject, listing, initialPairs, taken }: { subject: Subject; listing: WebsiteCar | null; initialPairs: PhotoPair[]; taken: string[] }) {
   const goBack = useGoBack();
   const entityType: EntityType = subject.kind;
   const { photos, links } = usePhotos(entityType, subject.id);
   const save = useSaveWebsiteCar();
   const remove = useDeleteWebsiteCar();
   const setOnWebsite = useSetPhotoOnWebsite();
+  const setPairs = useSetWebsitePairs();
   const [lang, setLang] = useState<Lang>('hr');
   const [slugEdited, setSlugEdited] = useState(Boolean(listing));
 
@@ -167,6 +183,7 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
       pinned: listing?.pinned ?? false,
       slug: listing?.slug ?? uniqueSlug(slugify([title, subject.year].filter(Boolean).join(' ')), taken),
       photoIds: photos.filter((p) => p.on_website).map((p) => p.id),
+      pairs: initialPairs,
     };
     // only once per listing: the photos may arrive later (synced below)
   }, [listing]);
@@ -185,12 +202,9 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
   const setPhotos = (ids: string[]) => form.setValue('photoIds', ids, { shouldDirty: true });
   const togglePhoto = (id: string) => setPhotos(photoIds.includes(id) ? photoIds.filter((x) => x !== id) : [...photoIds, id]);
 
-  // before/after comes from the Before and After albums (paired in the order the photos were added), as on the website
+  // the Before / After albums only label the photos (and come first when picking a pair's photo)
   const albumName = new Map((albums.data ?? []).map((a) => [a.id, a.name]));
   const sideOf = (p: Attachment): BeforeAfter | null => albumSide(p.album_id ? albumName.get(p.album_id) : null);
-  const byAdded = (list: Attachment[]) => [...list].sort((a, b) => a.created_at.localeCompare(b.created_at) || a.id.localeCompare(b.id));
-  const pairs = beforeAfterPairs(byAdded(chosen), sideOf);
-  const albumPhotos = photos.filter((p) => sideOf(p));
 
   const onSubmit = form.handleSubmit(async (values) => {
     if (taken.includes(values.slug)) {
@@ -207,7 +221,7 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
         const on = values.photoIds.includes(photo.id);
         if (photo.on_website !== on) await setOnWebsite.mutateAsync({ photo, on });
       }
-      await save.mutateAsync({
+      const listingId = await save.mutateAsync({
         id: listing?.id,
         target: subject.kind === 'car' ? { car_id: subject.id } : { job_id: subject.id },
         values: {
@@ -227,6 +241,10 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
           slug: values.slug,
         },
       });
+      // pairs whose photo was deleted in the meantime are dropped
+      const photoIdSet = new Set(photos.map((p) => p.id));
+      const pairs = values.pairs.filter((pair) => photoIdSet.has(pair.before) && photoIdSet.has(pair.after));
+      if (JSON.stringify(pairs) !== JSON.stringify(initialPairs)) await setPairs.mutateAsync({ websiteCarId: listingId, pairs });
       const wasPublic = listing?.is_public ?? false;
       if (!values.is_public && !wasPublic) {
         toast.success('Saved (not shown on the website)');
@@ -411,38 +429,11 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
               </div>
             </FieldSet>
 
-            <FieldSet>
-              <FieldLegend>Before / after</FieldLegend>
-              {pairs.length > 0 ? (
-                <>
-                  <FieldDescription>
-                    {pairs.length === 1 ? 'One pair' : `${pairs.length} pairs`} from the Before and After albums: the 1st Before photo with the
-                    1st After photo, and so on, in the order they were added. On the website, visitors drag a line across to compare.
-                  </FieldDescription>
-                  <div className="grid grid-cols-2 gap-x-3 gap-y-2 sm:grid-cols-3">
-                    {pairs.map(([before, after], i) => (
-                      <div key={before.id} className="flex items-center gap-1">
-                        <span className="w-4 text-xs text-muted-foreground tabular-nums">{i + 1}</span>
-                        {[before, after].map((p) => {
-                          const link = links?.[p.id];
-                          return (
-                            <span key={p.id} className="aspect-square flex-1 overflow-hidden rounded-md bg-muted">
-                              {link && <img src={link.thumb ?? link.full} alt="" loading="lazy" className="size-full object-cover" />}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <FieldDescription>
-                  {albumPhotos.length > 0
-                    ? 'Choose photos from both the Before and After albums above to get a before/after slider.'
-                    : `Put photos into the Before and After albums on the ${subject.kind} page to get a before/after slider.`}
-                </FieldDescription>
-              )}
-            </FieldSet>
+            <Controller
+              control={form.control}
+              name="pairs"
+              render={({ field }) => <PairsEditor photos={photos} links={links} sideOf={sideOf} value={field.value} onChange={field.onChange} />}
+            />
 
             {checkbox('pinned', 'Show it first', 'Pinned cars come before the others on the website.')}
 

@@ -3,7 +3,6 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { T, pick, type Lang, type Texts } from './i18n';
-import { beforeAfterPairs } from '../../src/domain/website';
 import {
   carPath,
   clip,
@@ -709,8 +708,9 @@ function CarPage({ v, car }: { v: View; car: SiteCar }) {
     .sort((a, b) => Number(b.favorite) - Number(a.favorite))
     .flatMap((ref) => (ctx.photos[ref.id] ? [{ ref, files: ctx.photos[ref.id] }] : []));
   const cover = coverOf(car.photos);
-  // the Before and After albums, paired in the order the photos were added (as the snapshot lists them)
-  const pairs = beforeAfterPairs(car.photos, (p) => p.album).map(([b, a]) => [ctx.photos[b.id], ctx.photos[a.id]] as [PhotoFiles, PhotoFiles]);
+  const pairs = car.pairs.flatMap((pair): [PhotoFiles, PhotoFiles][] =>
+    ctx.photos[pair.before] && ctx.photos[pair.after] ? [[ctx.photos[pair.before], ctx.photos[pair.after]]] : [],
+  );
   const forSale = isForSale(car);
   const badge = carBadge(car, t);
   const path = carPath(ctx.base, lang, car.slug);
