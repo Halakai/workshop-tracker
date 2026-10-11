@@ -9,6 +9,7 @@ import { useSettlement, useShares, useUndoSettlement } from '@/features/settleme
 import { SharesDrawer } from '@/features/settlement/SharesDrawer';
 import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 import { PhotoGallery, PhotoSection } from '@/features/files/Photos';
+import { WebsiteCard } from '@/features/website/WebsiteCard';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { Button } from '@/components/ui/button';
@@ -259,6 +260,7 @@ function CarView({ car }: { car: Car }) {
         </Card>
 
         <PhotoSection entityType="car" entityId={car.id} albums />
+        <WebsiteCard target={{ carId: car.id }} forSale={status === 'listed' ? car.asking_price_cents : undefined} />
         <AttachmentStrip entityType="car" entityId={car.id} kind="receipt" title="Papers & receipts" allowPdf />
 
         {!settled && (

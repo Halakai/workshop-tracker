@@ -26,6 +26,7 @@ import { BoughtLineDrawer, LaborDrawer, OtherLineDrawer, PaymentDrawer, StockLin
 import { buildInvoiceData } from './invoice/makeInvoice';
 import { InvoiceDrawer, type MadeInvoice } from './invoice/InvoiceDrawer';
 import { PhotoSection } from '@/features/files/Photos';
+import { WebsiteCard } from '@/features/website/WebsiteCard';
 import { useRememberVisit } from '@/features/home/recent';
 import { useAttachments, useDeleteAttachment, useUploadAttachment } from '@/features/files/api';
 
@@ -284,6 +285,7 @@ function JobView({ job }: { job: Job }) {
         )}
 
         <PhotoSection entityType="job" entityId={job.id} albums />
+        <WebsiteCard target={{ jobId: job.id }} />
 
         {!settled && (
           <Card>

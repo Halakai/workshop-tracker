@@ -1,6 +1,7 @@
 // Photos and receipts in the admin's Google Drive (scope drive.file: the app only sees files it created).
 //
-//   POST /files/upload   multipart: file, thumb?, entity_type, entity_id, kind, label?, album_id?   (signed-in member)
+//   POST /files/upload   multipart: file, thumb?, entity_type, entity_id, kind, label?, album_id?   (signed-in member;
+//                        an admin for the website's own photos)
 //   POST /files/sign     { ids: [...] } → signed view links                             (signed-in member)
 //   GET  /files/view/:id?v=thumb|full&exp=…&sig=…  → streams the file from Drive          (signed link)
 //   POST /files/invoice-link  { job_id } → a link for the customer, valid for a year       (signed-in member)
@@ -220,6 +221,12 @@ async function folderChainFor(entityType: EntityType, entityId: string, kind: Fi
     if (!item) throw new HttpError(404, 'Item not found');
     return folderChain({ type: 'item', item });
   }
+  // the public website's own photos ("about us"); they all belong to the one website_settings row
+  if (entityType === 'website') {
+    const { data: site } = await admin.from('website_settings').select('photos_id').eq('photos_id', entityId).maybeSingle();
+    if (!site || kind !== 'photo') throw new HttpError(400, 'The website only takes photos');
+    return folderChain({ type: 'website' });
+  }
   // stock purchases and other money: receipts by year; a car's money goes into the car's folder
   if (entityType === 'transaction') {
     const { data: txn } = await admin.from('transactions').select('id, car_id, job_id, occurred_on').eq('id', entityId).maybeSingle();
@@ -234,12 +241,13 @@ async function folderChainFor(entityType: EntityType, entityId: string, kind: Fi
 }
 
 async function upload(req: Request) {
-  const userId = await requireMember(req);
   const form = await req.formData().catch(() => null);
   if (!form) throw new HttpError(400, 'Send the file as multipart/form-data');
   const file = form.get('file');
   const thumb = form.get('thumb');
   const entityType = String(form.get('entity_type') ?? '') as EntityType;
+  // the website's texts and photos are the admins' (like the workshop settings)
+  const userId = await requireMember(req, entityType === 'website');
   const entityId = String(form.get('entity_id') ?? '');
   const kind = String(form.get('kind') ?? '') as FileKind;
   const label = String(form.get('label') ?? '');
@@ -368,8 +376,9 @@ async function remove(req: Request) {
   await requireMember(req);
   const body = await req.json().catch(() => null);
   const id = typeof body?.id === 'string' ? body.id : '';
-  const { data: row } = await admin.from('attachments').select('id, drive_file_id, drive_thumb_id').eq('id', id).maybeSingle();
+  const { data: row } = await admin.from('attachments').select('id, entity_type, drive_file_id, drive_thumb_id').eq('id', id).maybeSingle();
   if (!row) throw new HttpError(404, 'File not found');
+  if (row.entity_type === 'website') await requireMember(req, true);
   for (const driveId of [row.drive_file_id, row.drive_thumb_id].filter(Boolean) as string[]) {
     // to Drive's trash (recoverable for 30 days); a file already gone is fine
     const res = await drive(`/files/${driveId}`, {
