@@ -5,7 +5,10 @@ import type { BuildContext, PhotoFiles, Snapshot } from './types';
 
 const sample: Snapshot = JSON.parse(readFileSync(new URL('../fixtures/snapshot.json', import.meta.url), 'utf8'));
 const photo = (id: string): PhotoFiles => ({ width: 1600, height: 1200, src: `/f/${id}.webp`, srcset: `/f/${id}.webp 1600w`, full: `/f/${id}.webp`, share: `/f/${id}.jpg` });
-const ids = [...sample.site_photos, ...sample.cars.flatMap((c) => c.photos)].map((p) => p.id);
+const ids = [
+  ...sample.site_photos.map((p) => p.id),
+  ...sample.cars.flatMap((c) => [...c.photos.map((p) => p.id), ...c.pairs.flatMap((pair) => [pair.before, pair.after])]),
+];
 const ctx: BuildContext = {
   base: '/workshop-tracker/',
   origin: 'https://halakai.github.io',
@@ -68,7 +71,7 @@ describe('renderSite', () => {
     expect(html).toContain('&lt;img src=x onerror=alert(1)&gt;');
   });
 
-  it('makes a before/after slider for each pair from the Before and After albums', () => {
+  it('makes a before/after slider for each pair, in the order picked', () => {
     const golf = page(pages, 'auti/vw-golf-ii-gti-1989/index.html');
     const marker = 'data-pair="true"';
     expect(golf.split(marker)).toHaveLength(3);
@@ -77,7 +80,11 @@ describe('renderSite', () => {
     const first = golf.slice(golf.indexOf(marker), golf.indexOf(marker, golf.indexOf(marker) + 1));
     expect(first).toContain('/f/golf-before.webp');
     expect(first).toContain('/f/golf-after.webp');
-    // no albums: no slider
+    // a pair's photo that isn't in the gallery shows only in the slider
+    const gallery = golf.slice(golf.indexOf('data-gallery'), golf.indexOf('data-lightbox'));
+    expect(golf.slice(golf.indexOf('data-pairs'))).toContain('/f/golf-before-2.webp');
+    expect(gallery).not.toContain('golf-before-2');
+    // no pairs: no slider
     expect(page(pages, 'auti/bmw-3-series-e46-330d-2003/index.html')).not.toContain('data-pairs');
   });
 

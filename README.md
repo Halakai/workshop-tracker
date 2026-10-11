@@ -206,7 +206,8 @@ The app moved to **`/app/`**, and the website footer has a small *Prijava / Log 
 - **A car or job on the website:** open it in the app → **Website**.
   - Switch on **Show on the website**.
   - Write a title, a short line and *what we did*, in Croatian and (optionally) English. An empty English text shows the Croatian one.
-  - Pick the details to show, the photos (check them for licence plates and people first), the before/after pair and the web address.
+  - Pick the details to show, the photos (check them for licence plates and people first) and the web address. **Select all** takes every photo.
+  - **Before / after sliders:** *Add a pair*, then tap the before photo and the after photo. Any of the car's photos work, also ones not chosen for the gallery (those show only in the slider). Photos in the Before / After albums come first and are labelled. Tap a photo of a pair to change it, use ↑ ↓ to reorder, ✕ to remove. Visitors drag a line across each slider and flip between them with ‹ ›.
   - A customer's job needs the **customer agreed** tick first.
   - A flip in status *Listed* also appears under **Na prodaju / For sale** with its asking price. Once it's sold it shows a *Prodano / Sold* badge.
 - **Texts, contact buttons, opening hours, services, reviews and workshop photos:** **More → Website**.

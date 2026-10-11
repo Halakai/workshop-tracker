@@ -133,7 +133,7 @@ async function preparePhotos(ids) {
   return { photos, failed };
 }
 
-/** Photos the build couldn't get are left out of the pages (and so out of the before/after pairs). */
+/** Photos the build couldn't get are left out of the pages (and so are the before/after pairs they are in). */
 function withoutPhotos(snapshot, failed) {
   if (failed.length === 0) return snapshot;
   const gone = new Set(failed);
@@ -141,7 +141,11 @@ function withoutPhotos(snapshot, failed) {
   return {
     ...snapshot,
     site_photos: keep(snapshot.site_photos),
-    cars: snapshot.cars.map((c) => ({ ...c, photos: keep(c.photos) })),
+    cars: snapshot.cars.map((c) => ({
+      ...c,
+      photos: keep(c.photos),
+      pairs: c.pairs.filter((pair) => !gone.has(pair.before) && !gone.has(pair.after)),
+    })),
   };
 }
 
@@ -194,7 +198,10 @@ const manifest = JSON.parse(await readFile(new URL('s/.vite/manifest.json', dist
 await rm(new URL('s/.vite/', dist), { recursive: true });
 const entry = manifest['src/client.ts'];
 
-const allPhotoIds = [...loaded.site_photos.map((p) => p.id), ...loaded.cars.flatMap((c) => c.photos.map((p) => p.id))];
+const allPhotoIds = [
+  ...loaded.site_photos.map((p) => p.id),
+  ...loaded.cars.flatMap((c) => [...c.photos.map((p) => p.id), ...c.pairs.flatMap((pair) => [pair.before, pair.after])]),
+];
 const { photos, failed } = await preparePhotos(allPhotoIds);
 const snapshot = withoutPhotos(loaded, failed);
 const logo = await writeLogo(snapshot.workshop.logo);

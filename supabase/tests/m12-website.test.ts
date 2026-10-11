@@ -167,6 +167,52 @@ describe('cars and jobs on the website', () => {
   });
 });
 
+describe('before/after pairs', () => {
+  async function listing() {
+    const car = await newCar();
+    const photos = [await addPhoto('car', car.id), await addPhoto('car', car.id), await addPhoto('car', car.id)];
+    const { data: row } = await asMember.from('website_cars').insert({ car_id: car.id, slug: slug(), title_hr: 'x' }).select().single();
+    return { car, photos, row: row! };
+  }
+  const pairsOf = async (id: string) =>
+    (await asMember.from('website_pairs').select('before_photo_id, after_photo_id, sort_order').eq('website_car_id', id).order('sort_order')).data;
+
+  it('members set any two photos of the car as pairs, in their order, and replace them all at once', async () => {
+    const { photos: [a, b, c], row } = await listing();
+    const set = (pairs: { before: string; after: string }[]) => asMember.rpc('set_website_pairs', { p_website_car_id: row.id, p_pairs: pairs });
+    expect((await set([{ before: c.id, after: a.id }, { before: b.id, after: a.id }])).error).toBeNull();
+    expect(await pairsOf(row.id)).toEqual([
+      { before_photo_id: c.id, after_photo_id: a.id, sort_order: 1 },
+      { before_photo_id: b.id, after_photo_id: a.id, sort_order: 2 },
+    ]);
+    expect((await set([{ before: a.id, after: b.id }])).error).toBeNull();
+    expect(await pairsOf(row.id)).toEqual([{ before_photo_id: a.id, after_photo_id: b.id, sort_order: 1 }]);
+    expect((await set([])).error).toBeNull();
+    expect(await pairsOf(row.id)).toEqual([]);
+  });
+
+  it("refuses the same photo twice, another car's photo, receipts, and direct writes", async () => {
+    const { photos: [a, b], row, car } = await listing();
+    const other = await listing();
+    const receipt = await addPhoto('car', car.id, 'receipt');
+    const set = (pairs: unknown) => asMember.rpc('set_website_pairs', { p_website_car_id: row.id, p_pairs: pairs as never });
+    expect((await set([{ before: a.id, after: a.id }])).error?.message).toMatch(/two different photos/);
+    expect((await set([{ before: a.id, after: other.photos[0].id }])).error?.message).toMatch(/photos of this car/);
+    expect((await set([{ before: a.id, after: receipt.id }])).error?.message).toMatch(/photos of this car/);
+    expect((await set({ before: a.id, after: b.id })).error).not.toBeNull();
+    expect((await anonClient().rpc('set_website_pairs', { p_website_car_id: row.id, p_pairs: [] })).error).not.toBeNull();
+    expect((await asMember.from('website_pairs').insert({ website_car_id: row.id, before_photo_id: a.id, after_photo_id: b.id })).error?.code).toBe('42501');
+    expect((await anonClient().from('website_pairs').select('*')).data ?? []).toEqual([]);
+  });
+
+  it('a deleted photo takes its pairs with it', async () => {
+    const { photos: [a, b], row } = await listing();
+    await asMember.rpc('set_website_pairs', { p_website_car_id: row.id, p_pairs: [{ before: a.id, after: b.id }] });
+    await service.from('attachments').delete().eq('id', a.id);
+    expect(await pairsOf(row.id)).toEqual([]);
+  });
+});
+
 describe('what the website is built from', () => {
   it('only the service role reads the snapshot and photos', async () => {
     expect((await asAdmin.rpc('website_snapshot')).error).not.toBeNull();
@@ -179,24 +225,24 @@ describe('what the website is built from', () => {
     const hidden = await addPhoto('car', car.id);
     const before = await addPhoto('car', car.id);
     const after = await addPhoto('car', car.id);
-    const { data: albums } = await service.from('photo_albums').select('id, name');
-    await service.from('attachments').update({ album_id: albums!.find((a) => a.name === 'Before')!.id }).eq('id', before.id);
-    await service.from('attachments').update({ album_id: albums!.find((a) => a.name === 'After')!.id }).eq('id', after.id);
-    for (const p of [shown, before, after]) await asMember.rpc('set_photo_on_website', { p_attachment_id: p.id, p_on: true });
+    for (const p of [shown, after]) await asMember.rpc('set_photo_on_website', { p_attachment_id: p.id, p_on: true });
     const { data: row } = await asMember
       .from('website_cars')
       .insert({ car_id: car.id, slug: slug(), title_hr: 'BMW E46', story_hr: 'Novi kvačilo', show_mileage: false, is_public: true })
       .select()
       .single();
+    // the "before" photo isn't in the gallery, only in the slider
+    expect((await asMember.rpc('set_website_pairs', { p_website_car_id: row!.id, p_pairs: [{ before: before.id, after: after.id }] })).error).toBeNull();
 
     const entry = await snapshotCar(row!.id);
     expect(entry).toMatchObject({ kind: 'flip', status: 'listed', make: 'BMW', year: 2003, engine: '330d', fuel: 'Diesel', mileage_km: null, price_cents: 650000 });
-    // the chosen photos in the order they were added, with their before/after album
+    // the gallery: the chosen photos in the order they were added; the pairs as picked
     expect(entry!.photos).toEqual([
-      { id: shown.id, favorite: false, album: null },
-      { id: before.id, favorite: false, album: 'before' },
-      { id: after.id, favorite: false, album: 'after' },
+      { id: shown.id, favorite: false },
+      { id: after.id, favorite: false },
     ]);
+    expect(entry!.pairs).toEqual([{ before: before.id, after: after.id }]);
+    expect((await service.rpc('website_photo', { p_attachment_id: before.id })).data).toHaveLength(1);
 
     const text = JSON.stringify(await service.rpc('website_snapshot'));
     for (const secret of [car.vin!, car.plate!, 'secret note', car.ref]) expect(text).not.toContain(secret);

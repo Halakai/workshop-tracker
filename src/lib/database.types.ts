@@ -2097,6 +2097,78 @@ export type Database = {
           },
         ];
       };
+      website_pairs: {
+        Row: {
+          after_photo_id: string;
+          before_photo_id: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+          website_car_id: string;
+        };
+        Insert: {
+          after_photo_id: string;
+          before_photo_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          website_car_id: string;
+        };
+        Update: {
+          after_photo_id?: string;
+          before_photo_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+          website_car_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "website_pairs_after_photo_id_fkey";
+            columns: ["after_photo_id"];
+            isOneToOne: false;
+            referencedRelation: "attachments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_pairs_before_photo_id_fkey";
+            columns: ["before_photo_id"];
+            isOneToOne: false;
+            referencedRelation: "attachments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_pairs_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_pairs_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "website_pairs_website_car_id_fkey";
+            columns: ["website_car_id"];
+            isOneToOne: false;
+            referencedRelation: "website_cars";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       website_reviews: {
         Row: {
           author: string;
@@ -2435,6 +2507,10 @@ export type Database = {
       };
       set_photo_on_website: {
         Args: { p_attachment_id: string; p_on: boolean };
+        Returns: undefined;
+      };
+      set_website_pairs: {
+        Args: { p_pairs: Json; p_website_car_id: string };
         Returns: undefined;
       };
       undo_settlement: {

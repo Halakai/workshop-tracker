@@ -3,8 +3,6 @@
 export interface PhotoRef {
   id: string;
   favorite: boolean;
-  /** in the car's Before or After album: those become the before/after sliders */
-  album: 'before' | 'after' | null;
 }
 
 export type CarStatus = 'bought' | 'in_repair' | 'ready' | 'listed' | 'sold' | 'scrapped';
@@ -29,8 +27,10 @@ export interface SiteCar {
   mileage_km: number | null;
   price_cents: number | null;
   pinned: boolean;
-  /** in the order they were added */
+  /** the gallery, in the order they were added */
   photos: PhotoRef[];
+  /** the before/after sliders in the order picked; their photos needn't be in the gallery */
+  pairs: { before: string; after: string }[];
 }
 
 export interface SiteContact {

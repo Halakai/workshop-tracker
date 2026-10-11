@@ -22,18 +22,15 @@
   "site_photos": [
     {
       "id": "site-1",
-      "favorite": true,
-      "album": null
+      "favorite": true
     },
     {
       "id": "site-2",
-      "favorite": false,
-      "album": null
+      "favorite": false
     },
     {
       "id": "site-3",
-      "favorite": false,
-      "album": null
+      "favorite": false
     }
   ],
   "contacts": [
@@ -153,25 +150,22 @@
       "photos": [
         {
           "id": "bmw-1",
-          "favorite": true,
-          "album": null
+          "favorite": true
         },
         {
           "id": "bmw-2",
-          "favorite": false,
-          "album": null
+          "favorite": false
         },
         {
           "id": "bmw-3",
-          "favorite": false,
-          "album": null
+          "favorite": false
         },
         {
           "id": "bmw-4",
-          "favorite": false,
-          "album": null
+          "favorite": false
         }
-      ]
+      ],
+      "pairs": []
     },
     {
       "id": "car-2",
@@ -196,28 +190,29 @@
       "photos": [
         {
           "id": "golf-before",
-          "favorite": false,
-          "album": "before"
-        },
-        {
-          "id": "golf-before-2",
-          "favorite": false,
-          "album": "before"
+          "favorite": false
         },
         {
           "id": "golf-3",
-          "favorite": false,
-          "album": null
+          "favorite": false
         },
         {
           "id": "golf-after",
-          "favorite": true,
-          "album": "after"
+          "favorite": true
         },
         {
           "id": "golf-after-2",
-          "favorite": false,
-          "album": "after"
+          "favorite": false
+        }
+      ],
+      "pairs": [
+        {
+          "before": "golf-before",
+          "after": "golf-after"
+        },
+        {
+          "before": "golf-before-2",
+          "after": "golf-after-2"
         }
       ]
     },
@@ -244,10 +239,10 @@
       "photos": [
         {
           "id": "skoda-1",
-          "favorite": true,
-          "album": null
+          "favorite": true
         }
-      ]
+      ],
+      "pairs": []
     },
     {
       "id": "car-4",
@@ -269,7 +264,8 @@
       "mileage_km": null,
       "price_cents": null,
       "pinned": false,
-      "photos": []
+      "photos": [],
+      "pairs": []
     }
   ]
 }
