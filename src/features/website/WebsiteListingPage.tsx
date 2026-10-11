@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { useCar } from '@/features/cars/api';
 import { useJob } from '@/features/jobs/api';
 import { usePhotos, type EntityType } from '@/features/files/api';
-import { useDeleteWebsiteCar, useSaveWebsiteCar, useSetPhotoOnWebsite, useWebsiteCars, type WebsiteCar } from './api';
+import { publishWebsite, useDeleteWebsiteCar, useSaveWebsiteCar, useSetPhotoOnWebsite, useWebsiteCars, type WebsiteCar } from './api';
 import { websiteBase } from './links';
 import { LangToggle, type Lang } from './LangToggle';
 
@@ -235,7 +235,23 @@ function ListingForm({ subject, listing, taken }: { subject: Subject; listing: W
           after_photo_id: values.after_photo_id,
         },
       });
-      toast.success(values.is_public ? 'Saved. It shows on the website after the next publish.' : 'Saved (not shown on the website)');
+      const wasPublic = listing?.is_public ?? false;
+      if (!values.is_public && !wasPublic) {
+        toast.success('Saved (not shown on the website)');
+        goBack(subject.back);
+        return;
+      }
+      toast.success(values.is_public ? 'Saved. It shows on the website after the next publish.' : 'Saved. Publish to take it off the website.', {
+        duration: 8000,
+        action: {
+          label: 'Publish now',
+          onClick: () =>
+            publishWebsite().then(
+              () => toast.success('Publishing. The website updates in 2–3 minutes.'),
+              (e) => toast.error(syncErrorMessage(e)),
+            ),
+        },
+      });
       goBack(subject.back);
     } catch (e) {
       const err = e as { code?: string };

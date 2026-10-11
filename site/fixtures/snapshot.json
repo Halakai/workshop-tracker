@@ -1,0 +1,157 @@
+{
+  "workshop": {
+    "name": "Radionica Primjer",
+    "address": "Ulica primjera 1, 10000 Zagreb",
+    "phone": "+385 91 000 0001",
+    "email": null,
+    "logo": null
+  },
+  "site": {
+    "headline_hr": "Popravak, restauracija i prodaja automobila",
+    "headline_en": "Car repair, restoration and sales",
+    "intro_hr": "Mala radionica koja se posveti svakom autu. Pogledajte što smo napravili i javite nam se.",
+    "intro_en": "A small workshop that takes care of every car. See what we have done and get in touch.",
+    "about_hr": "Dva prijatelja i jedna garaža. Auti su nam hobi od malih nogu, a od 2020. popravljamo i restauriramo aute za prijatelje, susjede i sve koji traže pošten posao.\n\nNajviše volimo starije Volkswagene i BMW-e, ali radimo na svemu što ima četiri kotača.",
+    "about_en": null,
+    "hours_note_hr": "Izvan radnog vremena po dogovoru.",
+    "hours_note_en": "Outside these hours by appointment.",
+    "map_url": null,
+    "instagram_url": "https://www.instagram.com/example",
+    "facebook_url": null
+  },
+  "site_photos": [
+    { "id": "site-1", "favorite": true },
+    { "id": "site-2", "favorite": false },
+    { "id": "site-3", "favorite": false }
+  ],
+  "contacts": [
+    { "name": "David", "phone": "+385 91 000 0001", "call": true, "whatsapp": true, "viber": false },
+    { "name": "Ivan", "phone": "+385 98 000 0002", "call": true, "whatsapp": false, "viber": true }
+  ],
+  "services": [
+    { "title_hr": "Mehanika", "title_en": "Mechanics", "text_hr": "Servisi, kvačila, zupčasti remeni, remonti motora.", "text_en": "Servicing, clutches, timing belts, engine rebuilds." },
+    { "title_hr": "Limarija i lakiranje", "title_en": "Bodywork and paint", "text_hr": "Od sitnih ogrebotina do cijelog auta.", "text_en": "From small scratches to a full respray." },
+    { "title_hr": "Dijagnostika", "title_en": "Diagnostics", "text_hr": "Očitavanje grešaka i elektrika.", "text_en": null },
+    { "title_hr": "Priprema za tehnički", "title_en": "MOT preparation", "text_hr": null, "text_en": null }
+  ],
+  "reviews": [
+    { "author": "Marko, VW Golf IV", "stars": 5, "text_hr": "Brzo, pošteno i bez skrivenih troškova. Preporuka!", "text_en": "Quick, fair and no hidden costs. Recommended!" },
+    { "author": "Ana", "stars": 5, "text_hr": "Auto vozi kao nov.", "text_en": null }
+  ],
+  "hours": [
+    { "weekday": 1, "opens": "08:00", "closes": "16:00" },
+    { "weekday": 2, "opens": "08:00", "closes": "16:00" },
+    { "weekday": 3, "opens": "08:00", "closes": "16:00" },
+    { "weekday": 4, "opens": "08:00", "closes": "16:00" },
+    { "weekday": 5, "opens": "08:00", "closes": "16:00" },
+    { "weekday": 6, "opens": "09:00", "closes": "13:00" },
+    { "weekday": 7, "opens": null, "closes": null }
+  ],
+  "cars": [
+    {
+      "id": "car-1",
+      "slug": "bmw-3-series-e46-330d-2003",
+      "kind": "flip",
+      "status": "listed",
+      "title_hr": "BMW 3 Series E46 330d",
+      "title_en": null,
+      "summary_hr": "Novo kvačilo, zamašnjak i veliki servis",
+      "summary_en": "New clutch, flywheel and a full service",
+      "story_hr": "Auto smo kupili s potrošenim kvačilom i dvomasenim zamašnjakom.\n\nZamijenili smo kvačilo, zamašnjak, sve filtere i ulja, kočnice naprijed i oba prednja ramena.\nKaroserija je spolirana, a unutrašnjost dubinski očišćena.",
+      "story_en": "We bought the car with a worn clutch and dual-mass flywheel.\n\nWe replaced the clutch, the flywheel, all filters and fluids, the front brakes and both front control arms.\nThe paint is polished and the interior deep-cleaned.",
+      "make": "BMW",
+      "model": "3 Series",
+      "generation": "E46",
+      "year": 2003,
+      "engine": "330d",
+      "fuel": "Diesel",
+      "mileage_km": 214500,
+      "price_cents": 650000,
+      "pinned": true,
+      "photos": [
+        { "id": "bmw-1", "favorite": true },
+        { "id": "bmw-2", "favorite": false },
+        { "id": "bmw-3", "favorite": false },
+        { "id": "bmw-4", "favorite": false }
+      ],
+      "before_photo_id": null,
+      "after_photo_id": null
+    },
+    {
+      "id": "car-2",
+      "slug": "vw-golf-ii-gti-1989",
+      "kind": "job",
+      "status": null,
+      "title_hr": "VW Golf II GTI",
+      "title_en": null,
+      "summary_hr": "Lim, lak i nova unutrašnjost",
+      "summary_en": "Bodywork, paint and a new interior",
+      "story_hr": "Vlasnik je donio Golf nakon dvadeset godina u garaži. Izrezali smo i zavarili pragove, cijeli auto pjeskarili i lakirali u originalnu boju.",
+      "story_en": null,
+      "make": "VW",
+      "model": "Golf",
+      "generation": "II",
+      "year": 1989,
+      "engine": "1.8 GTI",
+      "fuel": null,
+      "mileage_km": null,
+      "price_cents": null,
+      "pinned": false,
+      "photos": [
+        { "id": "golf-before", "favorite": false },
+        { "id": "golf-after", "favorite": true },
+        { "id": "golf-3", "favorite": false }
+      ],
+      "before_photo_id": "golf-before",
+      "after_photo_id": "golf-after"
+    },
+    {
+      "id": "car-3",
+      "slug": "skoda-octavia-1-9-tdi-2008",
+      "kind": "flip",
+      "status": "sold",
+      "title_hr": "Škoda Octavia 1.9 TDI",
+      "title_en": null,
+      "summary_hr": "Zupčasti remen, kočnice, nove gume",
+      "summary_en": "Timing belt, brakes, new tyres",
+      "story_hr": null,
+      "story_en": null,
+      "make": "Škoda",
+      "model": "Octavia",
+      "generation": "II",
+      "year": 2008,
+      "engine": "1.9 TDI",
+      "fuel": "Diesel",
+      "mileage_km": 241000,
+      "price_cents": null,
+      "pinned": false,
+      "photos": [{ "id": "skoda-1", "favorite": true }],
+      "before_photo_id": null,
+      "after_photo_id": null
+    },
+    {
+      "id": "car-4",
+      "slug": "mazda-mx-5-na-1992",
+      "kind": "job",
+      "status": null,
+      "title_hr": "Mazda MX-5 NA",
+      "title_en": null,
+      "summary_hr": null,
+      "summary_en": null,
+      "story_hr": "Novi krov i servis prije sezone.",
+      "story_en": "A new soft top and a service before the summer.",
+      "make": "Mazda",
+      "model": "MX-5",
+      "generation": "NA",
+      "year": 1992,
+      "engine": null,
+      "fuel": null,
+      "mileage_km": null,
+      "price_cents": null,
+      "pinned": false,
+      "photos": [],
+      "before_photo_id": null,
+      "after_photo_id": null
+    }
+  ]
+}

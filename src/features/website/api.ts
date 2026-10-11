@@ -1,6 +1,7 @@
 // The public website's content: cars and jobs on it, their photos, and the texts (docs/PLAN.md §10).
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
+import { errorMessage } from '@/lib/errors';
 import type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types';
 import { fileKeys, type Attachment, type EntityType } from '@/features/files/api';
 
@@ -9,7 +10,46 @@ export const websiteKeys = {
   hours: ['website-hours'] as const,
   list: (table: WebsiteList) => ['website', table] as const,
   cars: ['website-cars'] as const,
+  status: ['website-status'] as const,
 };
+
+// ---------------------------------------------------------------------------
+// Publishing: the files function starts the website build on GitHub (about 2–3 minutes)
+// ---------------------------------------------------------------------------
+export interface PublishRun {
+  status: 'queued' | 'in_progress' | 'waiting' | 'requested' | 'pending' | 'completed';
+  conclusion: 'success' | 'failure' | 'cancelled' | 'skipped' | 'timed_out' | null;
+  started: string;
+  updated: string;
+  url: string;
+}
+
+export async function publishWebsite() {
+  const { error } = await supabase.functions.invoke('files/site-publish', { body: {} });
+  if (error) throw new Error(await errorMessage(error));
+}
+
+/** The latest website build; asks again every 10 s while `poll` (a build is starting or running). */
+export function useWebsiteStatus(poll: boolean) {
+  return useQuery({
+    queryKey: websiteKeys.status,
+    retry: false,
+    refetchInterval: poll ? 10_000 : false,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('files/site-status', { body: {} });
+      if (error) throw new Error(await errorMessage(error));
+      return data as PublishRun | null;
+    },
+  });
+}
+
+export function usePublishWebsite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: publishWebsite,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['activity'] }),
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Texts (admins edit; RLS turns a member's edit into "no rows")

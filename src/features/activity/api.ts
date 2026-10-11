@@ -15,6 +15,7 @@ export function useActivity(limit = 20) {
 }
 
 export function activityLink(entityType: string, entityId: string | null): string | null {
+  if (entityType === 'website') return '/website';
   if (!entityId) return null;
   switch (entityType) {
     case 'car':
