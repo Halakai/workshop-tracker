@@ -519,29 +519,31 @@ function HomePage({ v }: { v: View }) {
       <section className={`${container} pt-20`}>
         <SectionTitle id="kontakt" title={t.contact} />
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="flex flex-col gap-6 rounded-2xl border border-line bg-card p-6">
-            {s.contacts.map((c) => (
-              <div key={c.phone} className="flex flex-col gap-3">
-                <p>
-                  <span className="text-lg font-semibold">{c.name}</span> <span className="text-muted">{c.phone}</span>
-                </p>
-                <ContactButtons v={v} contacts={[c]} message={t.whatsappHello} compact />
-              </div>
-            ))}
-            {s.workshop.address && (
-              <div className="flex flex-col gap-3 border-t border-line pt-6">
-                <p className="flex items-start gap-2">
-                  <PinIcon className="mt-0.5 size-5 shrink-0 text-accent" />
-                  {s.workshop.address}
-                </p>
-                {map && (
-                  <a href={map} target="_blank" rel="noopener" className={`${btnSecondary} self-start`}>
-                    <PinIcon /> {t.openMap}
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
+          {(s.contacts.length > 0 || s.workshop.address) && (
+            <div className="flex flex-col gap-6 rounded-2xl border border-line bg-card p-6">
+              {s.contacts.map((c) => (
+                <div key={c.phone} className="flex flex-col gap-3">
+                  <p>
+                    <span className="text-lg font-semibold">{c.name}</span> <span className="text-muted">{c.phone}</span>
+                  </p>
+                  <ContactButtons v={v} contacts={[c]} message={t.whatsappHello} compact />
+                </div>
+              ))}
+              {s.workshop.address && (
+                <div className={`flex flex-col gap-3 ${s.contacts.length ? 'border-t border-line pt-6' : ''}`}>
+                  <p className="flex items-start gap-2">
+                    <PinIcon className="mt-0.5 size-5 shrink-0 text-accent" />
+                    {s.workshop.address}
+                  </p>
+                  {map && (
+                    <a href={map} target="_blank" rel="noopener" className={`${btnSecondary} self-start`}>
+                      <PinIcon /> {t.openMap}
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
           {hasHours && (
             <div
               className="rounded-2xl border border-line bg-card p-6"

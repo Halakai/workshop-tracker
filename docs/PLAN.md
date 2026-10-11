@@ -27,8 +27,8 @@ R3 (10.10.2026):
 - invoices get a link for the customer: the `files` function signs `/files/invoice/<job>` for a year and always
   serves the job's latest invoice copy from Drive.
 
-Public website (planned 11.10.2026, §10): a marketing site at the main address with the cars we've done, cars for
-sale, services and contacts; the app moves to `/app`.
+Public website (11.10.2026, §10, W1–W3 built): a marketing site at the main address with the cars we've done, cars
+for sale, services and contacts; the app moved to `/app`.
 
 ---
 
@@ -352,7 +352,7 @@ Each milestone ends **deployed and working**, with a commit and a short "test th
 
 ---
 
-## 10. Public website (planned 11.10.2026)
+## 10. Public website (planned and built 11.10.2026)
 
 Your answers:
 - **Address:** keep the GitHub address; a domain of your own can come later.
