@@ -27,6 +27,9 @@ R3 (10.10.2026):
 - invoices get a link for the customer: the `files` function signs `/files/invoice/<job>` for a year and always
   serves the job's latest invoice copy from Drive.
 
+Public website (planned 11.10.2026, §10): a marketing site at the main address with the cars we've done, cars for
+sale, services and contacts; the app moves to `/app`.
+
 ---
 
 ## 0. Things that could cause trouble (read first)
@@ -346,3 +349,111 @@ Each milestone ends **deployed and working**, with a commit and a short "test th
    - invoice numbers look like `2026-001`;
    - the app creates and manages its own `Workshop Tracker` folder in your Drive;
    - permissions as I proposed: members can do everything except manage users, change settings and export data.
+
+---
+
+## 10. Public website (planned 11.10.2026)
+
+Your answers:
+- **Address:** keep the GitHub address; a domain of your own can come later.
+- **Showcase:** flips and customer jobs, only the ones you switch on. A customer job needs a "customer agreed" tick first.
+- **For sale:** flips in status Listed, with price.
+- **Language:** Croatian and English.
+- **Photos:** you pick which photos go on the website (no blur tool), so check plates yourself.
+- **Car page:** before/after slider, "what we did", specs.
+- **Contact:** call and WhatsApp / Viber buttons (no form).
+- **Sections:** services, about us, reviews, location & hours.
+- **Who edits:** admins edit the texts in the app.
+- **Look:** dark, like the app.
+- **Log in:** a small link in the footer.
+
+### Addresses
+
+| What | Address (`https://halakai.github.io/workshop-tracker/…`) |
+|---|---|
+| Website, Croatian | `/` |
+| Website, English | `/en/` |
+| One car | `/auti/<name>/`, `/en/cars/<name>/` |
+| **The app (direct link)** | **`/app/`**: login, or straight in when already signed in |
+| Privacy, terms | unchanged (`/privacy.html`, `/terms.html`) |
+
+- Old links (`…/workshop-tracker/#/cars/…`) forward to `…/app/#/cars/…`.
+- The installed phone app keeps working. The next time it checks for an update, the old version removes itself, and the home page sends the installed app straight to `/app/`. Re-adding `/app/` to the home screen is optional.
+- The sign-in carries over.
+
+### How the website is made
+
+- **Plain static pages, built by GitHub Actions.**
+  - `scripts/build-site.mjs` fetches the published content and resizes the chosen photos (location data is stripped).
+  - It writes an HTML page per language and car.
+  - That keeps the site fast on phones, and when someone shares a link, WhatsApp, Facebook and Google show the car's name and photo.
+- **Without a login, nobody can read anything new in Supabase.**
+  - The build calls the `files` function: `GET /files/site-data` and `GET /files/site-photo/:id`.
+  - Both need a build token, `SITE_BUILD_TOKEN`, stored in Supabase secrets and in GitHub secrets.
+  - Both return only published content, picked in SQL by `website_snapshot()`, which only the service role can call.
+  - They never return plates, VINs, customers, purchase prices, costs, notes, or photos you didn't pick. The asking price of a car for sale is the only money shown.
+- **Publish:**
+  - The app's **Publish website** button calls `POST /files/site-publish`.
+  - That starts the `pages.yml` workflow on GitHub, using the secret `GITHUB_PUBLISH_TOKEN`: a token that can only start this repo's workflows.
+  - The site is live about 2–3 minutes later, and the app shows Publishing…, Live or Failed.
+  - Every merge to main rebuilds the site too.
+- **Photos:** resized copies are kept in the GitHub Actions cache, so a publish only fetches new photos from Drive.
+
+### Database (one new migration)
+
+- **`website_cars`:** one row per car or job on the website. Members edit it. It holds:
+  - the web address name;
+  - title, short line and "what we did" in Croatian and English (English falls back to Croatian);
+  - which specs to show: year, engine, fuel, mileage;
+  - customer agreed (jobs only), on the website yes/no, and pinned;
+  - the before/after photo pair.
+- **`attachments.on_website`** (photos only), set with `set_photo_on_website()`.
+- **Website texts.** Admins edit them and members can read them:
+  - `website_settings`: headline, intro, about us, hours note, Instagram / Facebook;
+  - `website_contacts`: name, number, and which buttons (call / WhatsApp / Viber);
+  - `website_services`, `website_reviews`;
+  - `website_hours`: Monday to Sunday.
+- **Workshop name, address and logo** come from Workshop settings. About-us photos go in a "Website" folder in Drive.
+- **Activity log:** entries like "Put CAR-003 on the website" and "Took … off the website".
+- **Tests:**
+  - signed-out visitors read nothing;
+  - members can't edit the texts;
+  - a job can't go public without the tick;
+  - the snapshot leaves out everything private.
+
+### In the app
+
+- **Car and job pages:** a **Website** card. It opens a listing page with the on/off switch, texts, specs, photo picker, before/after pair and web address.
+- **More → Website:**
+  - Publish button and status;
+  - texts, contact buttons, opening hours, services, reviews, links;
+  - about-us photos.
+
+### The website
+
+- **Look:** dark like the app (graphite and orange), with an HR | EN switch at the top.
+- **Home, in this order:**
+  1. Headline with call / WhatsApp / Viber buttons.
+  2. For sale.
+  3. Our work.
+  4. Services.
+  5. About us.
+  6. Reviews.
+  7. Location & hours.
+  8. Footer: address, links, privacy, and a small "Prijava / Log in" link.
+- **On phones:** a bar at the bottom with Call and WhatsApp.
+- **Car page:**
+  - swipeable photos with a full-screen view;
+  - before/after slider;
+  - what we did, specs, and the price if the car is for sale;
+  - "Ask about this car" buttons (the WhatsApp message names the car);
+  - other cars.
+- **Privacy:** no cookies, no tracking and no embedded map (a button opens Google Maps), so no cookie banner is needed.
+
+### Steps
+
+| | Scope | What you'll do |
+|---|---|---|
+| **W1** | App moves to `/app/` (redirects, old phone app cleans itself up); simple placeholder home with the Log in link | Open the app on the phone once; check it works |
+| **W2** | Database and app screens (listing on cars/jobs, More → Website) | Fill in texts, choose cars and photos |
+| **W3** | Website generator and design, function routes, Publish button | Create a GitHub token and paste it into Supabase (exact clicks given), then press Publish |
