@@ -1,9 +1,11 @@
 # Workshop Tracker
 
 Mobile-first web app for our private car workshop: car flips, small jobs for friends, the parts inventory, the
-shared workshop wallet and settling up between partners.
+shared workshop wallet and settling up between partners. Next to it, a public website shows the cars we've done.
 
-- **App:** https://halakai.github.io/workshop-tracker/ (install it with *Add to Home Screen*)
+- **App:** https://halakai.github.io/workshop-tracker/app/ (install it with *Add to Home Screen*)
+- **Website:** https://halakai.github.io/workshop-tracker/ (Croatian; English at `/en/`), built by
+  `scripts/build-site.mjs`; small *Prijava / Log in* link in the footer
 - **Design and decisions:** [docs/PLAN.md](docs/PLAN.md)
 - **Stack:** Vite + React + TypeScript, Tailwind + shadcn/ui, TanStack Query, react-hook-form + zod, Supabase
   (Postgres + Auth + Edge Functions), GitHub Pages. Photos and receipts go to Google Drive.
@@ -22,6 +24,9 @@ shared workshop wallet and settling up between partners.
 | R1 | After testing: dashboard with charts, search, Inventory rename, back button, restoring backups, car catalogue with logos | ✅ done |
 | R2 | Tools & equipment we own (Inventory → Tools) | ✅ done |
 | R3 | Photo gallery on cars, albums (Before/After), favorite photos for tools and parts, invoice links | ✅ done |
+| W1 | App moved to `/app/`, placeholder website at the main address | ✅ done |
+| W2 | Website content in the app (cars on the website, texts, services, reviews, hours) | planned |
+| W3 | The website itself, Publish button | planned |
 
 ## The app at a glance
 
@@ -267,7 +272,7 @@ The project `workshop-tracker` is in region Central EU (Frankfurt), on the Free 
 The workflow `.github/workflows/ci.yml` does the following on every push:
 - typecheck, unit tests and build;
 - the RLS and permission tests against a throwaway local Supabase;
-- on `main` only, and only if everything passed: deploy to GitHub Pages.
+- on `main` only, and only if everything passed: deploy to GitHub Pages (the website at the top, the app in `app/`).
 
 The setup it needs:
 - **Settings → Pages → Build and deployment → Source: GitHub Actions**.
@@ -339,7 +344,7 @@ The setup it needs:
 ```sh
 npm install
 cp .env.example .env.local   # fill in URL and publishable key
-npm run dev                  # http://localhost:5173 (also reachable from a phone on the same Wi-Fi)
+npm run dev                  # http://localhost:5173/app/ (also reachable from a phone on the same Wi-Fi)
 npm test                     # unit tests for all money and stock math
 ```
 

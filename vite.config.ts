@@ -5,8 +5,9 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-// On GitHub Pages the app lives under /<repo-name>/; the deploy workflow sets BASE_PATH.
-const base = process.env.BASE_PATH || '/';
+// On GitHub Pages the site lives under /<repo-name>/ (the deploy workflow sets BASE_PATH). The public website is
+// built next to it by scripts/build-site.mjs; the app itself lives in /app/ below that.
+const base = `${process.env.BASE_PATH || '/'}app/`;
 
 export default defineConfig({
   base,
@@ -17,7 +18,7 @@ export default defineConfig({
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
   // the service worker caches the bundle on the phone; big rarely-used parts (PDF) are lazy-loaded
-  build: { chunkSizeWarningLimit: 1000 },
+  build: { outDir: 'dist/app', chunkSizeWarningLimit: 1000 },
   plugins: [
     react(),
     tailwindcss(),
