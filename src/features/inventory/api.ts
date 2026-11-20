@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types';
 import { toMilli } from '@/domain/quantity';
 import { isLowStock, type MovementInput, type StockLevel } from '@/domain/stock';
+import { supplierKeys, supplierListQuery, type Supplier } from '@/features/catalog/api';
 import { STALE_STOCK, toPostStockMovementArgs } from './rpc';
 
 export type ItemRow = Tables<'items'>;
@@ -24,7 +25,7 @@ export const inventoryKeys = {
   items: ['items'] as const,
   movements: (itemId: string) => ['movements', itemId] as const,
   lastPurchases: ['item-last-purchases'] as const,
-  suppliers: ['suppliers'] as const,
+  suppliers: supplierKeys.all,
 };
 
 export function stockOf(item: Pick<ItemRow, 'qty_on_hand' | 'stock_value_cents'>): StockLevel {
@@ -81,24 +82,14 @@ export function useLastPurchases() {
   });
 }
 
-/** Suppliers we've bought from (stock and car parts), most frequent first (for type-ahead). */
+/** Supplier names from the suppliers list (More → Lists), most used first (for type-ahead). */
 export function useSuppliers() {
-  return useQuery({
-    queryKey: inventoryKeys.suppliers,
-    staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('counterparty')
-        .in('category', ['stock_purchase', 'car_part'])
-        .not('counterparty', 'is', null);
-      if (error) throw error;
-      const counts = new Map<string, number>();
-      for (const row of data) counts.set(row.counterparty!, (counts.get(row.counterparty!) ?? 0) + 1);
-      return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([name]) => name);
-    },
-  });
+  return useQuery({ ...supplierListQuery, select: selectSupplierNames });
 }
+const selectSupplierNames = (rows: Supplier[]) => rows.map((s) => s.name);
+
+/** For every supplier field: tells you a name you typed will join the list. */
+export const newSupplierHint = (name: string) => `“${name}” is new: it will be added to the suppliers list.`;
 
 export function useSaveItem() {
   const queryClient = useQueryClient();

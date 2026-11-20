@@ -28,13 +28,29 @@ export function todayIso(now: Date = new Date()): string {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-/** "12.03.2026" or "12.3.26" → "2026-03-12"; null if invalid. */
-export function parseEuropeanDate(input: string): string | null {
-  const match = /^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})$/.exec(input.trim());
-  if (!match) return null;
-  const day = Number(match[1]);
-  const month = Number(match[2]);
-  const year = match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3]);
+/**
+ * A date as people type it → "2026-03-12"; null if it isn't a real date.
+ * Day first: "12.03.2026", "12.3.26", "12/3/2026", "12-3-2026", "12 3 2026", "12032026", "120326";
+ * without a year it's this year: "12.3", "12.3.", "1203". A pasted "2026-03-12" works too.
+ * Two-digit years up to 20 years ahead are 20xx, the rest 19xx ("98" → 1998, "30" → 2030).
+ */
+export function parseTypedDate(input: string, now: Date = new Date()): string | null {
+  const text = input.trim();
+  if (!text) return null;
+  let day: number;
+  let month: number;
+  let year: number | null;
+  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(text);
+  const parts = /^(\d{1,2})[.\-/, ]+(\d{1,2})(?:[.\-/, ]+(\d{2}|\d{4}))?\.?$/.exec(text);
+  const digits = /^\d+$/.test(text) ? text : null;
+  if (iso) [year, month, day] = [Number(iso[1]), Number(iso[2]), Number(iso[3])];
+  else if (parts) [day, month, year] = [Number(parts[1]), Number(parts[2]), parts[3] ? Number(parts[3]) : null];
+  else if (digits && [4, 6, 8].includes(digits.length))
+    [day, month, year] = [Number(digits.slice(0, 2)), Number(digits.slice(2, 4)), digits.length > 4 ? Number(digits.slice(4)) : null];
+  else return null;
+
+  if (year === null) year = now.getFullYear();
+  else if (year < 100) year += 2000 + year <= now.getFullYear() + 20 ? 2000 : 1900;
   const date = new Date(year, month - 1, day);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
   return `${year}-${pad(month)}-${pad(day)}`;

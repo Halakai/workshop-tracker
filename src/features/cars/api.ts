@@ -102,6 +102,8 @@ function useInvalidateCar() {
       carId ? queryClient.invalidateQueries({ queryKey: carKeys.stock(carId) }) : null,
       queryClient.invalidateQueries({ queryKey: ['contacts'] }),
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+      // a part for the car can add a supplier to the list
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
     ]);
 }
 

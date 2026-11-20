@@ -252,8 +252,10 @@ export function SettleView({ target, title, subtitle, backTo, settled, ready, no
                   )}
                 </div>
                 <div className="flex flex-col gap-2">
-                  <p className="text-sm font-medium">Date</p>
-                  <DateField value={date} onChange={setDate} />
+                  <label htmlFor="settle-date" className="text-sm font-medium">
+                    Date
+                  </label>
+                  <DateField id="settle-date" value={date} onChange={setDate} />
                 </div>
               </CardContent>
             </Card>

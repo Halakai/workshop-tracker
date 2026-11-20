@@ -20,7 +20,7 @@ import { withMarkup } from '@/domain/jobs';
 import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { getLastPayer, setLastPayer, useAccounts, usePayerOptions } from '@/features/money/accounts';
-import { stockOf, unitOf, useSuppliers, type Item } from '@/features/inventory/api';
+import { newSupplierHint, stockOf, unitOf, useSuppliers, type Item } from '@/features/inventory/api';
 import { ItemPicker } from '@/features/cars/CarStockDrawers';
 import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 import {
@@ -352,7 +352,9 @@ function BoughtLineForm({ job, line, onDone }: { job: Job; line?: JobLine; onDon
           <Controller
             control={form.control}
             name="supplier"
-            render={({ field }) => <SuggestionInput id="bl-supplier" value={field.value} onChange={field.onChange} options={suppliers.data ?? []} />}
+            render={({ field }) => (
+              <SuggestionInput id="bl-supplier" value={field.value} onChange={field.onChange} options={suppliers.data ?? []} newHint={newSupplierHint} />
+            )}
           />
         </Field>
         <Field data-invalid={!!err.price}>
@@ -363,8 +365,8 @@ function BoughtLineForm({ job, line, onDone }: { job: Job; line?: JobLine; onDon
           <FieldError errors={[err.price]} />
         </Field>
         <Field>
-          <FieldLabel>Date</FieldLabel>
-          <Controller control={form.control} name="date" render={({ field }) => <DateField value={field.value} onChange={field.onChange} />} />
+          <FieldLabel htmlFor="bl-date">Date</FieldLabel>
+          <Controller control={form.control} name="date" render={({ field }) => <DateField id="bl-date" value={field.value} onChange={field.onChange} />} />
         </Field>
         {line?.transaction_id && (
           <AttachmentStrip entityType="transaction" entityId={line.transaction_id} kind="receipt" title="Receipt" allowPdf label={line.description} />
@@ -524,8 +526,8 @@ function PaymentForm({ job, payment, onDone }: { job: Job; payment?: PaymentRow;
           <FieldError errors={[err.receivedBy]} />
         </Field>
         <Field>
-          <FieldLabel>Date</FieldLabel>
-          <Controller control={form.control} name="date" render={({ field }) => <DateField value={field.value} onChange={field.onChange} />} />
+          <FieldLabel htmlFor="pay-date">Date</FieldLabel>
+          <Controller control={form.control} name="date" render={({ field }) => <DateField id="pay-date" value={field.value} onChange={field.onChange} />} />
         </Field>
         <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting && <Loader2 className="animate-spin" />}

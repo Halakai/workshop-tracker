@@ -18,7 +18,7 @@ import { applyDelta, averageUnitCost, buildPurchase } from '@/domain/stock';
 import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { getLastPayer, setLastPayer, usePayerOptions } from '@/features/money/accounts';
-import { stockOf, unitOf, useLastPurchases, usePostMovement, useSuppliers, type Item } from './api';
+import { newSupplierHint, stockOf, unitOf, useLastPurchases, usePostMovement, useSuppliers, type Item } from './api';
 
 export function BuyDrawer({ item, open, onOpenChange }: { item: Item; open: boolean; onOpenChange: (o: boolean) => void }) {
   return (
@@ -141,7 +141,7 @@ function BuyForm({ item, onDone }: { item: Item; onDone: () => void }) {
             control={form.control}
             name="supplier"
             render={({ field }) => (
-              <SuggestionInput id="buy-supplier" value={field.value} onChange={field.onChange} options={suppliers.data ?? []} />
+              <SuggestionInput id="buy-supplier" value={field.value} onChange={field.onChange} options={suppliers.data ?? []} newHint={newSupplierHint} />
             )}
           />
         </Field>

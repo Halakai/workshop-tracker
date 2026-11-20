@@ -10,11 +10,22 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentProfile } from '@/features/auth/profiles';
 import { useItems } from '@/features/inventory/api';
 import { useTools } from '@/features/tools/api';
-import { useBrands, useCategories, useExpenseCategories, usePhotoAlbums, useToolCategories, useUnits, type Brand } from './api';
+import {
+  useBrands,
+  useCategories,
+  useExpenseCategories,
+  usePhotoAlbums,
+  useSupplierList,
+  useToolCategories,
+  useUnits,
+  type Brand,
+  type Supplier,
+} from './api';
 import { AddCategoryDrawer, AddExpenseCategoryDrawer, AddPhotoAlbumDrawer, AddToolCategoryDrawer, AddUnitDrawer, EditEntryDrawer, type EditTarget } from './EntryDrawers';
 import { AddBrandDrawer } from './AddBrandDrawer';
+import { AddSupplierDrawer, EditSupplierDrawer } from './SupplierDrawers';
 
-/** Car makes, categories, units, brands, cost types, photo albums and tool categories. Everyone can add; admins can rename and delete. */
+/** Car makes, categories, units, brands, suppliers, cost types, photo albums and tool categories. Everyone can add; admins can rename and delete. */
 export function ListsPage() {
   const me = useCurrentProfile();
   const isAdmin = me.role === 'admin';
@@ -46,8 +57,11 @@ export function ListsPage() {
       return map;
     },
   });
-  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'cost' | 'tool-category' | 'album' | null>(null);
+  const suppliers = useSupplierList();
+  const sortedSuppliers = useMemo(() => [...(suppliers.data ?? [])].sort((a, b) => a.name.localeCompare(b.name)), [suppliers.data]);
+  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'supplier' | 'cost' | 'tool-category' | 'album' | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
 
   const usage = useMemo(() => {
     const count = (ids: (string | null)[]) => {
@@ -123,6 +137,13 @@ export function ListsPage() {
           ))}
         </Section>
 
+        <Section title="Suppliers" onAdd={() => setAdding('supplier')} loading={suppliers.isPending}>
+          {sortedSuppliers.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">No suppliers yet.</li>}
+          {sortedSuppliers.map((s) => (
+            <Row key={s.id} title={s.name} usedBy={s.uses} usedLabel="purchase" onEdit={isAdmin ? () => setEditingSupplier(s) : undefined} />
+          ))}
+        </Section>
+
         <Section title="Photo albums" onAdd={() => setAdding('album')} loading={photoAlbums.isPending}>
           {photoAlbums.data?.map((a) => {
             const used = albumUsage.data?.get(a.id) ?? 0;
@@ -173,6 +194,8 @@ export function ListsPage() {
       <AddCategoryDrawer open={adding === 'category'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddUnitDrawer open={adding === 'unit'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddBrandDrawer open={adding === 'brand'} onOpenChange={(o) => !o && setAdding(null)} />
+      <AddSupplierDrawer open={adding === 'supplier'} onOpenChange={(o) => !o && setAdding(null)} />
+      <EditSupplierDrawer supplier={editingSupplier} onClose={() => setEditingSupplier(null)} />
       <AddToolCategoryDrawer open={adding === 'tool-category'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddPhotoAlbumDrawer open={adding === 'album'} onOpenChange={(o) => !o && setAdding(null)} />
       <EditEntryDrawer target={editing} onClose={() => setEditing(null)} />

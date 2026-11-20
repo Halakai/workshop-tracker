@@ -100,6 +100,8 @@ function useInvalidateJob() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] }),
       queryClient.invalidateQueries({ queryKey: ['items'] }),
       queryClient.invalidateQueries({ queryKey: ['movements'] }),
+      // a part bought for the job can add a supplier to the list
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
     ]);
 }
 
