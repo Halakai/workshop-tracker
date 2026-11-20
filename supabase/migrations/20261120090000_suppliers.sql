@@ -120,12 +120,16 @@ begin
     return;
   end if;
 
-  delete from public.suppliers where name = v_new and id <> p_id;
-  update public.suppliers set name = v_new where id = p_id;
+  -- plain rename: the entry takes the new name (merging: the entry with that name stays)
+  if not exists (select 1 from public.suppliers s where s.name = v_new) then
+    update public.suppliers set name = v_new where id = p_id;
+  end if;
   update public.transactions set counterparty = v_new
     where app.is_supplier_purchase(category) and counterparty = v_old;
   update public.stock_movements set supplier = v_new where supplier = v_old;
   update public.tools set bought_from = v_new where bought_from = v_old;
+  -- merging: the old entry is unused now, so it can go
+  delete from public.suppliers where id = p_id and name = v_old;
 end;
 $$;
 revoke all on function public.rename_supplier(uuid, text) from public, anon;
