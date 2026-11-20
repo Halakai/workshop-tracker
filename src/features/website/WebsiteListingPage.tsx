@@ -386,7 +386,7 @@ function ListingForm({ subject, listing, initialPairs, taken }: { subject: Subje
                 )}
               </div>
               <FieldDescription>
-                Tap to choose. {chosen.length} of {photos.length} chosen. Check them for licence plates and people first.
+                Tap to choose. {chosen.length} of {photos.length} chosen. It is the same tick as “Customers can see”: customers with a key see these photos too.
               </FieldDescription>
               {photos.length === 0 && <p className="text-sm text-muted-foreground">No photos yet. Add them on the {subject.kind} page.</p>}
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4">

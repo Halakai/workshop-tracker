@@ -29,7 +29,7 @@ shared workshop wallet and settling up between partners. Everything is behind th
 | W3 | The website itself, Publish button | ✅ done (replaced by K1) |
 | R4 | Steady pop-ups on phones (back button closes them), typed dates on the computer, suppliers list | ✅ done |
 | K1 | Login first: the main address forwards to the app; the website only for the team, inside the app; Publish gone | ✅ done |
-| K2 | Job keys: a customer opens their job (work, prices, payments, photos, invoice) with a code | planned |
+| K2 | Job keys: a customer opens their job (work, prices, payments, photos, invoice) with a code | ✅ done |
 | K3 | Car keys: a page for a buyer or for the owner | planned |
 
 ## The app at a glance
@@ -196,6 +196,27 @@ up: hand and power tools, the compressor, lifts, the scanner…
 - **Logos** are public-domain or CC0 files from Wikimedia Commons and Simple Icons, listed with their sources in
   [data/car-catalog/LOGOS.md](data/car-catalog/LOGOS.md). Makes without a free logo (and makes you add) show their
   initials.
+
+## Customer keys
+
+A customer sees their own job on their phone, without an account (docs/PLAN.md §11).
+
+- **Make one:** job page → **Customer access** → **Make a key** (a note like *Ivan* is optional and only you see it).
+  You get a code like `K7M4-QX9P` and a link (`…/workshop-tracker/?k=K7M4-QX9P`).
+  - **Send to the customer** shares a message with the link (WhatsApp, Viber…); **Copy link** / **Copy code**.
+  - **See what the customer sees** opens their page (a yellow bar says it's the customer's view; your looks aren't
+    counted as openings).
+  - Each key shows how often and when it was last opened. **Switch off** stops it at once; it can be switched on again.
+- **The customer** taps the link, or types the code on the login page (*Imate kod? · Have a code?*). Their phone
+  remembers it, so the app's address opens their page again. Croatian with an EN switch.
+- **What they see:** the car and the job, what we did, every line at the price they're charged, labour and the total,
+  their payments and what's still to pay, the invoice (once made), call / WhatsApp buttons, and the photos ticked
+  **Customers can see** (open a photo → *Show to customers*; it's the same tick the website uses).
+- **What they never see:** costs, purchases and suppliers, notes, who paid, shares, settling up, other photos.
+- **How it works:** `create_access_key()` makes the code (no 0/O/1/I/L). The customer's page asks the `files` function
+  (`POST /files/key`), which calls `open_access_key()` with the service role: it picks exactly what the key may see,
+  counts the opening, and blocks a phone after 20 wrong codes in 15 minutes. Photo and invoice links are signed for
+  a day or two and made fresh each time the page opens.
 
 ## The website (team only)
 

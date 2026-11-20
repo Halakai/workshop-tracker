@@ -14,6 +14,97 @@ export type Database = {
   };
   public: {
     Tables: {
+      access_keys: {
+        Row: {
+          car_id: string | null;
+          code: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          job_id: string | null;
+          kind: string;
+          last_opened_at: string | null;
+          note: string | null;
+          opened_count: number;
+          switched_off_at: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          car_id?: string | null;
+          code: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          job_id?: string | null;
+          kind: string;
+          last_opened_at?: string | null;
+          note?: string | null;
+          opened_count?: number;
+          switched_off_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          car_id?: string | null;
+          code?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          job_id?: string | null;
+          kind?: string;
+          last_opened_at?: string | null;
+          note?: string | null;
+          opened_count?: number;
+          switched_off_at?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "access_keys_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "access_keys_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "access_keys_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "access_keys_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "job_summaries";
+            referencedColumns: ["job_id"];
+          },
+          {
+            foreignKeyName: "access_keys_job_id_fkey";
+            columns: ["job_id"];
+            isOneToOne: false;
+            referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "access_keys_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       accounts: {
         Row: {
           created_at: string;
@@ -2466,11 +2557,44 @@ export type Database = {
         Returns: undefined;
       };
       backup_tables: { Args: never; Returns: string[] };
+      create_access_key: {
+        Args: {
+          p_car_id: string;
+          p_job_id: string;
+          p_kind: string;
+          p_note?: string;
+        };
+        Returns: {
+          car_id: string | null;
+          code: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          job_id: string | null;
+          kind: string;
+          last_opened_at: string | null;
+          note: string | null;
+          opened_count: number;
+          switched_off_at: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        SetofOptions: {
+          from: "*";
+          to: "access_keys";
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       issue_invoice_number: { Args: { p_job_id: string }; Returns: string };
       keepalive: { Args: never; Returns: boolean };
       move_photo_to_album: {
         Args: { p_album_id: string; p_attachment_id: string };
         Returns: undefined;
+      };
+      open_access_key: {
+        Args: { p_code: string; p_count?: boolean; p_ip?: string };
+        Returns: Json;
       };
       post_stock_movement: {
         Args: {
