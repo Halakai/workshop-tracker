@@ -10,6 +10,7 @@ import { SharesDrawer } from '@/features/settlement/SharesDrawer';
 import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 import { PhotoGallery, PhotoSection } from '@/features/files/Photos';
 import { WebsiteCard } from '@/features/website/WebsiteCard';
+import { KeysCard } from '@/features/keys/CustomerAccessCard';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { Button } from '@/components/ui/button';
@@ -260,6 +261,7 @@ function CarView({ car }: { car: Car }) {
         </Card>
 
         <PhotoSection entityType="car" entityId={car.id} albums />
+        <KeysCard target={{ carId: car.id }} subject={car.ref} />
         <WebsiteCard target={{ carId: car.id }} forSale={status === 'listed' ? car.asking_price_cents : undefined} />
         <AttachmentStrip entityType="car" entityId={car.id} kind="receipt" title="Papers & receipts" allowPdf />
 

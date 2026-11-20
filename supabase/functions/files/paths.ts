@@ -168,5 +168,27 @@ export function invoicePayload(jobId: string, exp: number): string {
   return `invoice.${jobId}.${exp}`;
 }
 
+interface PhotoLists {
+  photos?: { id: string }[];
+  site_photos?: { id: string }[];
+  car?: { photos?: { id: string }[]; pairs?: { before: string; after: string }[] };
+  cars?: { photos?: { id: string }[]; pairs?: { before: string; after: string }[] }[];
+}
+
+/** Every photo a customer key's page shows (job, car or website), once each: the ones to sign links for. */
+export function keyPhotoIds(view: PhotoLists): string[] {
+  const ids = new Set<string>();
+  const add = (list?: { id: string }[]) => list?.forEach((p) => ids.add(p.id));
+  const addCar = (c?: { photos?: { id: string }[]; pairs?: { before: string; after: string }[] }) => {
+    add(c?.photos);
+    c?.pairs?.forEach((p) => (ids.add(p.before), ids.add(p.after)));
+  };
+  add(view.photos);
+  add(view.site_photos);
+  addCar(view.car);
+  view.cars?.forEach(addCar);
+  return [...ids];
+}
+
 export const MAX_UPLOAD_BYTES = 9 * 1024 * 1024;
 export const ALLOWED_MIME = /^(image\/(jpeg|png|webp|heic|heif)|application\/pdf)$/;

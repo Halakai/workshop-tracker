@@ -1,12 +1,16 @@
-// A customer's own page, opened with a key (docs/PLAN.md §11). For a job: the work at the customer's prices, their
-// payments, the photos the workshop ticked and the invoice. Plain HTML in the website's look, like render.tsx; the
-// data comes from open_access_key() through the files function and never holds costs.
+// The pages a key opens (docs/PLAN.md §11), in the website's look and plain HTML like render.tsx. The data comes from
+// open_access_key() through the files function and never holds costs:
+//   job      the work at the customer's prices, their payments, the ticked photos and the invoice
+//   buyer    one car like its website page, with the asking price while it is for sale
+//   owner    one car's history: what we did, the parts fitted (no prices), photos
+//   website  the website, without the sections and cars the key hides
 import type { ReactNode } from 'react';
 import { formatDate } from '@/domain/dates';
 import { formatMoney } from '@/domain/money';
-import { T, type Lang } from './i18n';
-import { Badge, ContactButtons, Frame, Gallery, Paragraphs, btnPrimary, doc, type View } from './render';
-import type { BuildContext, SiteContact, Snapshot } from './types';
+import { T, pick, type Lang } from './i18n';
+import { formatKm, fuelName } from './format';
+import { Badge, BeforeAfter, CarPage, ContactButtons, Frame, Gallery, Paragraphs, btnPrimary, doc, renderSite, type Page, type View } from './render';
+import type { BuildContext, PhotoFiles, SiteCar, SiteContact, Snapshot } from './types';
 
 export interface JobKeyView {
   kind: 'job';
@@ -32,10 +36,47 @@ export interface JobKeyView {
   photos: { id: string; favorite: boolean }[];
 }
 
-export type KeyView = JobKeyView;
+export interface CarKeyView {
+  kind: 'buyer' | 'owner';
+  code: string;
+  workshop: Snapshot['workshop'];
+  contacts: SiteContact[];
+  car: SiteCar & { plate: string | null };
+  /** the owner's: bought for the car, or taken from stock (qty, unit) */
+  parts: { date: string; description: string; qty: number | null; unit: string | null }[];
+}
+
+export interface WebsiteKeyView extends Snapshot {
+  kind: 'website';
+  code: string;
+  hidden: string[];
+}
+
+export type KeyView = JobKeyView | CarKeyView | WebsiteKeyView;
+
+/**
+ * The pages of a key: "index.html" and "en/index.html", and for a website key every page of the website.
+ * `ctx.base` is the key's own address ("#/k/K7M4QX9P/").
+ */
+export function renderKeyPages(view: KeyView, ctx: BuildContext, invoiceUrl: string | null): Page[] {
+  const keyCtx: BuildContext = { ...ctx, customerView: true };
+  if (view.kind === 'website') return renderSite(view, { ...keyCtx, hidden: view.hidden });
+  const s = shell(view);
+  const page = (lang: Lang, node: (v: View) => ReactNode): Page => ({
+    path: lang === 'hr' ? 'index.html' : 'en/index.html',
+    html: doc(node({ s, ctx: keyCtx, lang, t: T[lang] })),
+  });
+  return (['hr', 'en'] as const).map((lang) =>
+    page(lang, (v) => {
+      if (view.kind === 'job') return <JobKeyPage v={v} view={view} invoiceUrl={invoiceUrl} />;
+      if (view.kind === 'buyer') return <CarPage v={v} car={view.car} alone />;
+      return <OwnerPage v={v} view={view} />;
+    }),
+  );
+}
 
 /** What the website's frame (header, footer, call bar) needs from a snapshot; the rest stays empty. */
-function shell(view: KeyView): Snapshot {
+function shell(view: JobKeyView | CarKeyView): Snapshot {
   return {
     workshop: view.workshop,
     contacts: view.contacts,
@@ -58,12 +99,6 @@ function shell(view: KeyView): Snapshot {
     hours: [],
     cars: [],
   };
-}
-
-/** The page for a key. `ctx.base` is the key's own address ("#/k/K7M4QX9P/"); English is under "en/". */
-export function renderKeyPage(view: KeyView, ctx: BuildContext, lang: Lang, invoiceUrl: string | null): string {
-  const v: View = { s: shell(view), ctx, lang, t: T[lang] };
-  return doc(<JobKeyPage v={v} view={view} invoiceUrl={invoiceUrl} />);
 }
 
 const narrow = 'mx-auto w-full max-w-3xl px-4 sm:px-6';
@@ -115,7 +150,6 @@ function JobKeyPage({ v, view, invoiceUrl }: { v: View; view: JobKeyView; invoic
         path: here[lang],
         alternate: here[lang === 'hr' ? 'en' : 'hr'],
         noindex: true,
-        teamText: k.teamPreview,
       }}
     >
       <section className={`${narrow} pt-10`}>
@@ -191,6 +225,104 @@ function JobKeyPage({ v, view, invoiceUrl }: { v: View; view: JobKeyView; invoic
         <Section title={k.questions}>
           <p className="mb-5 text-muted">{k.questionsLead}</p>
           <ContactButtons v={v} contacts={view.contacts} message={k.whatsappJob(job.ref)} />
+        </Section>
+      )}
+    </Frame>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// The owner's page: their car's history
+// ---------------------------------------------------------------------------
+
+function OwnerPage({ v, view }: { v: View; view: CarKeyView }) {
+  const { t, ctx, lang } = v;
+  const k = t.key;
+  const car = view.car;
+  const title = pick(lang, car.title_hr, car.title_en);
+  const story = pick(lang, car.story_hr, car.story_en);
+  const photos = [...car.photos]
+    .sort((a, b) => Number(b.favorite) - Number(a.favorite))
+    .filter((p) => ctx.photos[p.id])
+    .map((p) => ({ ref: p, files: ctx.photos[p.id] }));
+  const pairs = car.pairs.flatMap((pair): [PhotoFiles, PhotoFiles][] =>
+    ctx.photos[pair.before] && ctx.photos[pair.after] ? [[ctx.photos[pair.before], ctx.photos[pair.after]]] : [],
+  );
+  const specs = [
+    car.plate && { label: k.plate, value: car.plate },
+    car.year != null && { label: t.year, value: String(car.year) },
+    car.engine && { label: t.engine, value: car.engine },
+    car.fuel && { label: t.fuel, value: fuelName(car.fuel, t.fuels) },
+    car.mileage_km != null && { label: t.mileage, value: formatKm(car.mileage_km) },
+  ].filter(Boolean) as { label: string; value: string }[];
+  const here = { hr: ctx.base, en: `${ctx.base}en/` };
+
+  return (
+    <Frame
+      v={v}
+      nav={[]}
+      meta={{ title: `${title} · ${view.workshop.name}`, description: title, path: here[lang], alternate: here[lang === 'hr' ? 'en' : 'hr'], noindex: true }}
+    >
+      <section className={`${narrow} pt-10`}>
+        <span className="text-sm font-semibold tracking-wide text-accent uppercase">{k.yourCar}</span>
+        <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">{title}</h1>
+      </section>
+
+      {photos.length > 0 && (
+        <section className={`${narrow} mt-8`}>
+          <Gallery v={v} photos={photos} title={title} />
+        </section>
+      )}
+
+      {specs.length > 0 && (
+        <section className={`${narrow} mt-8`}>
+          <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3">
+            {specs.map((sp) => (
+              <div key={sp.label} className="bg-card p-4">
+                <dt className="text-xs tracking-wide text-muted uppercase">{sp.label}</dt>
+                <dd className="mt-1 font-semibold">{sp.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      {pairs.length > 0 && (
+        <Section title={t.beforeAfter}>
+          <BeforeAfter v={v} pairs={pairs} />
+        </Section>
+      )}
+
+      {story && (
+        <Section title={t.whatWeDid}>
+          <Paragraphs text={story} className="space-y-3 text-lg leading-relaxed text-fg/90" />
+        </Section>
+      )}
+
+      {view.parts.length > 0 && (
+        <Section title={k.partsFitted}>
+          <p className="-mt-2 mb-4 text-muted">{k.partsFittedLead}</p>
+          <div className={`${card} divide-y divide-line`}>
+            {view.parts.map((p, i) => (
+              <Row
+                key={i}
+                label={
+                  <>
+                    {p.description}
+                    {p.qty != null && (p.qty !== 1 || p.unit) && <span className="text-muted"> · {qtyText(p.qty, p.unit)}</span>}
+                  </>
+                }
+                value={formatDate(p.date)}
+              />
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {view.contacts.length > 0 && (
+        <Section title={k.questions}>
+          <p className="mb-5 text-muted">{k.questionsLead}</p>
+          <ContactButtons v={v} contacts={view.contacts} message={k.whatsappOwner(title)} />
         </Section>
       )}
     </Frame>

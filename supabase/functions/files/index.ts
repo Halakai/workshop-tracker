@@ -8,7 +8,7 @@
 //   GET  /files/invoice/:jobId?exp=…&sig=…  → the job's latest invoice PDF                (signed link)
 //   POST /files/delete   { id }  → moves the file to Drive's trash                        (signed-in member)
 //   POST /files/health   checks the Google connection                                     (signed-in admin)
-//   POST /files/key      { code } → a customer's page: job (K2) with signed photo/invoice links  (no login; the code)
+//   POST /files/key      { code } → a key's page: job, car or website, with signed photo/invoice links (no login; the code)
 //
 // The website is only for the team since 21.11.2026 (docs/PLAN.md §11): the app draws it from live data, so the
 // routes that fed the public build and its Publish button are gone.
@@ -26,6 +26,7 @@ import {
   folderChain,
   invoiceLinkExpiry,
   invoicePayload,
+  keyPhotoIds,
   linkExpiry,
   signingPayload,
   type EntityType,
@@ -366,13 +367,13 @@ async function openKey(req: Request) {
     throw error;
   }
   if (!data) throw new HttpError(404, 'This code doesn’t work. It may be mistyped or switched off.');
-  const { job_id: jobId, ...view } = data as { job_id?: string; photos?: { id: string }[]; job?: { has_invoice?: boolean } };
+  const { job_id: jobId, ...view } = data as { job_id?: string; job?: { has_invoice?: boolean } } & Parameters<typeof keyPhotoIds>[0];
   const base = publicBase(req);
   const exp = linkExpiry(new Date());
   const links: Record<string, { thumb: string; full: string }> = {};
-  for (const p of view.photos ?? []) {
+  for (const id of keyPhotoIds(view)) {
     // a photo without a small copy gets the full one from the thumb link too
-    links[p.id] = { thumb: await signedUrl(base, p.id, 'thumb', exp), full: await signedUrl(base, p.id, 'full', exp) };
+    links[id] = { thumb: await signedUrl(base, id, 'thumb', exp), full: await signedUrl(base, id, 'full', exp) };
   }
   const invoiceUrl = jobId && view.job?.has_invoice ? `${base}/invoice/${jobId}?exp=${exp}&sig=${await hmac(invoicePayload(jobId, exp))}` : null;
   return Response.json({ ...view, links, invoice_url: invoiceUrl }, { headers: { 'Cache-Control': 'no-store' } });

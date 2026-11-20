@@ -497,3 +497,13 @@ Your answers:
 | **K1** | Login page first; website only in the app (`view.html`); public pages, Publish and its tokens removed | `website_preview()` |
 | **K2** | Job keys: Customer access card on jobs, customer job page, "Customers can see" tick, code box on the login page | `access_keys`, `key_view` |
 | **K3** | Car keys: buyer and owner pages | extends `key_view` |
+
+### K3 as built (your answers, 21.11.2026)
+
+- **Car keys** on the car page (buyer or owner, changeable later).
+- **Website keys:** made under More → Website → Visitor keys. Public (no name) or personal; the only difference is
+  the name. Each one chooses its sections, all cars or picked ones, and prices on or off.
+- **Every key:** a name and how long it works (until switched off / 1 week / 1 month / 3 months / a date), both
+  changeable while in use. **More → Keys** lists them all.
+- **Database:** `access_keys.expires_at`, `access_keys.shows` (cleaned by a trigger), `create_access_key()` for
+  every kind, `app.key_car_view()`, `app.key_website_view()`; `open_access_key()` checks the end date.

@@ -40,6 +40,7 @@ const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then(
 const HomePage = lazy(() => import('@/features/home/HomePage').then((m) => ({ default: m.HomePage })));
 const ContactsPage = lazy(() => import('@/features/contacts/ContactsPage').then((m) => ({ default: m.ContactsPage })));
 const ExportPage = lazy(() => import('@/features/export/ExportPage').then((m) => ({ default: m.ExportPage })));
+const KeysPage = lazy(() => import('@/features/keys/KeysPage').then((m) => ({ default: m.KeysPage })));
 const SearchPage = lazy(() => import('@/features/search/SearchPage').then((m) => ({ default: m.SearchPage })));
 const UsersPage = lazy(() => import('@/features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
 const website = () => import('@/features/website/pages');
@@ -86,6 +87,7 @@ export const router = createHashRouter([
           { path: 'jobs/:id/settle', element: <JobSettlePage /> },
           { path: 'jobs/:id/website', element: <JobWebsitePage /> },
           { path: 'website', element: <WebsitePage /> },
+          { path: 'keys', element: <KeysPage /> },
           { path: 'more', element: <MorePage /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'lists', element: <ListsPage /> },

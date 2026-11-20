@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cleanName, fileNameFor, folderChain, invoiceLinkExpiry, invoicePayload, linkExpiry, signingPayload } from './paths';
+import { cleanName, fileNameFor, folderChain, invoiceLinkExpiry, invoicePayload, keyPhotoIds, linkExpiry, signingPayload } from './paths';
 
 const car = { id: 'c1', ref: 'CAR-001', year: 2012, make: 'Škoda', model: 'Octavia', plate: 'ZG1234AB' };
 const job = { id: 'j1', ref: 'JOB-007', customer: 'Marko Marić', plate: 'ZG-123-AB', createdYear: 2026 };
@@ -91,5 +91,19 @@ describe('signed links', () => {
     expect(invoicePayload('job1', 123)).toBe('invoice.job1.123');
     // a photo link's signature can't be reused as an invoice link
     expect(invoicePayload('job1', 123)).not.toBe(signingPayload('job1', 'full', 123));
+  });
+});
+
+describe('photos a key shows', () => {
+  it('job, car and website keys, each photo once', () => {
+    expect(keyPhotoIds({ photos: [{ id: 'a' }, { id: 'b' }] })).toEqual(['a', 'b']);
+    expect(keyPhotoIds({ car: { photos: [{ id: 'a' }], pairs: [{ before: 'b', after: 'a' }] } })).toEqual(['a', 'b']);
+    expect(
+      keyPhotoIds({
+        site_photos: [{ id: 'hero' }],
+        cars: [{ photos: [{ id: 'x' }], pairs: [] }, { photos: [], pairs: [{ before: 'y', after: 'z' }] }],
+      }),
+    ).toEqual(['hero', 'x', 'y', 'z']);
+    expect(keyPhotoIds({})).toEqual([]);
   });
 });

@@ -6,7 +6,7 @@
 // Links inside a page (#radovi) just scroll.
 import '../../site/src/site.css';
 import { renderSite } from '../../site/src/render';
-import { renderKeyPage, type KeyView } from '../../site/src/customer';
+import { renderKeyPages, type KeyView } from '../../site/src/customer';
 import { initSite } from '../../site/src/client';
 import { T, type Lang } from '../../site/src/i18n';
 import type { BuildContext, PhotoFiles, Snapshot } from '../../site/src/types';
@@ -142,24 +142,42 @@ async function signPhotos(ids: string[]): Promise<Record<string, PhotoFiles>> {
 // ---------------------------------------------------------------------------
 interface Opened {
   code: string;
-  view: KeyView;
-  photos: Record<string, PhotoFiles>;
-  invoiceUrl: string | null;
+  /** the key's pages by path ("index.html", "en/index.html", and a website key's car pages) */
+  pages: Map<string, string>;
 }
 let opened: Opened | null = null;
 
-/** "#/k/K7M4QX9P/" → K7M4QX9P in Croatian; "#/k/K7M4QX9P/en/" in English */
-function keyRoute(hash: string): { code: string; lang: Lang } | null {
-  const match = /^#\/k\/([^/]*)\/?(en\/?)?$/.exec(hash);
-  return match ? { code: normalizeKeyCode(decodeURIComponent(match[1])), lang: match[2] ? 'en' : 'hr' } : null;
+/** "#/k/K7M4QX9P/" → K7M4QX9P; what follows is the page inside the key ("en/", "auti/golf/", "#kontakt"…) */
+function keyRoute(hash: string): { code: string; rest: string } | null {
+  const match = /^#\/k\/([^/#]*)\/?(.*)$/.exec(hash);
+  return match ? { code: normalizeKeyCode(decodeURIComponent(match[1])), rest: match[2] } : null;
 }
 
-async function openKey(code: string): Promise<Opened | { problem: 'bad' | 'many' | 'error' }> {
+type Problem = { problem: 'bad' | 'many' | 'error' };
+
+async function openKey(code: string): Promise<{ view: KeyView; photos: Record<string, PhotoFiles>; invoiceUrl: string | null } | Problem> {
   if (isSample()) {
-    // development only: a sample job for any code but ZZZZZZZZ (which shows the "wrong code" form)
+    // development only: ZZZZZZZZ is a wrong code; codes starting with W, B or O open the sample website (as a key
+    // showing for sale + contact, no prices), a buyer's or an owner's car; anything else the sample job
     if (code === 'ZZZZZZZZ') return { problem: 'bad' };
+    if (code.startsWith('W')) {
+      const s = (await import('../../site/fixtures/snapshot.json')).default as unknown as Snapshot;
+      const cars = s.cars.filter((c) => c.kind === 'flip' && c.status === 'listed').map((c) => ({ ...c, price_cents: null }));
+      const view: KeyView = { ...s, kind: 'website', code, cars, services: [], reviews: [], hidden: ['work', 'services', 'about', 'reviews'] };
+      return { view, photos: samplePhotos(photoIds(view)), invoiceUrl: null };
+    }
+    if (code.startsWith('B') || code.startsWith('O')) {
+      const s = (await import('../../site/fixtures/snapshot.json')).default as unknown as Snapshot;
+      const car = { ...s.cars[0], plate: code.startsWith('O') ? 'ZG-123-AB' : null };
+      const parts = [
+        { date: '2026-10-02', description: 'Kvačilo (komplet)', qty: null, unit: null },
+        { date: '2026-10-05', description: 'Motorno ulje 5W-30', qty: 4.5, unit: 'L' },
+      ];
+      const view: KeyView = { kind: code.startsWith('O') ? 'owner' : 'buyer', code, workshop: s.workshop, contacts: s.contacts, car, parts };
+      return { view, photos: samplePhotos([...car.photos.map((p) => p.id), ...car.pairs.flatMap((p) => [p.before, p.after])]), invoiceUrl: null };
+    }
     const view = (await import('../../site/fixtures/job-key.json')).default as unknown as KeyView;
-    return { code, view, photos: samplePhotos(view.photos.map((p) => p.id)), invoiceUrl: '#' };
+    return { view, photos: samplePhotos(view.kind === 'job' ? view.photos.map((p) => p.id) : []), invoiceUrl: '#' };
   }
   const { data, error } = await supabase.functions.invoke('files/key', { body: { code } });
   if (error) {
@@ -167,10 +185,11 @@ async function openKey(code: string): Promise<Opened | { problem: 'bad' | 'many'
     return { problem: status === 404 ? 'bad' : status === 429 ? 'many' : 'error' };
   }
   const { links, invoice_url: invoiceUrl, ...view } = data as KeyView & { links: Links; invoice_url: string | null };
-  return { code, view: view as KeyView, photos: toPhotoFiles(links ?? {}), invoiceUrl };
+  return { view: view as KeyView, photos: toPhotoFiles(links ?? {}), invoiceUrl };
 }
 
-async function showKey(code: string, lang: Lang) {
+async function showKey(code: string, rest: string) {
+  const lang: Lang = rest.startsWith('en/') || rest === 'en' ? 'en' : 'hr';
   if (!code) return codeForm(lang);
   if (opened?.code !== code) {
     loading();
@@ -179,20 +198,20 @@ async function showKey(code: string, lang: Lang) {
       const t = T[lang].key;
       return codeForm(lang, result.problem === 'bad' ? t.badCode : result.problem === 'many' ? t.tooMany : t.loadError);
     }
-    opened = result;
+    const ctx: BuildContext = {
+      base: `#/k/${code}/`,
+      root: ROOT,
+      origin: location.origin,
+      logo: result.view.workshop.logo ?? APP_ICON,
+      photos: result.photos,
+      team,
+      appHref: APP,
+    };
+    opened = { code, pages: new Map(renderKeyPages(result.view, ctx, result.invoiceUrl).map((p) => [p.path, p.html])) };
+    shownPage = null;
     if (!team) rememberKey(code);
   }
-  const ctx: BuildContext = {
-    base: `#/k/${code}/`,
-    root: ROOT,
-    origin: location.origin,
-    logo: opened.view.workshop.logo ?? APP_ICON,
-    photos: opened.photos,
-    team,
-    appHref: APP,
-  };
-  draw(renderKeyPage(opened.view, ctx, lang, opened.invoiceUrl));
-  window.scrollTo(0, 0);
+  showPage(opened.pages, `${code}:`, rest);
 }
 
 // ---------------------------------------------------------------------------
@@ -252,29 +271,33 @@ async function loadSample(): Promise<Map<string, string>> {
   return new Map(renderSite(snapshot, websiteContext(snapshot, photos)).map((p) => [p.path, p.html]));
 }
 
-/** "#/auti/golf/#radovi" → page "auti/golf/index.html", then scroll to "radovi" */
-function websiteRoute(hash: string): { page: string; anchor: string | null } {
-  const [path = '', anchor] = hash.replace(/^#\/?/, '').split('#');
-  let dir = decodeURIComponent(path);
+/** "auti/golf/#radovi" (or "#/auti/golf/#radovi") → page "auti/golf/index.html", then scroll to "radovi" */
+function pageRoute(path: string): { page: string; anchor: string | null } {
+  const [dirPart = '', anchor] = path.replace(/^#\/?/, '').split('#');
+  let dir = decodeURIComponent(dirPart);
   if (dir && !dir.endsWith('/')) dir += '/';
   return { page: `${dir}index.html`, anchor: anchor || null };
 }
 
-async function showWebsite(hash: string) {
-  const sample = isSample();
-  if (!pages) {
-    loading();
-    pages = sample ? await loadSample() : await loadWebsite();
-    if (!pages) return;
-  }
-  const { page, anchor } = websiteRoute(hash);
-  if (page !== shownPage) {
-    draw(pages.get(page) ?? pages.get('404.html')!);
-    shownPage = page;
+/** Draws one of `pages` (unless it is already shown: `id` tells the website and keys apart), then scrolls. */
+function showPage(pages: Map<string, string>, id: string, path: string) {
+  const { page, anchor } = pageRoute(path);
+  if (id + page !== shownPage) {
+    draw(pages.get(page) ?? pages.get('404.html') ?? pages.get('index.html')!);
+    shownPage = id + page;
   }
   const target = anchor && document.getElementById(anchor);
   if (target) target.scrollIntoView();
   else window.scrollTo(0, 0);
+}
+
+async function showWebsite(hash: string) {
+  if (!pages) {
+    loading();
+    pages = isSample() ? await loadSample() : await loadWebsite();
+    if (!pages) return;
+  }
+  showPage(pages, 'site:', hash);
 }
 
 // ---------------------------------------------------------------------------
@@ -283,10 +306,7 @@ async function showWebsite(hash: string) {
 async function route() {
   const hash = location.hash || '#/';
   const key = keyRoute(hash);
-  if (key) {
-    shownPage = null;
-    return showKey(key.code, key.lang);
-  }
+  if (key) return showKey(key.code, key.rest);
   if (team || isSample()) return showWebsite(hash);
   // not signed in: a customer back on this phone gets their page again; anyone else the login
   const last = rememberedKeys()[0];

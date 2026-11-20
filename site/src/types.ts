@@ -89,4 +89,8 @@ export interface BuildContext {
   team: boolean;
   /** the app's address (back to the app) */
   appHref: string;
+  /** a website key's hidden sections: for_sale, work, services, about, reviews, contact (their data isn't sent either) */
+  hidden?: string[];
+  /** a page opened with a key: the team's yellow bar says it's what the customer sees */
+  customerView?: boolean;
 }

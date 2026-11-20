@@ -1,40 +1,98 @@
-// "Customer access" on a job (docs/PLAN.md §11 K2): keys that open the customer's own page.
+// Keys on a job, a car or the website (docs/PLAN.md §11): the card with its keys, making one, and one key's pop-up
+// (send, copy, see what they see, change, switch off). More → Keys lists them all.
 import { useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { ChevronRight, Copy, Eye, KeyRound, Loader2, Plus, Power, Share2 } from 'lucide-react';
+import { ChevronRight, Copy, Eye, KeyRound, Pencil, Plus, Power, Share2 } from 'lucide-react';
 import { FormDrawer } from '@/components/FormDrawer';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatDate } from '@/domain/dates';
+import { KEY_KIND_LABEL, keyState, lastDay, readShows, shareMessage, WEBSITE_SECTIONS, type KeyKind } from '@/domain/keys';
 import { syncErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { formatKeyCode, keyLink, keyPageHref } from '@/lib/customerKeys';
 import { usePhotos } from '@/features/files/api';
-import { useAccessKeys, useCreateKey, useSwitchKey, type AccessKey } from './api';
+import { useAccessKeys, useUpdateKey, type AccessKey, type KeyTarget } from './api';
+import { KeyForm, targetOf } from './KeyForm';
 
-function openedText(key: AccessKey): string {
-  if (key.switched_off_at) return `Switched off ${formatDate(key.switched_off_at)}`;
-  if (!key.opened_count) return 'Not opened yet';
-  return `Opened ${key.opened_count}× · last ${formatDate(key.last_opened_at)}`;
+/** "Works until 24.12.2026 · opened 3× (last 20.11.2026)" */
+export function keyStatusText(key: AccessKey): string {
+  const state = keyState(key);
+  if (state === 'off') return `Switched off ${formatDate(key.switched_off_at)}`;
+  if (state === 'expired') return `Expired after ${formatDate(lastDay(key.expires_at!))}`;
+  const until = key.expires_at ? `Works until ${formatDate(lastDay(key.expires_at))}` : 'Works until switched off';
+  const opened = key.opened_count ? `opened ${key.opened_count}× (last ${formatDate(key.last_opened_at)})` : 'not opened yet';
+  return `${until} · ${opened}`;
 }
 
-export function CustomerAccessCard({ jobId, jobRef }: { jobId: string; jobRef: string }) {
-  const target = { jobId };
+/** What a website key shows, in a few words. */
+function showsText(key: AccessKey): string | null {
+  if (key.kind !== 'website') return null;
+  const s = readShows(key.shows);
+  const parts = s.sections.length === WEBSITE_SECTIONS.length ? ['Everything'] : WEBSITE_SECTIONS.filter((x) => s.sections.includes(x.value)).map((x) => x.label);
+  if (s.cars === 'chosen') parts.push(`${s.car_ids.length} chosen car${s.car_ids.length === 1 ? '' : 's'}`);
+  if (!s.prices) parts.push('no prices');
+  return parts.join(', ');
+}
+
+export function KeyRow({ accessKey, label, onOpen }: { accessKey: AccessKey; label?: string; onOpen: () => void }) {
+  const state = keyState(accessKey);
+  const who = accessKey.note ?? (accessKey.kind === 'website' ? 'Public' : null);
+  return (
+    <button type="button" onClick={onOpen} className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left active:bg-muted">
+      <span className="min-w-0 flex-1">
+        <span className="flex flex-wrap items-baseline gap-x-2">
+          <span className={cn('font-mono font-medium tracking-wider', state !== 'working' && 'text-muted-foreground line-through')}>{formatKeyCode(accessKey.code)}</span>
+          {who && <span className="text-sm">{who}</span>}
+          {(accessKey.kind === 'buyer' || accessKey.kind === 'owner') && (
+            <Badge variant="outline" className="text-xs">
+              {KEY_KIND_LABEL[accessKey.kind]}
+            </Badge>
+          )}
+        </span>
+        {label && <span className="block truncate text-xs">{label}</span>}
+        {showsText(accessKey) && <span className="block truncate text-xs text-muted-foreground">Shows: {showsText(accessKey)}</span>}
+        <span className="block text-xs text-muted-foreground">{keyStatusText(accessKey)}</span>
+      </span>
+      <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+    </button>
+  );
+}
+
+const CARD_TEXT = {
+  job: {
+    title: 'Customer access',
+    empty: 'With a key the customer sees this job on their phone: the work at your prices, their payments, the photos you tick and the invoice. Never your costs.',
+  },
+  car: {
+    title: 'Customer access',
+    empty: 'A key for a buyer shows the car with its asking price; one for the owner shows what you did and the parts fitted. Never what it cost you.',
+  },
+  website: {
+    title: 'Visitor keys',
+    empty: 'A key opens the website for people outside the team: a public one for ads, or one per person. You choose what each one shows.',
+  },
+};
+
+/** The keys of a job, a car or the website, with "Make a key". */
+export function KeysCard({ target, subject, defaultNote }: { target: KeyTarget; subject: string; defaultNote?: string }) {
   const keys = useAccessKeys(target);
-  const { photos } = usePhotos('job', jobId);
-  const shownPhotos = photos.filter((p) => p.on_website).length;
+  const which = 'jobId' in target ? 'job' : 'carId' in target ? 'car' : 'website';
+  const text = CARD_TEXT[which];
+  const photoTarget = 'jobId' in target ? (['job', target.jobId] as const) : 'carId' in target ? (['car', target.carId] as const) : null;
   const [making, setMaking] = useState(false);
-  const [open, setOpen] = useState<AccessKey | null>(null);
-  const current = open ? (keys.data?.find((k) => k.id === open.id) ?? open) : null;
+  const [open, setOpen] = useState<string | null>(null);
+  const current = keys.data?.find((k) => k.id === open) ?? null;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <KeyRound className="size-4 text-muted-foreground" /> Customer access
+          <KeyRound className="size-4 text-muted-foreground" /> {text.title}
         </CardTitle>
         <CardAction>
           <Button size="sm" variant="outline" onClick={() => setMaking(true)}>
@@ -43,102 +101,91 @@ export function CustomerAccessCard({ jobId, jobRef }: { jobId: string; jobRef: s
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 text-sm">
-        {keys.isPending && <Loader2 className="size-4 animate-spin text-muted-foreground" />}
-        {keys.data?.length === 0 && (
-          <p className="text-muted-foreground">
-            With a key the customer sees this job on their phone: the work at your prices, their payments, the photos you tick and the invoice.
-            Never your costs.
-          </p>
-        )}
+        {keys.isPending && <Skeleton className="h-12 rounded-lg" />}
+        {keys.data?.length === 0 && <p className="text-muted-foreground">{text.empty}</p>}
         {keys.data && keys.data.length > 0 && (
           <ul className="-mx-2 divide-y">
             {keys.data.map((k) => (
               <li key={k.id}>
-                <button type="button" onClick={() => setOpen(k)} className="flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left active:bg-muted">
-                  <span className="min-w-0 flex-1">
-                    <span className={cn('block font-mono font-medium tracking-wider', k.switched_off_at && 'text-muted-foreground line-through')}>
-                      {formatKeyCode(k.code)}
-                      {k.note && <span className="ml-2 font-sans font-normal tracking-normal text-muted-foreground no-underline">{k.note}</span>}
-                    </span>
-                    <span className="block text-xs text-muted-foreground">{openedText(k)}</span>
-                  </span>
-                  <ChevronRight className="size-5 text-muted-foreground" />
-                </button>
+                <KeyRow accessKey={k} onOpen={() => setOpen(k.id)} />
               </li>
             ))}
           </ul>
         )}
-        <p className="flex items-start gap-2 text-xs text-muted-foreground">
-          <Eye className="mt-0.5 size-3.5 shrink-0" />
-          {photos.length === 0
-            ? 'Photos you add and tick “Customers can see” show on their page.'
-            : `${shownPhotos} of ${photos.length} photo${photos.length === 1 ? '' : 's'} ticked “Customers can see” (open a photo to tick it).`}
-        </p>
+        {photoTarget && <PhotoHint entityType={photoTarget[0]} entityId={photoTarget[1]} />}
       </CardContent>
 
-      <MakeKeyDrawer
-        jobId={jobId}
-        open={making}
-        onOpenChange={setMaking}
-        onMade={(k) => {
-          setMaking(false);
-          setOpen(k);
-        }}
-      />
-      <KeyDrawer jobId={jobId} jobRef={jobRef} accessKey={current} onClose={() => setOpen(null)} />
+      <FormDrawer open={making} onOpenChange={setMaking} title={which === 'website' ? 'Make a website key' : `Make a key for ${subject}`}>
+        {making && (
+          <KeyForm
+            target={target}
+            defaultNote={defaultNote}
+            onSaved={(k) => {
+              setMaking(false);
+              setOpen(k.id);
+            }}
+          />
+        )}
+      </FormDrawer>
+      <KeyDrawer accessKey={current} subject={subject} onClose={() => setOpen(null)} />
     </Card>
   );
 }
 
-function MakeKeyDrawer({ jobId, open, onOpenChange, onMade }: { jobId: string; open: boolean; onOpenChange: (o: boolean) => void; onMade: (k: AccessKey) => void }) {
-  const create = useCreateKey({ jobId });
-  const [note, setNote] = useState('');
-  const make = async () => {
-    try {
-      const key = await create.mutateAsync(note);
-      setNote('');
-      onMade(key);
-    } catch (e) {
-      toast.error(syncErrorMessage(e));
-    }
+function PhotoHint({ entityType, entityId }: { entityType: 'job' | 'car'; entityId: string }) {
+  const { photos } = usePhotos(entityType, entityId);
+  const shown = photos.filter((p) => p.on_website).length;
+  return (
+    <p className="flex items-start gap-2 text-xs text-muted-foreground">
+      <Eye className="mt-0.5 size-3.5 shrink-0" />
+      {photos.length === 0
+        ? 'Photos you add and tick “Show to customers” are on their page.'
+        : `${shown} of ${photos.length} photo${photos.length === 1 ? '' : 's'} ticked for customers (open a photo to tick it).`}
+    </p>
+  );
+}
+
+/** One key: send it, copy it, see what they see, change it, switch it off. `subject`: "J-012", "CAR-003", "Website". */
+export function KeyDrawer({
+  accessKey,
+  subject,
+  openHref,
+  onClose,
+}: {
+  accessKey: AccessKey | null;
+  subject: string;
+  /** More → Keys: a way to the job or car */
+  openHref?: string;
+  onClose: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const close = () => {
+    setEditing(false);
+    onClose();
   };
   return (
-    <FormDrawer open={open} onOpenChange={onOpenChange} title="Make a customer key" description="A new code that opens this job’s page. You can switch it off any time.">
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          void make();
-        }}
-      >
-        <FieldGroup>
-          <Field>
-            <FieldLabel htmlFor="key-note">Note (optional)</FieldLabel>
-            <Input id="key-note" maxLength={80} placeholder="e.g. Ivan, or his wife" value={note} onChange={(e) => setNote(e.target.value)} />
-            <FieldDescription>Only you see it: who you gave the key to.</FieldDescription>
-          </Field>
-          <Button type="submit" size="lg" disabled={create.isPending}>
-            {create.isPending ? <Loader2 className="animate-spin" /> : <KeyRound />} Make the key
-          </Button>
-        </FieldGroup>
-      </form>
+    <FormDrawer
+      open={!!accessKey}
+      onOpenChange={(o) => !o && close()}
+      title={editing ? 'Change the key' : `Key · ${subject}`}
+      description={editing ? 'Changes apply straight away; the code stays the same.' : (accessKey?.note ?? undefined)}
+    >
+      {accessKey &&
+        (editing ? (
+          <KeyForm target={targetOf(accessKey)} accessKey={accessKey} onSaved={() => setEditing(false)} />
+        ) : (
+          <KeyBody accessKey={accessKey} subject={subject} openHref={openHref} onEdit={() => setEditing(true)} />
+        ))}
     </FormDrawer>
   );
 }
 
-function KeyDrawer({ jobId, jobRef, accessKey, onClose }: { jobId: string; jobRef: string; accessKey: AccessKey | null; onClose: () => void }) {
-  return (
-    <FormDrawer open={!!accessKey} onOpenChange={(o) => !o && onClose()} title={`Key for ${jobRef}`} description={accessKey?.note ?? undefined}>
-      {accessKey && <KeyBody jobId={jobId} jobRef={jobRef} accessKey={accessKey} />}
-    </FormDrawer>
-  );
-}
-
-function KeyBody({ jobId, jobRef, accessKey }: { jobId: string; jobRef: string; accessKey: AccessKey }) {
-  const switchKey = useSwitchKey({ jobId });
+function KeyBody({ accessKey, subject, openHref, onEdit }: { accessKey: AccessKey; subject: string; openHref?: string; onEdit: () => void }) {
+  const update = useUpdateKey();
   const code = formatKeyCode(accessKey.code);
   const link = keyLink(accessKey.code);
-  const off = Boolean(accessKey.switched_off_at);
-  const message = `Pozdrav! Ovdje možete pratiti posao na svom autu: ${link}\nKod: ${code}`;
+  const state = keyState(accessKey);
+  const message = shareMessage(accessKey.kind as KeyKind, link, code);
 
   const copy = async (text: string, what: string) => {
     try {
@@ -152,7 +199,7 @@ function KeyBody({ jobId, jobRef, accessKey }: { jobId: string; jobRef: string; 
   const share = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: `Posao ${jobRef}`, text: message });
+        await navigator.share({ title: subject, text: message });
         return;
       } catch (e) {
         if ((e as Error).name === 'AbortError') return;
@@ -160,18 +207,31 @@ function KeyBody({ jobId, jobRef, accessKey }: { jobId: string; jobRef: string; 
     }
     await copy(message, 'Message with the link');
   };
+  const switchTo = async (on: boolean) => {
+    try {
+      await update.mutateAsync({ key: accessKey, values: { switched_off_at: on ? null : new Date().toISOString() } });
+      toast.success(on ? 'The key works again' : 'Switched off');
+    } catch (e) {
+      toast.error(syncErrorMessage(e));
+    }
+  };
 
   return (
     <div className="flex flex-col gap-4 pb-2">
-      <div className={cn('rounded-xl border bg-muted/40 p-4 text-center', off && 'opacity-60')}>
-        <p className={cn('font-mono text-3xl font-semibold tracking-widest select-all', off && 'line-through')}>{code}</p>
+      <div className={cn('rounded-xl border bg-muted/40 p-4 text-center', state !== 'working' && 'opacity-60')}>
+        <p className={cn('font-mono text-3xl font-semibold tracking-widest select-all', state !== 'working' && 'line-through')}>{code}</p>
         <p className="mt-1 text-xs break-all text-muted-foreground select-all">{link}</p>
-        <p className="mt-2 text-xs text-muted-foreground">{openedText(accessKey)}</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {KEY_KIND_LABEL[accessKey.kind as KeyKind]}
+          {accessKey.kind === 'website' && !accessKey.note && ' · Public'}
+          {showsText(accessKey) && ` · ${showsText(accessKey)}`}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">{keyStatusText(accessKey)}</p>
       </div>
-      {!off && (
+      {state === 'working' && (
         <>
           <Button size="lg" onClick={share}>
-            <Share2 /> Send to the customer
+            <Share2 /> Send it
           </Button>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="outline" onClick={() => copy(link, 'Link')}>
@@ -183,43 +243,35 @@ function KeyBody({ jobId, jobRef, accessKey }: { jobId: string; jobRef: string; 
           </div>
           <Button variant="ghost" asChild>
             <a href={keyPageHref(accessKey.code)}>
-              <Eye /> See what the customer sees
+              <Eye /> See what they see
             </a>
           </Button>
         </>
       )}
-      <div className="border-t pt-3">
-        {off ? (
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={switchKey.isPending}
-            onClick={async () => {
-              try {
-                await switchKey.mutateAsync({ key: accessKey, on: true });
-                toast.success('The key works again');
-              } catch (e) {
-                toast.error(syncErrorMessage(e));
-              }
-            }}
-          >
+      {state === 'expired' && <p className="text-center text-sm text-muted-foreground">It has expired. Change the end date to make it work again.</p>}
+      <div className="flex flex-col gap-1 border-t pt-3">
+        {openHref && (
+          <Button variant="ghost" asChild>
+            <Link to={openHref}>
+              <ChevronRight /> Open {subject}
+            </Link>
+          </Button>
+        )}
+        <Button variant="ghost" onClick={onEdit}>
+          <Pencil /> Change name, end date{accessKey.kind === 'website' ? ', what it shows' : accessKey.kind === 'job' ? '' : ', buyer / owner'}
+        </Button>
+        {state === 'off' ? (
+          <Button variant="outline" disabled={update.isPending} onClick={() => switchTo(true)}>
             <Power /> Switch on again
           </Button>
         ) : (
           <ConfirmButton
             variant="ghost"
-            className="w-full text-destructive"
+            className="text-destructive"
             title="Switch this key off?"
             description="It stops opening the page straight away. You can switch it on again later."
             confirmLabel="Switch off"
-            onConfirm={async () => {
-              try {
-                await switchKey.mutateAsync({ key: accessKey, on: false });
-                toast.success('Switched off');
-              } catch (e) {
-                toast.error(syncErrorMessage(e));
-              }
-            }}
+            onConfirm={() => switchTo(false)}
           >
             <Power /> Switch off
           </ConfirmButton>
@@ -227,4 +279,9 @@ function KeyBody({ jobId, jobRef, accessKey }: { jobId: string; jobRef: string; 
       </div>
     </div>
   );
+}
+
+/** On a job page. */
+export function CustomerAccessCard({ jobId, jobRef, customerName }: { jobId: string; jobRef: string; customerName?: string }) {
+  return <KeysCard target={{ jobId }} subject={jobRef} defaultNote={customerName} />;
 }
