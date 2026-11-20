@@ -1,11 +1,11 @@
 # Workshop Tracker
 
 Mobile-first web app for our private car workshop: car flips, small jobs for friends, the parts inventory, the
-shared workshop wallet and settling up between partners. Next to it, a public website shows the cars we've done.
+shared workshop wallet and settling up between partners. Everything is behind the login: the team gets the app
+(with the website inside it), customers get a page for their job or car through a key (docs/PLAN.md §11).
 
-- **App:** https://halakai.github.io/workshop-tracker/app/ (install it with *Add to Home Screen*)
-- **Website:** https://halakai.github.io/workshop-tracker/ (Croatian; English at `/en/`), built by
-  `scripts/build-site.mjs`; small *Prijava / Log in* link in the footer
+- **App:** https://halakai.github.io/workshop-tracker/ (forwards to `/app/`; install it with *Add to Home Screen*)
+- **Website:** only for the team, **More → Website → Open the website** (`/app/view.html`)
 - **Design and decisions:** [docs/PLAN.md](docs/PLAN.md)
 - **Stack:** Vite + React + TypeScript, Tailwind + shadcn/ui, TanStack Query, react-hook-form + zod, Supabase
   (Postgres + Auth + Edge Functions), GitHub Pages. Photos and receipts go to Google Drive.
@@ -26,7 +26,11 @@ shared workshop wallet and settling up between partners. Next to it, a public we
 | R3 | Photo gallery on cars, albums (Before/After), favorite photos for tools and parts, invoice links | ✅ done |
 | W1 | App moved to `/app/`, placeholder website at the main address | ✅ done |
 | W2 | Website content in the app (cars on the website, texts, services, reviews, hours) | ✅ done |
-| W3 | The website itself, Publish button | ✅ done |
+| W3 | The website itself, Publish button | ✅ done (replaced by K1) |
+| R4 | Steady pop-ups on phones (back button closes them), typed dates on the computer, suppliers list | ✅ done |
+| K1 | Login first: the main address forwards to the app; the website only for the team, inside the app; Publish gone | ✅ done |
+| K2 | Job keys: a customer opens their job (work, prices, payments, photos, invoice) with a code | planned |
+| K3 | Car keys: a page for a buyer or for the owner | planned |
 
 ## The app at a glance
 
@@ -193,15 +197,18 @@ up: hand and power tools, the compressor, lifts, the scanner…
   [data/car-catalog/LOGOS.md](data/car-catalog/LOGOS.md). Makes without a free logo (and makes you add) show their
   initials.
 
-## The public website
+## The website (team only)
 
-**https://halakai.github.io/workshop-tracker/** (Croatian; English at `/en/`). It shows:
+Since 21.11.2026 nothing is public (docs/PLAN.md §11). The main address only forwards to the app's login, old
+website addresses forward there too, and `robots.txt` asks search engines to forget the old pages.
+
+**More → Website → Open the website** shows it inside the app, in its own dark look (Croatian, with an EN switch),
+always up to date: there's nothing to publish. A yellow bar says only the team sees it, with the way back to the app.
+It shows:
 - cars for sale;
 - the cars and jobs you put on it;
 - services, about us, reviews;
 - contact buttons, address and opening hours.
-
-The app moved to **`/app/`**, and the website footer has a small *Prijava / Log in* link to it.
 
 - **A car or job on the website:** open it in the app → **Website**.
   - Switch on **Show on the website**.
@@ -214,18 +221,15 @@ The app moved to **`/app/`**, and the website footer has a small *Prijava / Log 
   - Admins edit these; everyone else can read them.
   - The favorite (★) workshop photo is the big picture at the top.
   - Name, address and logo come from **Workshop settings**.
-- **Publish:** **More → Website → Publish**, or *Publish now* after saving a car. The website updates about 2–3
-  minutes later, and the app shows *Publishing…*, *Live since …* or *failed*. Every app update also rebuilds it.
 - **Never on the website:** plates, VINs, customers, what a car cost, money, notes, and photos you didn't pick.
-  - The website gets its content through `GET /files/site-data`.
-  - Behind it, `website_snapshot()` returns only what is published.
-  - Only the build can call it, with `SITE_BUILD_TOKEN`.
+  - `website_preview()` (members only) returns `website_snapshot()`: only what is switched on.
 - **How it's built:**
-  - `scripts/build-site.mjs` renders plain HTML pages (React on the server, `site/src/`).
-  - It resizes the photos with sharp (location data is dropped) and keeps them in the GitHub Actions cache.
-  - `.github/workflows/pages.yml` builds the app and website and deploys both.
-  - Locally, `npm run build` builds the website from sample data (`site/fixtures/`), shown with a "preview" banner.
-- **Sharing a car's link** on WhatsApp, Facebook or Instagram shows its title and photo.
+  - The pages are the components in `site/src/` (plain HTML from React), drawn in the browser by `src/view/main.ts`
+    from live data. Photos are signed links from the `files` function. Pages are picked by the `#` part:
+    `view.html#/`, `#/en/`, `#/auti/<name>/`.
+  - Locally, `npm run dev` and open `http://localhost:5173/app/view.html?sample` to see it with the sample content
+    (`site/fixtures/`) without logging in.
+  - `scripts/build-root.mjs` writes the top level (forwarding pages, `robots.txt`).
 
 ## Things to know
 
@@ -261,8 +265,6 @@ The app moved to **`/app/`**, and the website footer has a small *Prijava / Log 
 | Supabase secret key (`sb_secret_…`) | inside Supabase only; Edge Functions get it automatically | **yes** | Edge Functions |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REFRESH_TOKEN` | Supabase → Edge Functions → Secrets (see *Google Drive*) | **yes** | the `files` function |
 | `FILE_URL_SIGNING_SECRET` | Supabase → Edge Functions → Secrets (already set, random) | **yes** | signs the view links |
-| `SITE_BUILD_TOKEN` | Supabase → Edge Functions → Secrets **and** GitHub → Settings → Secrets → Actions (same random value, already set) | **yes** | the website build reads the published content |
-| `GITHUB_PUBLISH_TOKEN` | Supabase → Edge Functions → Secrets (see *Website publishing* below) | **yes** | the Publish button starts the website build |
 
 Never commit `.env.local`, and never put a secret key into a `VITE_*` variable: everything in `VITE_*` ends up in
 the browser.
@@ -375,24 +377,6 @@ The setup it needs:
    (`FILE_URL_SIGNING_SECRET` is already set.)
 8. In the app: **More → Workshop settings → Test Drive connection** should say *Connected*.
 
-### 6. Website publishing (a GitHub token for the Publish button)
-
-The Publish button asks GitHub to rebuild the website, which needs a token that can only start this repo's workflows.
-
-1. GitHub → your picture (top right) → **Settings** → **Developer settings** (bottom of the left menu) →
-   **Personal access tokens** → **Fine-grained tokens** → **Generate new token**.
-2. Fill in:
-   - **Token name:** `workshop-tracker publish`
-   - **Expiration:** the longest offered (*No expiration* if it's there, otherwise 1 year).
-   - **Repository access:** **Only select repositories** → `workshop-tracker`.
-   - **Permissions** → **Repository permissions** → **Actions:** **Read and write**. Leave everything else as it is.
-3. **Generate token** → copy it (it starts with `github_pat_`; GitHub shows it only once).
-4. Supabase dashboard → project `workshop-tracker` → **Edge Functions** → **Secrets** → add `GITHUB_PUBLISH_TOKEN` with
-   the token as the value → **Save**.
-5. In the app: **More → Website → Publish**. After 2–3 minutes it should say *Live since …*.
-
-When the token expires, the app says so on More → Website. Make a new one the same way and replace the secret.
-
 ## Local development
 
 ```sh
@@ -429,9 +413,8 @@ CI checks that `src/lib/database.types.ts` matches the migrations.
 - Members can't change roles, shares or settings. Admin actions go through the `admin-users` Edge Function, which
   checks that the caller is an active admin before using the secret key.
 - `created_by` and `updated_by` are set by the database from the user's token, so they can't be faked.
-- The public website is static HTML. Signed-out visitors still can't read anything from Supabase. The build gets the
-  published content from the `files` function with `SITE_BUILD_TOKEN`. Only the service role can run
-  `website_snapshot()` / `website_photo()`, and they return only what is published.
+- Nothing is public. GitHub Pages serves only the app's code and pages that forward to the login; every piece of
+  data comes from Supabase after a login. The website is read with `website_preview()` (members only).
 - Stock and money rows can only be written through a few database functions (`post_stock_movement`,
   `undo_stock_movement`, …). They run with elevated rights on purpose, check membership first and validate every
   number. Supabase's advisor lists them as a warning; that is expected.

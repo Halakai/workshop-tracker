@@ -1,6 +1,8 @@
-/* The public website (dark, like the app). Only the files in site/src are scanned for classes. */
+/* The website (dark, like the app), shown by the app's view.html. Only site/src and the view page are scanned for classes. */
 @import 'tailwindcss' source(none);
 @source './';
+@source '../../src/view/';
+@source '../../view.html';
 @import '@fontsource-variable/geist';
 
 @theme {

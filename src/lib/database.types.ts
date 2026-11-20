@@ -2582,6 +2582,7 @@ export type Database = {
           mime_type: string;
         }[];
       };
+      website_preview: { Args: never; Returns: Json };
       website_snapshot: { Args: never; Returns: Json };
     };
     Enums: {

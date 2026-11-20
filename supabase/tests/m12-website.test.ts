@@ -219,6 +219,17 @@ describe('what the website is built from', () => {
     expect((await asMember.rpc('website_photo', { p_attachment_id: crypto.randomUUID() })).error).not.toBeNull();
   });
 
+  it('the team sees the same content through website_preview(); nobody else does', async () => {
+    const { data: snap } = await service.rpc('website_snapshot');
+    const preview = await asMember.rpc('website_preview');
+    expect(preview.error).toBeNull();
+    expect(preview.data).toEqual(snap);
+    expect((await anonClient().rpc('website_preview')).error).not.toBeNull();
+    const outsiderEmail = testEmail('website-outsider');
+    await createAuthUser(outsiderEmail);
+    expect((await (await signIn(outsiderEmail)).rpc('website_preview')).error?.code).toBe('42501');
+  });
+
   it('holds only published cars, the shown details, and never private ones', async () => {
     const car = await newCar({ status: 'listed' });
     const shown = await addPhoto('car', car.id);

@@ -457,3 +457,43 @@ Your answers:
 | **W1** | App moves to `/app/` (redirects, old phone app cleans itself up); simple placeholder home with the Log in link | Open the app on the phone once; check it works |
 | **W2** | Database and app screens (listing on cars/jobs, More → Website) | Fill in texts, choose cars and photos |
 | **W3** | Website generator and design, function routes, Publish button | Create a GitHub token and paste it into Supabase (exact clicks given), then press Publish |
+
+## 11. Login first, customer keys (planned 20.11.2026)
+
+Replaces the public website of §10: nothing is public any more.
+
+Your answers:
+- **Website:** only the team sees it, inside the app. The public pages, the Publish button and its tokens go.
+- **Job key:** the customer sees the work and the prices they're charged (never costs), paid / still to pay, the photos you tick, and the invoice.
+- **Photos:** one tick per photo, "Customers can see". It replaces "On website", and photos already ticked stay ticked.
+- **Car key:** you choose per key, for a buyer (like the old website car page, with the asking price) or for the owner (the car's history: what we did and the parts fitted, no prices). A buyer key keeps working after the sale, with a "Sold" badge.
+- **Defaults you accepted:**
+  - members (partners) get the app like admins;
+  - a key is a code like `K7M4-QX9P` plus a link with it, and it works until it's switched off;
+  - several keys per job or car, each with a note, an "opened" count and a switch-off;
+  - customers stay signed in on their phone;
+  - customer pages are in Croatian with an EN switch, in the website's dark look.
+
+### How it's built
+
+- **The main address** (`/`) only forwards:
+  - to `/app/` (login, or straight into the app when signed in);
+  - with `?k=CODE`, to the customer page.
+  - Old website addresses forward to `/app/` too (404.html), and `robots.txt` tells search engines to forget the site.
+- **The website and customer pages are a second page of the app, `/app/view.html`.**
+  - It uses the website's own styles and the same page components (site/src), drawn in the browser from live data.
+  - There's no build step and nothing to publish.
+  - Team: `view.html#/…` reads `website_preview()` with the member's login. Photos come as signed links (`/files/sign`).
+  - Customers: `view.html#/k/CODE` reads everything through the files function, which checks the key every time.
+- **Keys (K2, K3):**
+  - table `access_keys` (job or car, kind job / buyer / owner, code, note, created by, switched off, opened count, last opened);
+  - SQL `key_view(code)` (service role only) picks exactly what that key may see;
+  - wrong codes are counted per IP, and after 20 within 15 minutes that IP is blocked for a while.
+
+### Steps
+
+| | Scope | Database |
+|---|---|---|
+| **K1** | Login page first; website only in the app (`view.html`); public pages, Publish and its tokens removed | `website_preview()` |
+| **K2** | Job keys: Customer access card on jobs, customer job page, "Customers can see" tick, code box on the login page | `access_keys`, `key_view` |
+| **K3** | Car keys: buyer and owner pages | extends `key_view` |

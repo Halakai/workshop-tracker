@@ -1,4 +1,4 @@
-// What the website is built from: the JSON of public.website_snapshot() (served by GET /files/site-data).
+// What the website is drawn from: the JSON of public.website_snapshot() (for the team: website_preview()).
 
 export interface PhotoRef {
   id: string;
@@ -64,7 +64,7 @@ export interface Snapshot {
   cars: SiteCar[];
 }
 
-/** A photo as the build wrote it: sizes for srcset, a big one for the full-screen view and a share picture. */
+/** A photo's links: sizes for srcset, a big one for the full-screen view and a share picture. */
 export interface PhotoFiles {
   width: number;
   height: number;
@@ -74,16 +74,19 @@ export interface PhotoFiles {
   share: string;
 }
 
+/** Where the pages are shown: the app's view.html, drawn in the browser from live data. */
 export interface BuildContext {
-  /** "/workshop-tracker/" */
+  /** what links between the pages start with: "#/" (view.html routes on the address' # part) */
   base: string;
+  /** where the site's files are: "/workshop-tracker/" (favicon, privacy page) */
+  root: string;
   /** "https://halakai.github.io" */
   origin: string;
-  css: string[];
-  js: string;
   /** the workshop logo (from Workshop settings) or the app icon */
   logo: string;
   photos: Record<string, PhotoFiles>;
-  /** built from sample data: never indexed, with a banner */
-  preview: boolean;
+  /** the team's view of the website: a banner says only the team sees it, with the way back to the app */
+  team: boolean;
+  /** the app's address (back to the app) */
+  appHref: string;
 }
