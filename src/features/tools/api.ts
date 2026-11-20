@@ -73,7 +73,8 @@ export function useToolSuggestions() {
         ...(profiles.data ?? []).filter((p) => p.is_active).map((p) => p.display_name),
         ...(contacts.data ?? []).map((c) => c.name),
       ]),
-      sellers: unique([...list.map((t) => t.bought_from), ...(suppliers.data ?? [])]),
+      // the suppliers list already holds every tool's "bought from" (most used first)
+      sellers: suppliers.data ?? [],
     };
   }, [tools.data, items.data, contacts.data, profiles.data, suppliers.data]);
 }
@@ -85,8 +86,9 @@ function useInvalidateTools() {
       queryClient.invalidateQueries({ queryKey: toolKeys.all }),
       queryClient.invalidateQueries({ queryKey: ['tool-history'] }),
       queryClient.invalidateQueries({ queryKey: ['activity'] }),
-      // saving can add a new brand on the way
+      // saving can add a new brand or supplier on the way
       queryClient.invalidateQueries({ queryKey: ['brands'] }),
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] }),
     ]);
 }
 

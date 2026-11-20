@@ -1539,6 +1539,48 @@ export type Database = {
           },
         ];
       };
+      suppliers: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "suppliers_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "suppliers_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tool_categories: {
         Row: {
           created_at: string;
@@ -2395,6 +2437,14 @@ export type Database = {
         };
         Relationships: [];
       };
+      supplier_usage: {
+        Row: {
+          id: string | null;
+          name: string | null;
+          uses: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       add_job_stock_line: {
@@ -2459,6 +2509,10 @@ export type Database = {
           p_line_id: string;
           p_value_delta_cents: number;
         };
+        Returns: undefined;
+      };
+      rename_supplier: {
+        Args: { p_id: string; p_name: string };
         Returns: undefined;
       };
       save_job_bought_line: {

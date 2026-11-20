@@ -27,6 +27,7 @@ import { useGoBack } from '@/lib/navigation';
 import { useProfiles } from '@/features/auth/profiles';
 import { ensureBrand, useBrands, useToolCategories } from '@/features/catalog/api';
 import { getLastPayer, setLastPayer, useDefaultShares, usePayerOptions } from '@/features/money/accounts';
+import { newSupplierHint } from '@/features/inventory/api';
 import { useDeleteTool, useSaveTool, useSaveToolPayment, useTool, useToolSuggestions, useTools, type Tool } from './api';
 
 const WORKSHOP = 'workshop';
@@ -232,7 +233,16 @@ function ToolForm({ tool }: { tool?: Tool }) {
     <Controller
       control={form.control}
       name={name}
-      render={({ field }) => <SuggestionInput id={id} value={field.value} onChange={field.onChange} options={options} placeholder={placeholder} />}
+      render={({ field }) => (
+        <SuggestionInput
+          id={id}
+          value={field.value}
+          onChange={field.onChange}
+          options={options}
+          placeholder={placeholder}
+          newHint={name === 'bought_from' ? newSupplierHint : undefined}
+        />
+      )}
     />
   );
 

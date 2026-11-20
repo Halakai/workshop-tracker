@@ -4,6 +4,8 @@
 @import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
+/* a computer (mouse and a wide screen); phones and tablets get the touch layout */
+@custom-variant pc (@media (min-width: 40rem) and (pointer: fine));
 
 @theme inline {
     --font-heading: var(--font-sans);

@@ -1,6 +1,6 @@
-// The editable lists: item categories, units, brands, cost types, tool categories and photo albums.
+// The editable lists: item categories, units, brands, suppliers, cost types, tool categories and photo albums.
 // Everyone can add entries; only admins can rename or delete them (enforced by RLS).
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types';
 import { deriveCode } from '@/domain/codes';
@@ -164,6 +164,72 @@ export function useAddUnit() {
       return data;
     },
     onSuccess: invalidate,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Suppliers: purchases keep the name as text; the database adds new names to this list by itself
+// and renames them on every purchase when an admin renames one here.
+// ---------------------------------------------------------------------------
+
+export interface Supplier {
+  id: string;
+  name: string;
+  /** purchases (stock, car parts, job parts, tools) that name it */
+  uses: number;
+}
+
+export const supplierKeys = { all: ['suppliers'] as const };
+
+/** The suppliers list, most used first (that's the order type-ahead suggests them in). */
+export const supplierListQuery = queryOptions({
+  queryKey: supplierKeys.all,
+  staleTime: 5 * 60_000,
+  queryFn: async (): Promise<Supplier[]> => {
+    const { data, error } = await supabase.from('supplier_usage').select('*').order('uses', { ascending: false }).order('name');
+    if (error) throw error;
+    return data.map((s) => ({ id: s.id!, name: s.name!, uses: s.uses ?? 0 }));
+  },
+});
+
+export function useSupplierList() {
+  return useQuery(supplierListQuery);
+}
+
+export function useAddSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { data, error } = await supabase.from('suppliers').insert({ name: name.trim() }).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: supplierKeys.all }),
+  });
+}
+
+/** Renames it on every purchase too; renaming to a name already on the list merges the two. */
+export function useRenameSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const { error } = await supabase.rpc('rename_supplier', { p_id: id, p_name: name.trim() });
+      if (error) throw error;
+    },
+    // the name shows up on purchases all over the app
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+}
+
+export function useDeleteSupplier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data, error } = await supabase.from('suppliers').delete().eq('id', id).select();
+      if (error) throw error.code === '23503' ? new Error('Still used by a purchase. Rename it instead.') : error;
+      if (!data.length) throw new Error('Only an admin can delete suppliers.');
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: supplierKeys.all }),
   });
 }
 

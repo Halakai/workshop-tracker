@@ -19,7 +19,7 @@ import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { getLastPayer, setLastPayer, useAccounts, usePayerOptions } from '@/features/money/accounts';
 import { useExpenseCategories } from '@/features/catalog/api';
-import { useSuppliers } from '@/features/inventory/api';
+import { newSupplierHint, useSuppliers } from '@/features/inventory/api';
 import { useDeleteCarTransaction, useSaveCarTransaction, type Car, type CarMoneyRow } from './api';
 import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 
@@ -174,7 +174,7 @@ function CarMoneyForm({ car, kind, row, onDone }: { car: Car; kind: CarMoneyKind
               control={form.control}
               name="counterparty"
               render={({ field }) => (
-                <SuggestionInput id="money-supplier" value={field.value} onChange={field.onChange} options={suppliers.data ?? []} />
+                <SuggestionInput id="money-supplier" value={field.value} onChange={field.onChange} options={suppliers.data ?? []} newHint={newSupplierHint} />
               )}
             />
           </Field>
