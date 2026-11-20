@@ -68,11 +68,16 @@ as $$
 declare
   v_name text;
 begin
-  v_name := case tg_table_name
-    when 'transactions' then case when app.is_supplier_purchase(new.category) then new.counterparty end
-    when 'stock_movements' then new.supplier
-    when 'tools' then new.bought_from
-  end;
+  -- separate branches: each table's row only has its own columns
+  if tg_table_name = 'transactions' then
+    if app.is_supplier_purchase(new.category) then
+      v_name := new.counterparty;
+    end if;
+  elsif tg_table_name = 'stock_movements' then
+    v_name := new.supplier;
+  elsif tg_table_name = 'tools' then
+    v_name := new.bought_from;
+  end if;
   v_name := btrim(coalesce(v_name, ''));
   if char_length(v_name) between 1 and 120 then
     insert into public.suppliers (name) values (v_name) on conflict (name) do nothing;
