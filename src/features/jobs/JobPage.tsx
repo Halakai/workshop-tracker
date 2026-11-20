@@ -286,7 +286,7 @@ function JobView({ job }: { job: Job }) {
         )}
 
         <PhotoSection entityType="job" entityId={job.id} albums />
-        <CustomerAccessCard jobId={job.id} jobRef={job.ref} />
+        <CustomerAccessCard jobId={job.id} jobRef={job.ref} customerName={job.customer?.name} />
         <WebsiteCard target={{ jobId: job.id }} />
 
         {!settled && (

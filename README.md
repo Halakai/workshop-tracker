@@ -30,7 +30,7 @@ shared workshop wallet and settling up between partners. Everything is behind th
 | R4 | Steady pop-ups on phones (back button closes them), typed dates on the computer, suppliers list | ✅ done |
 | K1 | Login first: the main address forwards to the app; the website only for the team, inside the app; Publish gone | ✅ done |
 | K2 | Job keys: a customer opens their job (work, prices, payments, photos, invoice) with a code | ✅ done |
-| K3 | Car keys: a page for a buyer or for the owner | planned |
+| K3 | Car keys (buyer / owner), website keys (public or personal, choose what they show), end dates, More → Keys | ✅ done |
 
 ## The app at a glance
 
@@ -199,14 +199,23 @@ up: hand and power tools, the compressor, lifts, the scanner…
 
 ## Customer keys
 
-A customer sees their own job on their phone, without an account (docs/PLAN.md §11).
+People outside the team see a job, a car or the website on their phone, without an account (docs/PLAN.md §11).
 
-- **Make one:** job page → **Customer access** → **Make a key** (a note like *Ivan* is optional and only you see it).
-  You get a code like `K7M4-QX9P` and a link (`…/workshop-tracker/?k=K7M4-QX9P`).
-  - **Send to the customer** shares a message with the link (WhatsApp, Viber…); **Copy link** / **Copy code**.
-  - **See what the customer sees** opens their page (a yellow bar says it's the customer's view; your looks aren't
-    counted as openings).
+- **Kinds of keys:**
+  - **Job** (job page → **Customer access**): the customer's job. The name defaults to the customer's.
+  - **Car** (car page → **Customer access**): **for a buyer** (the car like its website page, with the asking price
+    while it's for sale; *Prodano / Sold* after) or **for the owner** (what we did, the parts fitted with dates, the
+    plate, photos; never prices).
+  - **Website** (More → Website → **Visitor keys**, or More → Keys): **public** (no name, for ads or a business card)
+    or for **one person**. You choose what it shows: which sections, all cars on the website or only picked ones, and
+    asking prices on or off. What's hidden is left out in the database, so it never reaches their phone.
+- **Every key:** a code like `K7M4-QX9P` and a link (`…/workshop-tracker/?k=K7M4-QX9P`), a name, and how long it
+  works (until switched off, 1 week, 1 month, 3 months or through a date you pick).
+  - **Send it** shares a message with the link (WhatsApp, Viber…); **Copy link** / **Copy code**.
+  - **See what they see** opens their page (a yellow bar says it's their view; your looks aren't counted).
+  - **Change** the name, end date, buyer / owner or what a website key shows while it's in use; the code stays.
   - Each key shows how often and when it was last opened. **Switch off** stops it at once; it can be switched on again.
+- **More → Keys** lists every key (website, cars, jobs), filtered by working / expired / switched off.
 - **The customer** taps the link, or types the code on the login page (*Imate kod? · Have a code?*). Their phone
   remembers it, so the app's address opens their page again. Croatian with an EN switch.
 - **What they see:** the car and the job, what we did, every line at the price they're charged, labour and the total,

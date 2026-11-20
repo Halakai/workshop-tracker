@@ -214,8 +214,6 @@ export interface Meta {
   type?: 'website' | 'article';
   jsonLd?: object;
   noindex?: boolean;
-  /** what the team's yellow bar says on this page (default: only the team sees the website) */
-  teamText?: string;
 }
 
 function abs(ctx: BuildContext, path: string) {
@@ -264,7 +262,7 @@ export function Frame({ v, meta, nav, children }: { v: View; meta: Meta; nav: { 
       <body className={`min-h-dvh bg-bg font-sans text-fg antialiased ${bar.length ? 'pb-24 sm:pb-0' : ''}`}>
         {ctx.team && (
           <div className="flex items-center justify-center gap-3 bg-amber-400 px-4 py-1.5 text-center text-sm font-semibold text-black">
-            <span>{meta.teamText ?? t.teamOnly}</span>
+            <span>{ctx.customerView ? t.key.teamPreview : t.teamOnly}</span>
             <a href={ctx.appHref} className="shrink-0 rounded-full bg-black/85 px-3 py-0.5 text-white hover:bg-black">
               {t.backToApp}
             </a>
@@ -372,13 +370,16 @@ function HomePage({ v }: { v: View }) {
   const hoursNote = pick(lang, s.site.hours_note_hr, s.site.hours_note_en);
   const home = homePath(ctx.base, lang);
   const hasHours = s.hours.some((h) => h.opens);
+  // a website key can hide sections (their data isn't even sent, apart from contact details for the call buttons)
+  const shows = (section: string) => !ctx.hidden?.includes(section);
+  const showAbout = shows('about') && (about || aboutPhotos.length > 0);
 
   const nav = [
     forSale.length > 0 && { href: '#prodaja', label: t.nav.forSale },
     work.length > 0 && { href: '#radovi', label: t.nav.work },
     s.services.length > 0 && { href: '#usluge', label: t.nav.services },
-    (about || aboutPhotos.length > 0) && { href: '#o-nama', label: t.nav.about },
-    { href: '#kontakt', label: t.nav.contact },
+    showAbout && { href: '#o-nama', label: t.nav.about },
+    shows('contact') && { href: '#kontakt', label: t.nav.contact },
   ].filter(Boolean) as { href: string; label: string }[];
 
   const jsonLd = {
@@ -477,7 +478,7 @@ function HomePage({ v }: { v: View }) {
         </section>
       )}
 
-      {(about || aboutPhotos.length > 0) && (
+      {showAbout && (
         <section className={`${container} pt-20`}>
           <SectionTitle id="o-nama" title={t.about} />
           <div className="grid items-start gap-8 lg:grid-cols-2">
@@ -523,60 +524,62 @@ function HomePage({ v }: { v: View }) {
         </section>
       )}
 
-      <section className={`${container} pt-20`}>
-        <SectionTitle id="kontakt" title={t.contact} />
-        <div className="grid gap-6 lg:grid-cols-2">
-          {(s.contacts.length > 0 || s.workshop.address) && (
-            <div className="flex flex-col gap-6 rounded-2xl border border-line bg-card p-6">
-              {s.contacts.map((c) => (
-                <div key={c.phone} className="flex flex-col gap-3">
-                  <p>
-                    <span className="text-lg font-semibold">{c.name}</span> <span className="text-muted">{c.phone}</span>
-                  </p>
-                  <ContactButtons v={v} contacts={[c]} message={t.whatsappHello} compact />
-                </div>
-              ))}
-              {s.workshop.address && (
-                <div className={`flex flex-col gap-3 ${s.contacts.length ? 'border-t border-line pt-6' : ''}`}>
-                  <p className="flex items-start gap-2">
-                    <PinIcon className="mt-0.5 size-5 shrink-0 text-accent" />
-                    {s.workshop.address}
-                  </p>
-                  {map && (
-                    <a href={map} target="_blank" rel="noopener" className={`${btnSecondary} self-start`}>
-                      <PinIcon /> {t.openMap}
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-          {hasHours && (
-            <div
-              className="rounded-2xl border border-line bg-card p-6"
-              data-hours={JSON.stringify(s.hours)}
-              data-open-text={t.openNow}
-              data-closed-text={t.closedNow}
-            >
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-lg font-semibold">
-                  <ClockIcon className="size-5 text-accent" /> {t.hours}
-                </h3>
-                <span data-open-now className="hidden rounded-full px-3 py-1 text-xs font-semibold" />
-              </div>
-              <dl className="mt-4 flex flex-col divide-y divide-line">
-                {hours.map((h) => (
-                  <div key={h.days} data-weekdays={h.weekdays.join(' ')} className="flex justify-between gap-4 py-2.5">
-                    <dt>{h.days}</dt>
-                    <dd className={h.time ? 'tabular-nums' : 'text-muted'}>{h.time ?? t.closed}</dd>
+      {shows('contact') && (
+        <section className={`${container} pt-20`}>
+          <SectionTitle id="kontakt" title={t.contact} />
+          <div className="grid gap-6 lg:grid-cols-2">
+            {(s.contacts.length > 0 || s.workshop.address) && (
+              <div className="flex flex-col gap-6 rounded-2xl border border-line bg-card p-6">
+                {s.contacts.map((c) => (
+                  <div key={c.phone} className="flex flex-col gap-3">
+                    <p>
+                      <span className="text-lg font-semibold">{c.name}</span> <span className="text-muted">{c.phone}</span>
+                    </p>
+                    <ContactButtons v={v} contacts={[c]} message={t.whatsappHello} compact />
                   </div>
                 ))}
-              </dl>
-              {hoursNote && <p className="mt-4 text-sm text-muted">{hoursNote}</p>}
-            </div>
-          )}
-        </div>
-      </section>
+                {s.workshop.address && (
+                  <div className={`flex flex-col gap-3 ${s.contacts.length ? 'border-t border-line pt-6' : ''}`}>
+                    <p className="flex items-start gap-2">
+                      <PinIcon className="mt-0.5 size-5 shrink-0 text-accent" />
+                      {s.workshop.address}
+                    </p>
+                    {map && (
+                      <a href={map} target="_blank" rel="noopener" className={`${btnSecondary} self-start`}>
+                        <PinIcon /> {t.openMap}
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            {hasHours && (
+              <div
+                className="rounded-2xl border border-line bg-card p-6"
+                data-hours={JSON.stringify(s.hours)}
+                data-open-text={t.openNow}
+                data-closed-text={t.closedNow}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="flex items-center gap-2 text-lg font-semibold">
+                    <ClockIcon className="size-5 text-accent" /> {t.hours}
+                  </h3>
+                  <span data-open-now className="hidden rounded-full px-3 py-1 text-xs font-semibold" />
+                </div>
+                <dl className="mt-4 flex flex-col divide-y divide-line">
+                  {hours.map((h) => (
+                    <div key={h.days} data-weekdays={h.weekdays.join(' ')} className="flex justify-between gap-4 py-2.5">
+                      <dt>{h.days}</dt>
+                      <dd className={h.time ? 'tabular-nums' : 'text-muted'}>{h.time ?? t.closed}</dd>
+                    </div>
+                  ))}
+                </dl>
+                {hoursNote && <p className="mt-4 text-sm text-muted">{hoursNote}</p>}
+              </div>
+            )}
+          </div>
+        </section>
+      )}
     </Frame>
   );
 }
@@ -676,7 +679,7 @@ function Compare({ v, before, after }: { v: View; before: PhotoFiles; after: Pho
 }
 
 /** One slider per before/after pair; with several pairs, ‹ 1 / 3 › switches between them. */
-function BeforeAfter({ v, pairs }: { v: View; pairs: [PhotoFiles, PhotoFiles][] }) {
+export function BeforeAfter({ v, pairs }: { v: View; pairs: [PhotoFiles, PhotoFiles][] }) {
   const { t } = v;
   return (
     <div data-pairs>
@@ -705,7 +708,11 @@ function BeforeAfter({ v, pairs }: { v: View; pairs: [PhotoFiles, PhotoFiles][] 
   );
 }
 
-function CarPage({ v, car }: { v: View; car: SiteCar }) {
+/**
+ * One car's page. `alone`: a buyer key's page (docs/PLAN.md §11): the key's own address, no links to the rest of the
+ * website, and a WhatsApp message without a link.
+ */
+export function CarPage({ v, car, alone }: { v: View; car: SiteCar; alone?: boolean }) {
   const { s, ctx, lang, t } = v;
   const title = pick(lang, car.title_hr, car.title_en);
   const summary = pick(lang, car.summary_hr, car.summary_en);
@@ -720,7 +727,8 @@ function CarPage({ v, car }: { v: View; car: SiteCar }) {
   );
   const forSale = isForSale(car);
   const badge = carBadge(car, t);
-  const path = carPath(ctx.base, lang, car.slug);
+  const pathIn = (l: Lang) => (alone ? homePath(ctx.base, l) : carPath(ctx.base, l, car.slug));
+  const path = pathIn(lang);
   const url = abs(ctx, path);
   const specs = [
     car.year != null && { label: t.year, value: String(car.year) },
@@ -728,11 +736,13 @@ function CarPage({ v, car }: { v: View; car: SiteCar }) {
     car.fuel && { label: t.fuel, value: fuelName(car.fuel, t.fuels) },
     car.mileage_km != null && { label: t.mileage, value: formatKm(car.mileage_km) },
   ].filter(Boolean) as { label: string; value: string }[];
-  const others = [...s.cars.filter((c) => c.id !== car.id && isForSale(c) === forSale), ...s.cars.filter((c) => c.id !== car.id && isForSale(c) !== forSale)].slice(0, 3);
+  const others = alone
+    ? []
+    : [...s.cars.filter((c) => c.id !== car.id && isForSale(c) === forSale), ...s.cars.filter((c) => c.id !== car.id && isForSale(c) !== forSale)].slice(0, 3);
   const home = homePath(ctx.base, lang);
   const description = clip(summary || story || title);
 
-  const jsonLd = forSale
+  const jsonLd = forSale && !alone
     ? {
         '@context': 'https://schema.org',
         '@type': 'Car',
@@ -753,24 +763,31 @@ function CarPage({ v, car }: { v: View; car: SiteCar }) {
   return (
     <Frame
       v={v}
-      nav={[
-        { href: `${home}#radovi`, label: t.nav.work },
-        { href: `${home}#kontakt`, label: t.nav.contact },
-      ]}
+      nav={
+        alone
+          ? []
+          : [
+              { href: `${home}#radovi`, label: t.nav.work },
+              { href: `${home}#kontakt`, label: t.nav.contact },
+            ]
+      }
       meta={{
         title: `${title} · ${s.workshop.name}`,
         description,
         path,
-        alternate: carPath(ctx.base, lang === 'hr' ? 'en' : 'hr', car.slug),
+        alternate: pathIn(lang === 'hr' ? 'en' : 'hr'),
         image: cover ? ctx.photos[cover.id]?.share : undefined,
         type: 'article',
         jsonLd,
+        noindex: alone,
       }}
     >
       <div className="mx-auto w-full max-w-4xl px-4 pt-4 sm:px-6 sm:pt-8">
-        <a href={`${home}#${forSale ? 'prodaja' : 'radovi'}`} className="mb-4 inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
-          <ArrowLeftIcon className="size-4" /> {forSale ? t.forSale : t.allWork}
-        </a>
+        {!alone && (
+          <a href={`${home}#${forSale ? 'prodaja' : 'radovi'}`} className="mb-4 inline-flex items-center gap-2 text-sm text-muted hover:text-fg">
+            <ArrowLeftIcon className="size-4" /> {forSale ? t.forSale : t.allWork}
+          </a>
+        )}
         <Gallery v={v} photos={photos} title={title} />
 
         <div className="mt-6 flex flex-col gap-3">
@@ -814,7 +831,7 @@ function CarPage({ v, car }: { v: View; car: SiteCar }) {
             <h2 className="text-2xl font-bold">{forSale ? t.askAboutCar : t.jobCta}</h2>
             <p className="mt-1 text-muted">{forSale ? t.askAboutCarLead : t.jobCtaLead}</p>
             <div className="mt-5">
-              <ContactButtons v={v} contacts={s.contacts} message={forSale ? t.whatsappCar(title, url) : t.whatsappHello} compact />
+              <ContactButtons v={v} contacts={s.contacts} message={alone ? t.key.whatsappCar(title) : forSale ? t.whatsappCar(title, url) : t.whatsappHello} compact />
             </div>
           </section>
         )}

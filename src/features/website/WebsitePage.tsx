@@ -25,6 +25,7 @@ import {
 } from './api';
 import { ContactDrawer, HoursDrawer, ReviewDrawer, ServiceDrawer, TextsDrawer } from './WebsiteDrawers';
 import { websiteHref } from './links';
+import { KeysCard } from '@/features/keys/CustomerAccessCard';
 
 export function WebsitePage() {
   const admin = useCurrentProfile().role === 'admin';
@@ -50,6 +51,7 @@ export function WebsitePage() {
       <PageHeader title="Website" back="/more" />
       <PageBody>
         <OpenWebsiteCard />
+        <KeysCard target={{ website: true }} subject="Website" />
 
         <Section title="Cars and jobs on the website">
           {cars.isPending && <Skeleton className="h-16 rounded-xl" />}
