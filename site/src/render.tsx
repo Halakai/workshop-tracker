@@ -39,29 +39,29 @@ import {
 } from './icons';
 import type { BuildContext, PhotoFiles, PhotoRef, SiteCar, SiteContact, Snapshot } from './types';
 
-interface Page {
+export interface Page {
   path: string;
   html: string;
 }
 
-interface View {
+export interface View {
   s: Snapshot;
   ctx: BuildContext;
   lang: Lang;
   t: Texts;
 }
 
-const container = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
-const btnPrimary =
+export const container = 'mx-auto w-full max-w-6xl px-4 sm:px-6';
+export const btnPrimary =
   'inline-flex items-center justify-center gap-2 rounded-full bg-accent px-5 py-3 font-semibold text-white shadow-lg shadow-accent/20 transition hover:brightness-110';
-const btnSecondary =
+export const btnSecondary =
   'inline-flex items-center justify-center gap-2 rounded-full border border-line bg-card/70 px-5 py-3 font-semibold text-fg transition hover:border-accent';
 
 // ---------------------------------------------------------------------------
 // Pieces
 // ---------------------------------------------------------------------------
 
-function Img({ photo, alt, sizes, className, eager }: { photo: PhotoFiles; alt: string; sizes: string; className?: string; eager?: boolean }) {
+export function Img({ photo, alt, sizes, className, eager }: { photo: PhotoFiles; alt: string; sizes: string; className?: string; eager?: boolean }) {
   return (
     <img
       src={photo.src}
@@ -78,7 +78,7 @@ function Img({ photo, alt, sizes, className, eager }: { photo: PhotoFiles; alt: 
   );
 }
 
-function ContactButtons({ v, contacts, message, compact }: { v: View; contacts: SiteContact[]; message?: string; compact?: boolean }) {
+export function ContactButtons({ v, contacts, message, compact }: { v: View; contacts: SiteContact[]; message?: string; compact?: boolean }) {
   const { t } = v;
   const many = contacts.length > 1;
   return (
@@ -113,7 +113,7 @@ function ContactButtons({ v, contacts, message, compact }: { v: View; contacts: 
   );
 }
 
-function Badge({ children, tone = 'accent' }: { children: ReactNode; tone?: 'accent' | 'dark' }) {
+export function Badge({ children, tone = 'accent' }: { children: ReactNode; tone?: 'accent' | 'dark' }) {
   return (
     <span
       className={
@@ -175,7 +175,7 @@ function CarCard({ v, car }: { v: View; car: SiteCar }) {
   );
 }
 
-function SectionTitle({ id, title, lead }: { id?: string; title: string; lead?: string }) {
+export function SectionTitle({ id, title, lead }: { id?: string; title: string; lead?: string }) {
   return (
     <div id={id} className="mb-8 scroll-mt-24">
       <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
@@ -184,7 +184,7 @@ function SectionTitle({ id, title, lead }: { id?: string; title: string; lead?: 
   );
 }
 
-function Paragraphs({ text, className }: { text: string; className?: string }) {
+export function Paragraphs({ text, className }: { text: string; className?: string }) {
   return (
     <div className={className}>
       {paragraphs(text).map((lines, i) => (
@@ -205,7 +205,7 @@ function Paragraphs({ text, className }: { text: string; className?: string }) {
 // Frame: <head>, header, footer, the call bar on phones
 // ---------------------------------------------------------------------------
 
-interface Meta {
+export interface Meta {
   title: string;
   description: string;
   path: string;
@@ -214,13 +214,15 @@ interface Meta {
   type?: 'website' | 'article';
   jsonLd?: object;
   noindex?: boolean;
+  /** what the team's yellow bar says on this page (default: only the team sees the website) */
+  teamText?: string;
 }
 
 function abs(ctx: BuildContext, path: string) {
   return new URL(path, ctx.origin).href;
 }
 
-function Frame({ v, meta, nav, children }: { v: View; meta: Meta; nav: { href: string; label: string }[]; children: ReactNode }) {
+export function Frame({ v, meta, nav, children }: { v: View; meta: Meta; nav: { href: string; label: string }[]; children: ReactNode }) {
   const { s, ctx, lang, t } = v;
   const other: Lang = lang === 'hr' ? 'en' : 'hr';
   const main = mainContacts(s.contacts);
@@ -262,7 +264,7 @@ function Frame({ v, meta, nav, children }: { v: View; meta: Meta; nav: { href: s
       <body className={`min-h-dvh bg-bg font-sans text-fg antialiased ${bar.length ? 'pb-24 sm:pb-0' : ''}`}>
         {ctx.team && (
           <div className="flex items-center justify-center gap-3 bg-amber-400 px-4 py-1.5 text-center text-sm font-semibold text-black">
-            <span>{t.teamOnly}</span>
+            <span>{meta.teamText ?? t.teamOnly}</span>
             <a href={ctx.appHref} className="shrink-0 rounded-full bg-black/85 px-3 py-0.5 text-white hover:bg-black">
               {t.backToApp}
             </a>
@@ -583,7 +585,7 @@ function HomePage({ v }: { v: View }) {
 // One car
 // ---------------------------------------------------------------------------
 
-function Gallery({ v, photos, title }: { v: View; photos: { ref: PhotoRef; files: PhotoFiles }[]; title: string }) {
+export function Gallery({ v, photos, title }: { v: View; photos: { ref: PhotoRef; files: PhotoFiles }[]; title: string }) {
   const { t } = v;
   if (photos.length === 0) return null;
   return (
@@ -851,7 +853,7 @@ function NotFoundPage({ v }: { v: View }) {
 
 // ---------------------------------------------------------------------------
 
-function doc(node: ReactNode): string {
+export function doc(node: ReactNode): string {
   return `<!doctype html>\n${renderToStaticMarkup(node)}`;
 }
 

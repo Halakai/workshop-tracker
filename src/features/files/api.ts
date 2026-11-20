@@ -133,6 +133,27 @@ export function useMoveToAlbum() {
   });
 }
 
+/**
+ * The "Customers can see" tick on a car's or job's photo (attachments.on_website): customers with a key and the
+ * team's website show only ticked photos (docs/PLAN.md §11).
+ */
+export function useSetPhotoShared() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ photo, on }: { photo: Attachment; on: boolean }) => {
+      const { error } = await supabase.rpc('set_photo_on_website', { p_attachment_id: photo.id, p_on: on });
+      if (error) throw error;
+    },
+    onMutate: async ({ photo, on }) => {
+      // tapping through a grid of photos should feel instant
+      const key = fileKeys.list(photo.entity_type as EntityType, photo.entity_id);
+      await queryClient.cancelQueries({ queryKey: key });
+      queryClient.setQueryData<Attachment[]>(key, (rows) => rows?.map((r) => (r.id === photo.id ? { ...r, on_website: on } : r)));
+    },
+    onSettled: (_d, _e, { photo }) => queryClient.invalidateQueries({ queryKey: fileKeys.list(photo.entity_type as EntityType, photo.entity_id) }),
+  });
+}
+
 /** A record's photos, cover first, with their view links. */
 export function usePhotos(entityType: EntityType, entityId: string | undefined) {
   const attachments = useAttachments(entityType, entityId);

@@ -8,6 +8,7 @@
 //   GET  /files/invoice/:jobId?exp=…&sig=…  → the job's latest invoice PDF                (signed link)
 //   POST /files/delete   { id }  → moves the file to Drive's trash                        (signed-in member)
 //   POST /files/health   checks the Google connection                                     (signed-in admin)
+//   POST /files/key      { code } → a customer's page: job (K2) with signed photo/invoice links  (no login; the code)
 //
 // The website is only for the team since 21.11.2026 (docs/PLAN.md §11): the app draws it from live data, so the
 // routes that fed the public build and its Publish button are gone.
@@ -346,6 +347,37 @@ async function invoiceLink(req: Request) {
   return Response.json({ url: `${publicBase(req)}/invoice/${jobId}?exp=${exp}&sig=${sig}`, expires: exp });
 }
 
+/**
+ * A customer's key (docs/PLAN.md §11): what it shows (open_access_key() picks it in SQL), with signed links for its
+ * photos and the invoice. No login; the database counts wrong codes per IP and blocks after 20 in 15 minutes.
+ */
+async function openKey(req: Request) {
+  const body = await req.json().catch(() => null);
+  const code = typeof body?.code === 'string' ? body.code.slice(0, 40) : '';
+  const ip = (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null;
+  // a team member looking at what the customer sees isn't counted as an opening
+  const team = await requireMember(req).then(
+    () => true,
+    () => false,
+  );
+  const { data, error } = await admin.rpc('open_access_key', { p_code: code, p_ip: ip, p_count: !team });
+  if (error) {
+    if (error.hint === 'too_many') throw new HttpError(429, error.message);
+    throw error;
+  }
+  if (!data) throw new HttpError(404, 'This code doesn’t work. It may be mistyped or switched off.');
+  const { job_id: jobId, ...view } = data as { job_id?: string; photos?: { id: string }[]; job?: { has_invoice?: boolean } };
+  const base = publicBase(req);
+  const exp = linkExpiry(new Date());
+  const links: Record<string, { thumb: string; full: string }> = {};
+  for (const p of view.photos ?? []) {
+    // a photo without a small copy gets the full one from the thumb link too
+    links[p.id] = { thumb: await signedUrl(base, p.id, 'thumb', exp), full: await signedUrl(base, p.id, 'full', exp) };
+  }
+  const invoiceUrl = jobId && view.job?.has_invoice ? `${base}/invoice/${jobId}?exp=${exp}&sig=${await hmac(invoicePayload(jobId, exp))}` : null;
+  return Response.json({ ...view, links, invoice_url: invoiceUrl }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
 async function invoice(req: Request, jobId: string) {
   const url = new URL(req.url);
   const exp = Number(url.searchParams.get('exp'));
@@ -435,6 +467,8 @@ async function route(req: Request): Promise<Response> {
         return await remove(req);
       case '/health':
         return await health(req);
+      case '/key':
+        return await openKey(req);
       default:
         throw new HttpError(404, 'Unknown route');
     }

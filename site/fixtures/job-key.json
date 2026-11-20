@@ -1,0 +1,30 @@
+{
+  "kind": "job",
+  "code": "K7M4QX9P",
+  "workshop": { "name": "Radionica Primjer", "address": "Primjerna ulica 1, Zagreb", "phone": null, "email": null, "logo": null },
+  "contacts": [{ "name": "David", "phone": "+385910000001", "call": true, "whatsapp": true, "viber": false }],
+  "job": {
+    "ref": "J-012",
+    "description": "Zamjena prednjih kočionih pločica i diskova.\n\nUsput smo provjerili ovjes i zamijenili ulje.",
+    "status": "done",
+    "received_on": "2026-11-12",
+    "done_on": "2026-11-18",
+    "car_make": "VW",
+    "car_model": "Golf VII",
+    "car_plate": "ZG-123-AB",
+    "labor_cents": 8000,
+    "invoice_number": "2026-007",
+    "invoice_date": "2026-11-18",
+    "has_invoice": true,
+    "lines": [
+      { "description": "Prednje kočione pločice", "qty": 1, "unit": null, "price_cents": 5678 },
+      { "description": "Prednji kočioni diskovi", "qty": 2, "unit": null, "price_cents": 12000 },
+      { "description": "Motorno ulje 5W-30", "qty": 4.5, "unit": "L", "price_cents": 4500 }
+    ],
+    "payments": [{ "date": "2026-11-18", "amount_cents": 20000 }]
+  },
+  "photos": [
+    { "id": "job-before", "favorite": false },
+    { "id": "job-after", "favorite": true }
+  ]
+}

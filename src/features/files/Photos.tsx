@@ -2,7 +2,7 @@
 // and the photo section with albums (Before, After …). Files live in Google Drive (see ./api.ts).
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { Camera, ChevronLeft, ChevronRight, ExternalLink, Globe, ImagePlus, Loader2, Plus, Star, Trash2, X } from 'lucide-react';
+import { Camera, ChevronLeft, ChevronRight, ExternalLink, Eye, EyeOff, ImagePlus, Loader2, Plus, Star, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmButton } from '@/components/ConfirmButton';
@@ -12,7 +12,7 @@ import { syncErrorMessage } from '@/lib/errors';
 import { albumCounts } from '@/domain/photos';
 import { usePhotoAlbums } from '@/features/catalog/api';
 import { AddPhotoAlbumDrawer } from '@/features/catalog/EntryDrawers';
-import { useDeleteAttachment, useMoveToAlbum, usePhotos, useSetCover, useUploadAttachment, type Attachment, type EntityType } from './api';
+import { useDeleteAttachment, useMoveToAlbum, usePhotos, useSetCover, useSetPhotoShared, useUploadAttachment, type Attachment, type EntityType } from './api';
 
 type Links = Record<string, { thumb: string | null; full: string }> | undefined;
 
@@ -229,6 +229,7 @@ function ViewerBody({ photos, links, start, albums, onClose }: { photos: Attachm
   const albumList = usePhotoAlbums();
   const setCover = useSetCover();
   const move = useMoveToAlbum();
+  const share = useSetPhotoShared();
   const remove = useDeleteAttachment();
   // the last photo was deleted
   useEffect(() => {
@@ -290,6 +291,24 @@ function ViewerBody({ photos, links, start, albums, onClose }: { photos: Attachm
             <Star className={cn(current.is_cover && 'fill-current text-amber-500')} />
             {current.is_cover ? 'Favorite' : 'Make favorite'}
           </Button>
+          {(current.entity_type === 'car' || current.entity_type === 'job') && (
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={share.isPending}
+              onClick={async () => {
+                try {
+                  await share.mutateAsync({ photo: current, on: !current.on_website });
+                  toast.success(current.on_website ? 'Hidden from customers and the website' : 'Customers with a key (and the website) can see it');
+                } catch (e) {
+                  toast.error(syncErrorMessage(e));
+                }
+              }}
+            >
+              {current.on_website ? <Eye className="text-primary" /> : <EyeOff />}
+              {current.on_website ? 'Customers see it' : 'Show to customers'}
+            </Button>
+          )}
           {albums && (
             <select
               aria-label="Album"
@@ -417,8 +436,8 @@ export function PhotoSection({
                   </span>
                 )}
                 {p.on_website && (
-                  <span className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/55" title="On the website">
-                    <Globe className="size-3.5 text-white" />
+                  <span className="absolute top-1 right-1 flex size-6 items-center justify-center rounded-full bg-black/55" title="Customers can see it">
+                    <Eye className="size-3.5 text-white" />
                   </span>
                 )}
               </button>
