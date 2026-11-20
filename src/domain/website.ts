@@ -1,4 +1,4 @@
-// The public website (docs/PLAN.md §10): page addresses, default titles, contact numbers.
+// The website (docs/PLAN.md §10, team only since §11): page addresses, default titles, contact numbers.
 
 const LETTERS: Record<string, string> = { đ: 'd', ð: 'd', ø: 'o', ł: 'l', ß: 'ss', æ: 'ae', œ: 'oe', þ: 'th' };
 

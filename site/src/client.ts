@@ -1,6 +1,5 @@
 // The little the website does in the browser: photo galleries with a full-screen view, the before/after slider,
-// and today's opening hours. The pages work without it.
-import './site.css';
+// and today's opening hours. view.html calls initSite() each time it draws a page.
 
 function track(root: Element): HTMLElement {
   return root.querySelector<HTMLElement>('[data-track]')!;
@@ -30,75 +29,77 @@ function wireStrip(root: Element, count: number) {
   return { strip, update, index: () => index };
 }
 
-for (const gallery of document.querySelectorAll('[data-gallery]')) {
-  const slides = gallery.querySelectorAll<HTMLButtonElement>('[data-open]');
-  wireStrip(gallery, slides.length);
-  const dialog = gallery.nextElementSibling instanceof HTMLDialogElement ? gallery.nextElementSibling : null;
-  if (!dialog) continue;
-  const box = wireStrip(dialog, slides.length);
-  const load = () => dialog.querySelectorAll<HTMLImageElement>('img[data-src]').forEach((img) => (img.src = img.dataset.src!));
+export function initSite(doc: Document = document) {
+  for (const gallery of doc.querySelectorAll('[data-gallery]')) {
+    const slides = gallery.querySelectorAll<HTMLButtonElement>('[data-open]');
+    wireStrip(gallery, slides.length);
+    const dialog = gallery.nextElementSibling instanceof HTMLDialogElement ? gallery.nextElementSibling : null;
+    if (!dialog) continue;
+    const box = wireStrip(dialog, slides.length);
+    const load = () => dialog.querySelectorAll<HTMLImageElement>('img[data-src]').forEach((img) => (img.src = img.dataset.src!));
 
-  slides.forEach((slide, i) =>
-    slide.addEventListener('click', () => {
-      load();
-      dialog.showModal();
-      document.documentElement.style.overflow = 'hidden';
-      requestAnimationFrame(() => {
-        goTo(box.strip, i, false);
-        box.update();
-      });
-    }),
-  );
-  dialog.querySelector('[data-close]')?.addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', () => {
-    document.documentElement.style.overflow = '';
-    goTo(track(gallery), box.index(), false);
-  });
-  dialog.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowRight') goTo(box.strip, Math.min(slides.length - 1, currentIndex(box.strip) + 1));
-    if (e.key === 'ArrowLeft') goTo(box.strip, Math.max(0, currentIndex(box.strip) - 1));
-  });
-}
+    slides.forEach((slide, i) =>
+      slide.addEventListener('click', () => {
+        load();
+        dialog.showModal();
+        doc.documentElement.style.overflow = 'hidden';
+        requestAnimationFrame(() => {
+          goTo(box.strip, i, false);
+          box.update();
+        });
+      }),
+    );
+    dialog.querySelector('[data-close]')?.addEventListener('click', () => dialog.close());
+    dialog.addEventListener('close', () => {
+      doc.documentElement.style.overflow = '';
+      goTo(track(gallery), box.index(), false);
+    });
+    dialog.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight') goTo(box.strip, Math.min(slides.length - 1, currentIndex(box.strip) + 1));
+      if (e.key === 'ArrowLeft') goTo(box.strip, Math.max(0, currentIndex(box.strip) - 1));
+    });
+  }
 
-for (const compare of document.querySelectorAll<HTMLElement>('[data-compare]')) {
-  const range = compare.querySelector<HTMLInputElement>('input[type=range]')!;
-  const set = () => compare.style.setProperty('--pos', `${range.value}%`);
-  range.addEventListener('input', set);
-  set();
-}
+  for (const compare of doc.querySelectorAll<HTMLElement>('[data-compare]')) {
+    const range = compare.querySelector<HTMLInputElement>('input[type=range]')!;
+    const set = () => compare.style.setProperty('--pos', `${range.value}%`);
+    range.addEventListener('input', set);
+    set();
+  }
 
-for (const box of document.querySelectorAll<HTMLElement>('[data-pairs]')) {
-  const pairs = [...box.querySelectorAll<HTMLElement>('[data-pair]')];
-  const counter = box.querySelector('[data-pair-counter]');
-  let shown = 0;
-  const show = (i: number) => {
-    shown = (i + pairs.length) % pairs.length;
-    pairs.forEach((p, k) => (p.hidden = k !== shown));
-    if (counter) counter.textContent = `${shown + 1} / ${pairs.length}`;
-  };
-  box.querySelector('[data-pair-prev]')?.addEventListener('click', () => show(shown - 1));
-  box.querySelector('[data-pair-next]')?.addEventListener('click', () => show(shown + 1));
-}
+  for (const box of doc.querySelectorAll<HTMLElement>('[data-pairs]')) {
+    const pairs = [...box.querySelectorAll<HTMLElement>('[data-pair]')];
+    const counter = box.querySelector('[data-pair-counter]');
+    let shown = 0;
+    const show = (i: number) => {
+      shown = (i + pairs.length) % pairs.length;
+      pairs.forEach((p, k) => (p.hidden = k !== shown));
+      if (counter) counter.textContent = `${shown + 1} / ${pairs.length}`;
+    };
+    box.querySelector('[data-pair-prev]')?.addEventListener('click', () => show(shown - 1));
+    box.querySelector('[data-pair-next]')?.addEventListener('click', () => show(shown + 1));
+  }
 
-// Opening hours: mark today's line and say whether the workshop is open now (in the workshop's time zone).
-for (const box of document.querySelectorAll<HTMLElement>('[data-hours]')) {
-  const hours = JSON.parse(box.dataset.hours!) as { weekday: number; opens: string | null; closes: string | null }[];
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Zagreb', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
-      .formatToParts(new Date())
-      .map((p) => [p.type, p.value]),
-  );
-  const weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(parts.weekday) + 1;
-  const now = `${parts.hour}:${parts.minute}`;
-  box.querySelectorAll<HTMLElement>('[data-weekdays]').forEach((row) => {
-    if (row.dataset.weekdays!.split(' ').includes(String(weekday))) row.classList.add('is-today');
-  });
-  const today = hours.find((h) => h.weekday === weekday);
-  const open = Boolean(today?.opens && today.closes && today.opens <= now && now < today.closes);
-  const badge = box.querySelector<HTMLElement>('[data-open-now]');
-  if (badge) {
-    badge.textContent = open ? box.dataset.openText! : box.dataset.closedText!;
-    badge.classList.remove('hidden');
-    badge.classList.add(open ? 'is-open' : 'is-closed');
+  // Opening hours: mark today's line and say whether the workshop is open now (in the workshop's time zone).
+  for (const box of doc.querySelectorAll<HTMLElement>('[data-hours]')) {
+    const hours = JSON.parse(box.dataset.hours!) as { weekday: number; opens: string | null; closes: string | null }[];
+    const parts = Object.fromEntries(
+      new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Zagreb', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+        .formatToParts(new Date())
+        .map((p) => [p.type, p.value]),
+    );
+    const weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].indexOf(parts.weekday) + 1;
+    const now = `${parts.hour}:${parts.minute}`;
+    box.querySelectorAll<HTMLElement>('[data-weekdays]').forEach((row) => {
+      if (row.dataset.weekdays!.split(' ').includes(String(weekday))) row.classList.add('is-today');
+    });
+    const today = hours.find((h) => h.weekday === weekday);
+    const open = Boolean(today?.opens && today.closes && today.opens <= now && now < today.closes);
+    const badge = box.querySelector<HTMLElement>('[data-open-now]');
+    if (badge) {
+      badge.textContent = open ? box.dataset.openText! : box.dataset.closedText!;
+      badge.classList.remove('hidden');
+      badge.classList.add(open ? 'is-open' : 'is-closed');
+    }
   }
 }

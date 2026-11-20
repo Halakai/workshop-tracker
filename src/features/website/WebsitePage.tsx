@@ -1,33 +1,30 @@
-// More → Website: what the public website shows. Members see it; admins change the texts and lists.
+// More → Website: what the website shows (only the team sees it, docs/PLAN.md §11). Members see this; admins change the texts and lists.
 import { useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Globe, Loader2, Pencil, Plus, Star, Upload } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronRight, ExternalLink, Globe, Pencil, Plus, Star } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatDateTime } from '@/domain/dates';
 import { shortTime, WEEKDAYS } from '@/domain/website';
 import { syncErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { useCurrentProfile } from '@/features/auth/profiles';
 import { PhotoSection } from '@/features/files/Photos';
 import {
-  usePublishWebsite,
   useSwapWebsiteRows,
   useWebsiteCars,
   useWebsiteHours,
   useWebsiteList,
   useWebsiteSettings,
-  useWebsiteStatus,
   type WebsiteContact,
   type WebsiteList,
   type WebsiteReview,
   type WebsiteService,
 } from './api';
 import { ContactDrawer, HoursDrawer, ReviewDrawer, ServiceDrawer, TextsDrawer } from './WebsiteDrawers';
-import { websiteBase } from './links';
+import { websiteHref } from './links';
 
 export function WebsitePage() {
   const admin = useCurrentProfile().role === 'admin';
@@ -42,7 +39,6 @@ export function WebsitePage() {
   const [contact, setContact] = useState<WebsiteContact | 'new' | null>(null);
   const [service, setService] = useState<WebsiteService | 'new' | null>(null);
   const [review, setReview] = useState<WebsiteReview | 'new' | null>(null);
-  const site = websiteBase();
   const lastSort = (rows: { sort_order: number }[] | undefined) => Math.max(0, ...(rows ?? []).map((r) => r.sort_order));
 
   const s = settings.data;
@@ -53,7 +49,7 @@ export function WebsitePage() {
     <>
       <PageHeader title="Website" back="/more" />
       <PageBody>
-        <PublishCard site={site} />
+        <OpenWebsiteCard />
 
         <Section title="Cars and jobs on the website">
           {cars.isPending && <Skeleton className="h-16 rounded-xl" />}
@@ -175,65 +171,17 @@ export function WebsitePage() {
   );
 }
 
-/** Publish button and how the latest website build went. */
-function PublishCard({ site }: { site: string }) {
-  const publish = usePublishWebsite();
-  // the run that was the latest when Publish was pressed; until GitHub lists a newer one, it is "starting"
-  const [startedFrom, setStartedFrom] = useState<string | null | undefined>(undefined);
-  const waiting = startedFrom !== undefined;
-  const status = useWebsiteStatus(waiting);
-  const run = status.data;
-  const isNew = waiting && run && run.url !== startedFrom;
-  const running = waiting && (!isNew || run.status !== 'completed');
-  if (waiting && isNew && run.status === 'completed') setStartedFrom(undefined);
-
-  const onPublish = async () => {
-    try {
-      await publish.mutateAsync();
-      setStartedFrom(run?.url ?? null);
-    } catch (e) {
-      toast.error(syncErrorMessage(e));
-    }
-  };
-
-  let line: ReactNode = null;
-  if (running) line = <span className="flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> Publishing… usually 2–3 minutes.</span>;
-  else if (status.error) line = <span className="text-muted-foreground">{status.error.message}</span>;
-  else if (run?.status === 'completed' && run.conclusion === 'success')
-    line = (
-      <>
-        <span className="text-success">Live since {formatDateTime(run.updated)}.</span>{' '}
-        <span className="text-muted-foreground">A phone that had the website open may show the old version for up to 10 minutes; Open always shows the new one.</span>
-      </>
-    );
-  else if (run?.status === 'completed' && run.conclusion === 'cancelled') line = <span className="text-muted-foreground">The last publish was replaced by a newer one.</span>;
-  else if (run?.status === 'completed')
-    line = (
-      <span className="text-destructive">
-        The last publish failed ({formatDateTime(run.updated)}).{' '}
-        <a href={run.url} target="_blank" rel="noreferrer" className="underline">
-          Details on GitHub
-        </a>
-      </span>
-    );
-  else if (run) line = <span className="flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> Publishing…</span>;
-
+/** The website opens inside the app, always up to date (nothing to publish). */
+function OpenWebsiteCard() {
   return (
     <Card>
       <CardContent className="flex flex-col gap-3 text-sm">
-        <p>The public website shows the cars and jobs you choose, and the texts below. Changes show on it after you publish.</p>
-        {line && <p>{line}</p>}
-        <div className="grid grid-cols-2 gap-2">
-          <Button onClick={onPublish} disabled={publish.isPending || running}>
-            {publish.isPending ? <Loader2 className="animate-spin" /> : <Upload />} Publish
-          </Button>
-          <Button variant="outline" asChild>
-            {/* a new address after every publish, so the browser can't show a copy it kept from before */}
-            <a href={run?.updated ? `${site}?v=${Date.parse(run.updated) / 1000}` : site} target="_blank" rel="noreferrer">
-              <ExternalLink /> Open
-            </a>
-          </Button>
-        </div>
+        <p>Only your team sees the website. It shows the cars and jobs you choose and the texts below, always up to date.</p>
+        <Button asChild>
+          <a href={websiteHref()}>
+            <ExternalLink /> Open the website
+          </a>
+        </Button>
       </CardContent>
     </Card>
   );

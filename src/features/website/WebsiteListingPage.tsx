@@ -1,4 +1,4 @@
-// How one car (flip) or customer job appears on the public website: switch, texts, details, photos, address.
+// How one car (flip) or customer job appears on the website (team only, docs/PLAN.md §11): switch, texts, details, photos, address.
 import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router';
 import { Controller, useForm, useWatch } from 'react-hook-form';
@@ -26,7 +26,6 @@ import { useJob } from '@/features/jobs/api';
 import { usePhotos, type Attachment, type EntityType } from '@/features/files/api';
 import { usePhotoAlbums } from '@/features/catalog/api';
 import {
-  publishWebsite,
   useDeleteWebsiteCar,
   useSaveWebsiteCar,
   useSetPhotoOnWebsite,
@@ -37,7 +36,7 @@ import {
   type WebsiteCar,
 } from './api';
 import { PairsEditor } from './PairsEditor';
-import { websiteBase } from './links';
+import { websiteHref } from './links';
 import { LangToggle, type Lang } from './LangToggle';
 
 /** What the page needs to know about the car or job behind the listing. */
@@ -251,17 +250,7 @@ function ListingForm({ subject, listing, initialPairs, taken }: { subject: Subje
         goBack(subject.back);
         return;
       }
-      toast.success(values.is_public ? 'Saved. It shows on the website after the next publish.' : 'Saved. Publish to take it off the website.', {
-        duration: 8000,
-        action: {
-          label: 'Publish now',
-          onClick: () =>
-            publishWebsite().then(
-              () => toast.success('Publishing. The website updates in 2–3 minutes.'),
-              (e) => toast.error(syncErrorMessage(e)),
-            ),
-        },
-      });
+      toast.success(values.is_public ? 'Saved. It shows on the website.' : 'Saved and taken off the website.');
       goBack(subject.back);
     } catch (e) {
       const err = e as { code?: string };
@@ -306,7 +295,7 @@ function ListingForm({ subject, listing, initialPairs, taken }: { subject: Subje
     { name: 'show_mileage' as const, label: 'Mileage', value: subject.mileage != null ? `${formatInteger(subject.mileage)} km` : null },
   ].filter((s) => s.value);
   const needsAgreement = subject.kind === 'job' && !agreed;
-  const site = websiteBase();
+  const site = websiteHref();
   const t = (hr: string, en: string) => (lang === 'hr' ? hr : en);
 
   return (
@@ -330,7 +319,7 @@ function ListingForm({ subject, listing, initialPairs, taken }: { subject: Subje
               <span className="flex-1">
                 <span className="block font-medium">Show on the website</span>
                 <span className="block text-sm text-muted-foreground">
-                  {needsAgreement ? 'Tick the customer’s permission first.' : isPublic ? 'Shown after the next publish.' : 'Not shown. Texts and photos are kept.'}
+                  {needsAgreement ? 'Tick the customer’s permission first.' : isPublic ? 'Shown on the website (only the team sees it).' : 'Not shown. Texts and photos are kept.'}
                 </span>
               </span>
             </label>
@@ -441,7 +430,13 @@ function ListingForm({ subject, listing, initialPairs, taken }: { subject: Subje
               <FieldLabel htmlFor="w-slug">Web address</FieldLabel>
               <Input id="w-slug" className="font-mono" autoCapitalize="none" {...form.register('slug', { onChange: () => setSlugEdited(true) })} />
               <FieldDescription className="break-all">
-                {site}auti/{form.watch('slug') || '…'}/
+                {listing?.is_public ? (
+                  <a href={`${site}auti/${listing.slug}/`} className="underline">
+                    Open it on the website
+                  </a>
+                ) : (
+                  'The car’s page on the website: …/auti/' + (form.watch('slug') || '…') + '/'
+                )}
               </FieldDescription>
               <FieldError errors={[errors.slug]} />
             </Field>

@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { renderSite, sitemapPaths } from './render';
+import { renderSite } from './render';
 import type { BuildContext, PhotoFiles, Snapshot } from './types';
 
 const sample: Snapshot = JSON.parse(readFileSync(new URL('../fixtures/snapshot.json', import.meta.url), 'utf8'));
@@ -11,12 +11,12 @@ const ids = [
 ];
 const ctx: BuildContext = {
   base: '/workshop-tracker/',
+  root: '/workshop-tracker/',
   origin: 'https://halakai.github.io',
-  css: ['/workshop-tracker/s/site.css'],
-  js: '/workshop-tracker/s/site.js',
   logo: '/workshop-tracker/favicon.svg',
   photos: Object.fromEntries(ids.map((id) => [id, photo(id)])),
-  preview: false,
+  team: false,
+  appHref: '/workshop-tracker/app/',
 };
 
 function page(pages: { path: string; html: string }[], path: string) {
@@ -37,7 +37,6 @@ describe('renderSite', () => {
         ...sample.cars.flatMap((c) => [`auti/${c.slug}/index.html`, `en/cars/${c.slug}/index.html`]),
       ].sort(),
     );
-    expect(sitemapPaths(sample, ctx.base)).toContain('/workshop-tracker/en/cars/vw-golf-ii-gti-1989/');
   });
 
   it('cars for sale are under "Na prodaju" with their price, the others under "Naši radovi"', () => {
@@ -88,9 +87,19 @@ describe('renderSite', () => {
     expect(page(pages, 'auti/bmw-3-series-e46-330d-2003/index.html')).not.toContain('data-pairs');
   });
 
-  it('pages built from sample data are not indexed', () => {
-    expect(page(renderSite(sample, { ...ctx, preview: true }), 'index.html')).toContain('<meta name="robots" content="noindex"/>');
-    expect(page(pages, 'index.html')).not.toContain('noindex');
+  it('is never indexed; the team version says only the team sees it and leads back to the app', () => {
+    expect(page(pages, 'index.html')).toContain('<meta name="robots" content="noindex"/>');
+    expect(page(pages, 'index.html')).not.toContain('Only the team');
+    const team = page(renderSite(sample, { ...ctx, team: true }), 'en/index.html');
+    expect(team).toContain('Only the team can see this website.');
+    expect(team).toContain('href="/workshop-tracker/app/"');
+  });
+
+  it('links between pages start with the base, so view.html can route on the # part', () => {
+    const home = page(renderSite(sample, { ...ctx, base: '#/' }), 'index.html');
+    expect(home).toContain('href="#/auti/vw-golf-ii-gti-1989/"');
+    expect(home).toContain('href="#/en/"');
+    expect(home).toContain('href="/workshop-tracker/privacy.html"');
   });
 
   it('the WhatsApp button on a car for sale names the car', () => {

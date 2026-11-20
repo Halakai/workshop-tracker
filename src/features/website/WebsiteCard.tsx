@@ -4,7 +4,7 @@ import { formatMoney } from '@/domain/money';
 import { cn } from '@/lib/utils';
 import { useWebsiteCar } from './api';
 
-/** On a car's or job's page: whether it is on the public website; opens its listing. */
+/** On a car's or job's page: whether it is on the website (team only); opens its listing. */
 export function WebsiteCard({ target, forSale }: { target: { carId: string } | { jobId: string }; forSale?: number | null }) {
   const listing = useWebsiteCar(target);
   const to = 'carId' in target ? `/cars/${target.carId}/website` : `/jobs/${target.jobId}/website`;

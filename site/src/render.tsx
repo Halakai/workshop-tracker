@@ -1,4 +1,4 @@
-// The public website's pages, rendered to plain HTML at build time (scripts/build-site.mjs).
+// The website's pages as plain HTML, drawn in the browser by the app's view.html (src/view) from live data.
 // Everything typed in the app goes through React, so it is escaped; the only raw HTML is the JSON-LD block.
 import type { CSSProperties, ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -237,7 +237,7 @@ function Frame({ v, meta, nav, children }: { v: View; meta: Meta; nav: { href: s
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>{meta.title}</title>
         <meta name="description" content={meta.description} />
-        {(meta.noindex || ctx.preview) && <meta name="robots" content="noindex" />}
+        <meta name="robots" content="noindex" />
         <meta name="theme-color" content="#0c0f14" />
         <link rel="canonical" href={abs(ctx, meta.path)} />
         <link rel="alternate" hrefLang="hr" href={abs(ctx, hrefs.hr)} />
@@ -253,17 +253,21 @@ function Frame({ v, meta, nav, children }: { v: View; meta: Meta; nav: { href: s
         {meta.image && <meta property="og:image:width" content="1200" />}
         {meta.image && <meta property="og:image:height" content="630" />}
         <meta name="twitter:card" content={meta.image ? 'summary_large_image' : 'summary'} />
-        <link rel="icon" href={`${ctx.base}favicon.svg`} type="image/svg+xml" />
-        <link rel="apple-touch-icon" href={`${ctx.base}apple-touch-icon-180x180.png`} />
-        {ctx.css.map((href) => (
-          <link key={href} rel="stylesheet" href={href} />
-        ))}
+        <link rel="icon" href={`${ctx.root}favicon.svg`} type="image/svg+xml" />
+        <link rel="apple-touch-icon" href={`${ctx.root}apple-touch-icon-180x180.png`} />
         {meta.jsonLd && (
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(meta.jsonLd).replace(/</g, '\\u003c') }} />
         )}
       </head>
       <body className={`min-h-dvh bg-bg font-sans text-fg antialiased ${bar.length ? 'pb-24 sm:pb-0' : ''}`}>
-        {ctx.preview && <div className="bg-amber-400 py-1 text-center text-sm font-semibold text-black">{t.preview}</div>}
+        {ctx.team && (
+          <div className="flex items-center justify-center gap-3 bg-amber-400 px-4 py-1.5 text-center text-sm font-semibold text-black">
+            <span>{t.teamOnly}</span>
+            <a href={ctx.appHref} className="shrink-0 rounded-full bg-black/85 px-3 py-0.5 text-white hover:bg-black">
+              {t.backToApp}
+            </a>
+          </div>
+        )}
         <header className="sticky top-0 z-30 border-b border-line/70 bg-bg/85 backdrop-blur">
           <div className={`${container} flex h-16 items-center gap-4`}>
             <a href={homePath(ctx.base, lang)} className="flex min-w-0 items-center gap-3">
@@ -299,7 +303,6 @@ function Frame({ v, meta, nav, children }: { v: View; meta: Meta; nav: { href: s
             ))}
           </div>
         )}
-        <script type="module" src={ctx.js} />
       </body>
     </html>
   );
@@ -330,12 +333,14 @@ function Footer({ v }: { v: View }) {
               <FacebookIcon className="size-6" />
             </a>
           )}
-          <a href={`${ctx.base}privacy.html`} className="hover:text-fg">
+          <a href={`${ctx.root}privacy.html`} className="hover:text-fg">
             {t.privacy}
           </a>
-          <a href={`${ctx.base}app/`} rel="nofollow" className="opacity-70 hover:text-fg hover:opacity-100">
-            {t.login}
-          </a>
+          {ctx.team && (
+            <a href={ctx.appHref} className="opacity-70 hover:text-fg hover:opacity-100">
+              {t.backToApp}
+            </a>
+          )}
         </div>
       </div>
     </footer>
@@ -862,9 +867,4 @@ export function renderSite(s: Snapshot, ctx: BuildContext): Page[] {
   }
   pages.push({ path: '404.html', html: doc(<NotFoundPage v={{ s, ctx, lang: 'hr', t: T.hr }} />) });
   return pages;
-}
-
-/** Page addresses for sitemap.xml. */
-export function sitemapPaths(s: Snapshot, base: string): string[] {
-  return (['hr', 'en'] as const).flatMap((lang) => [homePath(base, lang), ...s.cars.map((c) => carPath(base, lang, c.slug))]);
 }
