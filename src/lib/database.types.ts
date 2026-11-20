@@ -20,12 +20,14 @@ export type Database = {
           code: string;
           created_at: string;
           created_by: string | null;
+          expires_at: string | null;
           id: string;
           job_id: string | null;
           kind: string;
           last_opened_at: string | null;
           note: string | null;
           opened_count: number;
+          shows: Json | null;
           switched_off_at: string | null;
           updated_at: string;
           updated_by: string | null;
@@ -35,12 +37,14 @@ export type Database = {
           code: string;
           created_at?: string;
           created_by?: string | null;
+          expires_at?: string | null;
           id?: string;
           job_id?: string | null;
           kind: string;
           last_opened_at?: string | null;
           note?: string | null;
           opened_count?: number;
+          shows?: Json | null;
           switched_off_at?: string | null;
           updated_at?: string;
           updated_by?: string | null;
@@ -50,12 +54,14 @@ export type Database = {
           code?: string;
           created_at?: string;
           created_by?: string | null;
+          expires_at?: string | null;
           id?: string;
           job_id?: string | null;
           kind?: string;
           last_opened_at?: string | null;
           note?: string | null;
           opened_count?: number;
+          shows?: Json | null;
           switched_off_at?: string | null;
           updated_at?: string;
           updated_by?: string | null;
@@ -2559,22 +2565,26 @@ export type Database = {
       backup_tables: { Args: never; Returns: string[] };
       create_access_key: {
         Args: {
-          p_car_id: string;
-          p_job_id: string;
+          p_car_id?: string;
+          p_expires_at?: string;
+          p_job_id?: string;
           p_kind: string;
           p_note?: string;
+          p_shows?: Json;
         };
         Returns: {
           car_id: string | null;
           code: string;
           created_at: string;
           created_by: string | null;
+          expires_at: string | null;
           id: string;
           job_id: string | null;
           kind: string;
           last_opened_at: string | null;
           note: string | null;
           opened_count: number;
+          shows: Json | null;
           switched_off_at: string | null;
           updated_at: string;
           updated_by: string | null;
