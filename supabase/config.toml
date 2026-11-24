@@ -424,3 +424,7 @@ verify_jwt = false
 # Photos and receipts in Google Drive; checks the caller itself (signed view links have no JWT).
 [functions.files]
 verify_jwt = false
+
+# The index of repair manuals; checks the caller itself.
+[functions.manuals]
+verify_jwt = false

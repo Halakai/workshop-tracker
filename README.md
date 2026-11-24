@@ -31,32 +31,28 @@ shared workshop wallet and settling up between partners. Everything is behind th
 | K1 | Login first: the main address forwards to the app; the website only for the team, inside the app; Publish gone | ✅ done |
 | K2 | Job keys: a customer opens their job (work, prices, payments, photos, invoice) with a code | ✅ done |
 | K3 | Car keys (buyer / owner), website keys (public or personal, choose what they show), end dates, More → Keys | ✅ done |
+| R5 | Home with big tiles, everything about money in one place, repair manuals on cars and jobs | built, not published yet |
 
 ## The app at a glance
 
-- **Home** is a dashboard:
-  - a **search** bar for everything (see below);
-  - quick actions: *Expense, Use part, Buy part, New car, New job*;
-  - the wallet and each partner's balance;
-  - tiles: inventory value (and what's running low), money in unsold cars, money still to collect from finished jobs,
-    and this year's profit (cars sold and jobs paid this year);
-  - **Money in & out**: a bar chart per month (6 or 12 months; tap a month) and what the money went on and came
-    from, for a month, the year or the last 12 months. Moves between the wallet and partners aren't counted;
-  - **recently opened** cars, jobs, items and tools (remembered on each phone);
-  - cars in progress, open and unpaid jobs, low stock, tools lent out or needing repair, and recent activity (who
-    did what, when).
+- **Home** is a menu: one big tile per area (Cars, Jobs, Parts, Money, Manuals, Tools) with what's going on there, and in
+  red what needs attention (jobs done but not paid, parts running low, tools to repair). **Add new** adds anything:
+  a job, a car, an expense, a part bought or used, a new part, a tool.
+- **Money** (tile, or More) has three tabs: *Wallet* (the entries), *Overview* (inventory value, money in unsold cars,
+  money still to collect, this year's profit, and **Money in & out** per month with what it went on and came from;
+  moves between the wallet and partners aren't counted) and *Partners*.
+- **Repair manuals:** see [below](#repair-manuals).
 - **Search** finds cars (make, model, plate, VIN, car ID), jobs (customer, work, plate, invoice number), inventory
   (name, part number, brand, shelf), tools (name, tool ID, brand, serial number, who has it), contacts (name, phone)
   and money entries (description, who, amount). Case, accents and spaces or dashes in plates and IDs don't matter:
-  `zg123ab` finds `ZG 123-AB`.
+  `zg123ab` finds `ZG 123-AB`. Before you type, it lists what you opened last (remembered on each phone).
 - **Bottom bar:** Home · Inventory (red badge = items to buy) · Cars · Jobs · More.
 - **Back arrows** go back to wherever you came from.
 - **More:**
-  - Money and Partners;
-  - Contacts (sellers, buyers, customers, with tap-to-call);
-  - Lists (car makes & models, categories, units, brands, cost types, tool categories);
-  - My account;
-  - admin only: Users & partners, Workshop settings (invoice header, Google Drive test), Backup & restore.
+  - *Workshop:* Money, Repair manuals, Contacts (with tap-to-call), Activity (who did what, when);
+  - *Customers:* Keys, Website;
+  - *Settings:* My account, Lists (car makes & models, categories, units, brands, suppliers, cost types…); admin only:
+    Users & partners, Workshop settings (invoice header, Google Drive test), Backup & restore.
 
 ## How the inventory works (short)
 
@@ -196,6 +192,27 @@ up: hand and power tools, the compressor, lifts, the scanner…
 - **Logos** are public-domain or CC0 files from Wikimedia Commons and Simple Icons, listed with their sources in
   [data/car-catalog/LOGOS.md](data/car-catalog/LOGOS.md). Makes without a free logo (and makes you add) show their
   initials.
+
+## Repair manuals
+
+Every car and job with a make and model has a **Repair manual** section: *Small service, Big service, Brakes, Clutch &
+gearbox, Suspension, Engine…*, and a search in English or Croatian (*timing belt*, *zupčasti remen*, *kočnice*). A tap
+opens the exact page of the factory manual. The **Manuals** tile on Home does the same for any car.
+
+- **The manuals** are on [workshop-manuals.com](https://workshop-manuals.com/) (about 7 000: all of VW, Škoda, SEAT and
+  Audi until about 2015, BMW until about 2010, Opel as Vauxhall, Citroën, Fiat, Alfa Romeo, Ford, Volvo and more;
+  nothing useful for newer Renaults, Dacias and Peugeots, though Peugeots get the matching Citroën).
+- **The app keeps only titles and addresses.** The pages are read on the site, which isn't ours: it can change,
+  disappear or be wrong, and the texts belong to the car makers. Check the engine code and the torques.
+- **The right manual** is found from the make, model, generation, year and engine; *Change* picks another one, for
+  every car of that kind (`car_manuals`). Manuals for several engines show only the car's engine (guessed from its
+  name, e.g. VW's 1.9 TDI with unit injectors or with a distributor pump); *Change* next to it picks other engines,
+  and your gearbox.
+- **How it gets there:** the Edge Function `manuals` reads the index the site publishes for crawlers (its robots.txt
+  allows all of them): one list of manuals a month, and two requests the first time a manual is opened. It is kept in
+  the database after that. lemon-manuals.la was the first idea; it only has cars sold in the USA and blocks this.
+- The matching is in `src/domain/manuals.ts`, the search, the Croatian words and the jobs in
+  `src/domain/manualSearch.ts`.
 
 ## Customer keys
 
@@ -415,6 +432,10 @@ cp .env.example .env.local   # fill in URL and publishable key
 npm run dev                  # http://localhost:5173/app/ (also reachable from a phone on the same Wi-Fi)
 npm test                     # unit tests for all money and stock math
 ```
+
+`npm run dev` uses the **real** database (you sign in as usual). To look around without it, open
+<http://localhost:5173/app/demo.html>: the app with made-up data and no login; nothing is saved. Repair manuals work in
+both without the `manuals` function (`scripts/manuals-dev.ts` answers for it).
 
 ### Database changes
 

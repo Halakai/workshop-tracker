@@ -20,6 +20,7 @@ import { categoryInfo } from '@/features/money/labels';
 import { useTools } from '@/features/tools/api';
 import { useProfileNames } from '@/features/auth/profiles';
 import { conditionLabel, goneLabel } from '@/domain/tools';
+import { RecentlyOpened } from '@/features/home/RecentlyOpened';
 
 type Group = 'cars' | 'jobs' | 'items' | 'tools' | 'contacts' | 'money';
 
@@ -162,11 +163,12 @@ export function SearchPage() {
         </div>
 
         {!query.trim() && (
-          <p className="text-sm text-muted-foreground">
-            Finds cars (make, model, plate, VIN, car ID), jobs (customer, work, plate, invoice number), inventory (name, part
-            number, brand, shelf), tools (name, ID, brand, serial number, who has it), contacts (name, phone) and money entries
-            (description, who, amount). Spaces and dashes don’t matter in plates and IDs.
-          </p>
+          <>
+            <p className="text-sm text-muted-foreground">
+              Finds cars, jobs, parts, tools, contacts and money entries. Spaces and dashes don’t matter in plates and IDs.
+            </p>
+            <RecentlyOpened />
+          </>
         )}
         {query.trim() && loading && <Skeleton className="h-40 rounded-xl" />}
         {query.trim() && !loading && results.length === 0 && <p className="text-muted-foreground">Nothing found for “{query.trim()}”.</p>}

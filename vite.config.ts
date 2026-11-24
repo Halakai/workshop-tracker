@@ -4,6 +4,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { manualsDev } from './scripts/manuals-dev.ts';
 
 // On GitHub Pages everything lives under /<repo-name>/ (the deploy workflow sets BASE_PATH). The app is in /app/
 // below that; the top level only forwards to it (scripts/build-root.mjs).
@@ -32,6 +33,7 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    manualsDev(base),
     VitePWA({
       // the app decides when to switch to a new version (src/app/UpdatePrompt.tsx), so nobody loses a half-typed entry
       registerType: 'prompt',

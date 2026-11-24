@@ -1,4 +1,4 @@
-// "Recently opened" on the dashboard: the last cars, jobs, items and tools this person opened on this device.
+// "Recently opened" on the search page: the last cars, jobs, items and tools this person opened on this device.
 // A per-device convenience, so it lives in localStorage (and the app works fine without it).
 import { useEffect } from 'react';
 

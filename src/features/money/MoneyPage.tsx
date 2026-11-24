@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router';
-import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Banknote, Receipt, Users } from 'lucide-react';
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpFromLine, Banknote, Receipt } from 'lucide-react';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { useAccounts } from './accounts';
 import { useTransactions, useWalletBalance, type TransactionRow } from './api';
 import { MoneyEntryDrawer, modeOf, type EntryMode } from './MoneyEntryDrawer';
+import { MoneyTabs } from './MoneyTabs';
 import { TransactionList } from './TransactionList';
 
 type Filter = 'wallet' | 'all' | 'expenses' | 'income' | 'moves';
@@ -56,18 +56,9 @@ export function MoneyPage() {
 
   return (
     <>
-      <PageHeader
-        title="Money"
-        back="/more"
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/partners">
-              <Users /> Partners
-            </Link>
-          </Button>
-        }
-      />
+      <PageHeader title="Money" back />
       <PageBody>
+        <MoneyTabs current="entries" />
         <Card>
           <CardContent>
             <p className="text-sm text-muted-foreground">Workshop wallet</p>

@@ -28,6 +28,7 @@ import { InvoiceDrawer, type MadeInvoice } from './invoice/InvoiceDrawer';
 import { PhotoSection } from '@/features/files/Photos';
 import { WebsiteCard } from '@/features/website/WebsiteCard';
 import { CustomerAccessCard } from '@/features/keys/CustomerAccessCard';
+import { ManualCard } from '@/features/manuals/ManualCard';
 import { useRememberVisit } from '@/features/home/recent';
 import { useAttachments, useDeleteAttachment, useUploadAttachment } from '@/features/files/api';
 
@@ -185,6 +186,11 @@ function JobView({ job }: { job: Job }) {
             <AddedBy by={job.created_by} at={job.created_at} />
           </CardContent>
         </Card>
+
+        <ManualCard
+          car={{ make: job.car_make, model: job.car_model, generation: job.car_generation, year: job.car_year, engine: job.car_engine }}
+          to={`/jobs/${job.id}/manual`}
+        />
 
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold">Charged to the customer</h2>

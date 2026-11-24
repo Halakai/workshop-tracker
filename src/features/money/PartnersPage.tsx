@@ -14,6 +14,7 @@ import { MoneyEntryDrawer, modeOf, type EntryMode, type EntryPrefill } from './M
 import { usePartnerAllocations } from '@/features/settlement/api';
 import { formatDate } from '@/domain/dates';
 import { carTitle } from '@/domain/cars';
+import { MoneyTabs } from './MoneyTabs';
 import { TransactionList } from './TransactionList';
 
 function Figures({ p }: { p: PartnerRow }) {
@@ -40,8 +41,9 @@ export function PartnersPage() {
   const total = (positions ?? []).reduce((s, p) => s + p.balance, 0);
   return (
     <>
-      <PageHeader title="Partners" back="/money" />
+      <PageHeader title="Money" back />
       <PageBody>
+        <MoneyTabs current="partners" />
         <p className="text-sm text-muted-foreground">
           <strong className="text-foreground">Balance</strong> = what the workshop owes each partner: put in − taken out +
           share of profits and losses. Together the balances are worth{' '}
