@@ -31,7 +31,7 @@ shared workshop wallet and settling up between partners. Everything is behind th
 | K1 | Login first: the main address forwards to the app; the website only for the team, inside the app; Publish gone | ✅ done |
 | K2 | Job keys: a customer opens their job (work, prices, payments, photos, invoice) with a code | ✅ done |
 | K3 | Car keys (buyer / owner), website keys (public or personal, choose what they show), end dates, More → Keys | ✅ done |
-| R5 | Home with big tiles, everything about money in one place, repair manuals on cars and jobs | built, not published yet |
+| R5 | Home with big tiles, everything about money in one place, repair manuals on cars and jobs | ✅ done |
 
 ## The app at a glance
 
