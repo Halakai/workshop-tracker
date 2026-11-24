@@ -11,6 +11,7 @@ import { AttachmentStrip } from '@/features/files/AttachmentStrip';
 import { PhotoGallery, PhotoSection } from '@/features/files/Photos';
 import { WebsiteCard } from '@/features/website/WebsiteCard';
 import { KeysCard } from '@/features/keys/CustomerAccessCard';
+import { ManualCard } from '@/features/manuals/ManualCard';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { Button } from '@/components/ui/button';
@@ -193,6 +194,8 @@ function CarView({ car }: { car: Car }) {
             Settled on {formatDate(car.settled_at)}. The car’s money can’t be changed anymore.
           </p>
         )}
+
+        <ManualCard car={car} to={`/cars/${car.id}/manual`} />
 
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold">Costs</h2>

@@ -28,6 +28,7 @@ const CarMakePage = lazy(() => carLists().then((m) => ({ default: m.CarMakePage 
 const ListsPage = lazy(() => import('@/features/catalog/ListsPage').then((m) => ({ default: m.ListsPage })));
 const money = () => import('@/features/money/pages');
 const MoneyPage = lazy(() => money().then((m) => ({ default: m.MoneyPage })));
+const OverviewPage = lazy(() => money().then((m) => ({ default: m.OverviewPage })));
 const PartnersPage = lazy(() => money().then((m) => ({ default: m.PartnersPage })));
 const PartnerPage = lazy(() => money().then((m) => ({ default: m.PartnerPage })));
 const SettlePage = lazy(() => import('@/features/settlement/SettlePage').then((m) => ({ default: m.SettlePage })));
@@ -38,11 +39,17 @@ const JobFormPage = lazy(() => jobs().then((m) => ({ default: m.JobFormPage })))
 const JobSettlePage = lazy(() => jobs().then((m) => ({ default: m.JobSettlePage })));
 const SettingsPage = lazy(() => import('@/features/settings/SettingsPage').then((m) => ({ default: m.SettingsPage })));
 const HomePage = lazy(() => import('@/features/home/HomePage').then((m) => ({ default: m.HomePage })));
+const ActivityPage = lazy(() => import('@/features/activity/ActivityPage').then((m) => ({ default: m.ActivityPage })));
 const ContactsPage = lazy(() => import('@/features/contacts/ContactsPage').then((m) => ({ default: m.ContactsPage })));
 const ExportPage = lazy(() => import('@/features/export/ExportPage').then((m) => ({ default: m.ExportPage })));
 const KeysPage = lazy(() => import('@/features/keys/KeysPage').then((m) => ({ default: m.KeysPage })));
 const SearchPage = lazy(() => import('@/features/search/SearchPage').then((m) => ({ default: m.SearchPage })));
 const UsersPage = lazy(() => import('@/features/users/UsersPage').then((m) => ({ default: m.UsersPage })));
+const manuals = () => import('@/features/manuals/pages');
+const ManualsPage = lazy(() => manuals().then((m) => ({ default: m.ManualsPage })));
+const CarManualPage = lazy(() => manuals().then((m) => ({ default: m.CarManualPage })));
+const JobManualPage = lazy(() => manuals().then((m) => ({ default: m.JobManualPage })));
+const AnyCarManualPage = lazy(() => manuals().then((m) => ({ default: m.AnyCarManualPage })));
 const website = () => import('@/features/website/pages');
 const WebsitePage = lazy(() => website().then((m) => ({ default: m.WebsitePage })));
 const CarWebsitePage = lazy(() => website().then((m) => ({ default: m.CarWebsitePage })));
@@ -77,7 +84,9 @@ export const router = createHashRouter([
           { path: 'cars/:id/edit', element: <CarFormPage /> },
           { path: 'cars/:id/settle', element: <SettlePage /> },
           { path: 'cars/:id/website', element: <CarWebsitePage /> },
+          { path: 'cars/:id/manual', element: <CarManualPage /> },
           { path: 'money', element: <MoneyPage /> },
+          { path: 'money/overview', element: <OverviewPage /> },
           { path: 'partners', element: <PartnersPage /> },
           { path: 'partners/:id', element: <PartnerPage /> },
           { path: 'jobs', element: <JobsListPage /> },
@@ -86,9 +95,13 @@ export const router = createHashRouter([
           { path: 'jobs/:id/edit', element: <JobFormPage /> },
           { path: 'jobs/:id/settle', element: <JobSettlePage /> },
           { path: 'jobs/:id/website', element: <JobWebsitePage /> },
+          { path: 'jobs/:id/manual', element: <JobManualPage /> },
+          { path: 'manuals', element: <ManualsPage /> },
+          { path: 'manuals/car', element: <AnyCarManualPage /> },
           { path: 'website', element: <WebsitePage /> },
           { path: 'keys', element: <KeysPage /> },
           { path: 'more', element: <MorePage /> },
+          { path: 'activity', element: <ActivityPage /> },
           { path: 'account', element: <AccountPage /> },
           { path: 'lists', element: <ListsPage /> },
           { path: 'lists/cars', element: <CarMakesPage /> },

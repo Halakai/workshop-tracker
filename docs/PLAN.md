@@ -507,3 +507,38 @@ Your answers:
   changeable while in use. **More → Keys** lists them all.
 - **Database:** `access_keys.expires_at`, `access_keys.shows` (cleaned by a trigger), `create_access_key()` for
   every kind, `app.key_car_view()`, `app.key_website_view()`; `open_access_key()` checks the end date.
+
+---
+
+## 12. Simpler home, repair manuals (R5, 24.11.2026)
+
+**Asked for:** the app is too complicated, visually and to use; and on cars and jobs, help with the work itself: the
+manual for that car (small service, big service…), easy to search. The first idea for a source was lemon-manuals.la.
+
+**Your answers:** Home as big tiles; leave the car and job pages as they are, only add a section; show it before
+publishing; look for another site that has European cars and lets its data be read.
+
+**Sources looked at:**
+
+| Site | Why (not) |
+|---|---|
+| lemon-manuals.la | Only cars sold in the USA (no Passat 1.9 TDI 96 kW); blocks automatic reading |
+| **workshop-manuals.com** | **Chosen.** European factory manuals; robots.txt allows every crawler and publishes sitemaps. No licence stated, so the app keeps titles and addresses only |
+| AUTODOC Club | Refuses automatic reading; nothing for big jobs on this engine |
+| iFixit | Open API, but almost nothing for these cars, and paid for business use |
+| erWin (VW), HaynesPro, Autodata, ALLDATA | Official and complete, but paid; no simple API for a small workshop |
+
+**Built:**
+- Home: tiles with counts and what needs attention; *Add new*. What was on Home moved: figures and chart to Money →
+  Overview, activity to More → Activity, recently opened to Search. Money, Overview and Partners are tabs of one page.
+  More is grouped.
+- Repair manuals: `car_manuals` (the team's choice per kind of car), `manual_lists` and `manual_indexes` (kept
+  indexes, service role only, not in backups), Edge Function `manuals` (`find`, `open`), pages `/manuals`,
+  `/manuals/car`, `/cars/:id/manual`, `/jobs/:id/manual`, the section on car and job pages.
+- `demo.html` (development only): the app with made-up data.
+
+**To publish:** push the branch and run CI (database tests), `npm run db:push`, `npm run functions:deploy`, merge to
+`main`.
+
+**Not known yet:** whether the site answers Supabase's servers as it answers this computer (it is behind Cloudflare).
+Try one manual right after deploying the function. If it refuses, the indexes can be fetched from a computer instead.

@@ -551,6 +551,63 @@ export type Database = {
           },
         ];
       };
+      car_manuals: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          engine: string;
+          generation: string;
+          id: string;
+          make: string;
+          manual_slug: string;
+          model: string;
+          parts: string[];
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          engine?: string;
+          generation?: string;
+          id?: string;
+          make: string;
+          manual_slug: string;
+          model: string;
+          parts?: string[];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          engine?: string;
+          generation?: string;
+          id?: string;
+          make?: string;
+          manual_slug?: string;
+          model?: string;
+          parts?: string[];
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_manuals_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_manuals_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       car_models: {
         Row: {
           created_at: string;
@@ -1265,6 +1322,54 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      manual_indexes: {
+        Row: {
+          base: string;
+          chapters: Json;
+          fetched_at: string;
+          page_count: number;
+          pages: string;
+          slug: string;
+          title: string;
+        };
+        Insert: {
+          base: string;
+          chapters: Json;
+          fetched_at?: string;
+          page_count: number;
+          pages: string;
+          slug: string;
+          title: string;
+        };
+        Update: {
+          base?: string;
+          chapters?: Json;
+          fetched_at?: string;
+          page_count?: number;
+          pages?: string;
+          slug?: string;
+          title?: string;
+        };
+        Relationships: [];
+      };
+      manual_lists: {
+        Row: {
+          fetched_at: string;
+          id: number;
+          slugs: string[];
+        };
+        Insert: {
+          fetched_at?: string;
+          id?: number;
+          slugs: string[];
+        };
+        Update: {
+          fetched_at?: string;
+          id?: number;
+          slugs?: string[];
+        };
+        Relationships: [];
       };
       photo_albums: {
         Row: {
