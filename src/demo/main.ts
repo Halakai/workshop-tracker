@@ -53,7 +53,7 @@ window.fetch = async (input, init) => {
     const chosen = url.searchParams.get('id')?.replace(/^eq\./, '');
     const row = DEMO_TABLES.car_manuals.find((r) => r.id === chosen);
     if (row) Object.assign(row, values);
-    else DEMO_TABLES.car_manuals.push({ id: crypto.randomUUID(), ...values });
+    else DEMO_TABLES.car_manuals.push({ id: `demo-${Date.now()}`, ...values });
     return answer(null, 204);
   }
 
