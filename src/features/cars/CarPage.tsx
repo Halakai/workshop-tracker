@@ -84,11 +84,11 @@ export function CarPage() {
   return <CarView car={car.data} />;
 }
 
-type Tab = 'history' | 'money' | 'parts' | 'info';
+type Tab = 'history' | 'money' | 'parts' | 'docs';
 
 /**
  * A car, kept calm: photos, who and what it is, two or three figures, one Add button, and the rest in tabs —
- * History (services and jobs), Money (the workshop's cars) or Parts (our own cars), and Info.
+ * History (services and jobs), Money (the workshop's cars) or Parts (our own cars), and Photos & docs.
  */
 function CarView({ car }: { car: Car }) {
   useRememberVisit('car', car.id);
@@ -109,7 +109,7 @@ function CarView({ car }: { car: Car }) {
     { value: 'history', label: 'History' },
     ...(workshop && !flip ? [{ value: 'money' as const, label: 'Money' }] : []),
     ...(member ? [{ value: 'parts' as const, label: 'Parts' }] : []),
-    { value: 'info', label: 'Info' },
+    { value: 'docs', label: 'Photos & docs' },
   ];
   const [params, setParams] = useSearchParams();
   const tab = tabs.find((t) => t.value === params.get('tab'))?.value ?? tabs[0].value;
@@ -227,7 +227,8 @@ function CarView({ car }: { car: Car }) {
 
         <DetailsCard car={car} />
 
-        <div className="grid grid-cols-2 gap-2">
+        {/* a lone figure takes the whole row */}
+        <div className="grid grid-cols-2 gap-2 [&>*:only-child]:col-span-2">
           {workshop && <Fact label="Invested" value={formatMoney(car.totals.invested)} />}
           {workshop && car.totals.profit !== null && (
             <Fact
@@ -239,7 +240,10 @@ function CarView({ car }: { car: Car }) {
           {workshop && car.totals.profit === null && status === 'listed' && car.asking_price_cents != null && (
             <Fact label="Asking" value={formatMoney(car.asking_price_cents)} />
           )}
-          {workshop && car.totals.profit === null && status !== 'listed' && <Fact label="Mileage" value={mileage ? `${formatInteger(mileage.km)} km` : '—'} />}
+          {/* the mileage at purchase is in the details; here only a newer reading, from a service or a job */}
+          {workshop && car.totals.profit === null && status !== 'listed' && mileage && mileage.km > (car.mileage_km ?? -1) && (
+            <Fact label="Mileage now" value={`${formatInteger(mileage.km)} km`} />
+          )}
           {!workshop && <Fact label="Mileage" value={mileage ? `${formatInteger(mileage.km)} km` : '—'} />}
           {!workshop && <Fact label={customer ? 'Last time here' : 'Last service'} value={lastWork ? formatDate(lastWork.date) : '—'} />}
         </div>
@@ -310,7 +314,7 @@ function CarView({ car }: { car: Car }) {
           />
         )}
         {tab === 'parts' && <CarParts car={car} showAdd={false} />}
-        {tab === 'info' && <InfoTab car={car} />}
+        {tab === 'docs' && <DocsTab car={car} />}
       </PageBody>
 
       <FormDrawer open={adding} onOpenChange={setAdding} title={`Add to ${car.ref}`}>
@@ -567,7 +571,7 @@ function MoneyTab({
 }
 
 // ---------------------------------------------------------------------------
-// The car's details (right under its ID and plate), and Info: manual, photos, papers, keys and the website
+// The car's details (right under its ID and plate), and Photos & docs: manual, photos, papers, keys, website
 // ---------------------------------------------------------------------------
 function DetailsCard({ car }: { car: Car }) {
   const people = useOwnerPeople();
@@ -607,7 +611,8 @@ function DetailsCard({ car }: { car: Car }) {
           {car.engine && <Detail label="Engine" value={car.engine} />}
           {car.fuel && <Detail label="Fuel" value={car.fuel} />}
           {car.colour && <Detail label="Colour" value={car.colour} />}
-          {car.mileage_km != null && <Detail label={workshop ? 'Mileage bought' : 'Mileage (entered)'} value={`${formatInteger(car.mileage_km)} km`} />}
+          {/* other cars show their latest mileage in the figures under this panel */}
+          {workshop && car.mileage_km != null && <Detail label="Mileage bought" value={`${formatInteger(car.mileage_km)} km`} />}
           {car.sale_mileage_km != null && <Detail label="Mileage sold" value={`${formatInteger(car.sale_mileage_km)} km`} />}
           {workshop && <Detail label="Bought on" value={formatDate(car.purchase_date)} />}
           {car.sale_date && <Detail label={status === 'scrapped' ? 'Scrapped on' : 'Sold on'} value={formatDate(car.sale_date)} />}
@@ -621,7 +626,7 @@ function DetailsCard({ car }: { car: Car }) {
   );
 }
 
-function InfoTab({ car }: { car: Car }) {
+function DocsTab({ car }: { car: Car }) {
   const workshop = hasWorkshopMoney(car);
   const status = car.status as CarStatus;
 
