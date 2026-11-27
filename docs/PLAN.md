@@ -648,3 +648,19 @@ of the job.
 | **V5** | Calendar |
 
 Each step is shown in `demo.html` before it goes live.
+
+### V1 + V2 as built (27.11.2026, branch `vehicles-v1`)
+
+- **Your answers for V2:** a member's service is its parts plus the work (they add up); every kind of part gets its
+  own fields (tyres: season, size, load/speed, DOT, count, tread, on rims; wheels, battery, oil, filter, brakes,
+  wipers, bulbs, suspension, timing, clutch, plugs, fluids: see `src/domain/carParts.ts`); on workshop cars costs
+  go into a service from the service's page or by picking the service on the cost.
+- **Database:** `20261127090000_vehicle_owners.sql` (owners, privacy, `backup_table()`, old jobs → customers'
+  cars), `20261127100000_car_services.sql` (`service_types`, `car_services`, `car_parts`, `service_id` on
+  transactions and stock movements, `set_movement_service()`, stock on a member's car → allocation to the owner,
+  private car named "a private car" in stock activity, receipts as attachments `car_service` / `car_part`).
+- **App:** car page History (services, jobs, parts bought and stock outside a service, totals), Parts on our own
+  cars, `/cars/:id/services/:serviceId`, `/cars/:id/parts/new|:partId`, service picker on car costs,
+  Lists → Service types.
+- **To publish:** `npm run db:push`, `npx supabase functions deploy files --use-api` (new attachment types),
+  merge to `main`.
