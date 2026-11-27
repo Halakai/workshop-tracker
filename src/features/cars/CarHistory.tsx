@@ -32,7 +32,7 @@ interface Entry {
  * A car's history: its services and the jobs done on it, newest first, with prices; on our own cars also the
  * parts taken from workshop stock outside a service.
  */
-export function CarHistory({ car, jobs }: { car: Car; jobs: Job[] }) {
+export function CarHistory({ car, jobs, showAdd = true }: { car: Car; jobs: Job[]; showAdd?: boolean }) {
   const navigate = useNavigate();
   const services = useCarServices(car.id);
   const money = useServiceMoney(car);
@@ -98,13 +98,14 @@ export function CarHistory({ car, jobs }: { car: Car; jobs: Job[] }) {
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h2 className="font-semibold">History</h2>
+          {showAdd && <h2 className="font-semibold">History</h2>}
           {!workshop && entries.length > 0 && (
             <p className="text-xs text-muted-foreground">
               {formatMoney(totals.all)} in all · {formatMoney(totals.thisYear)} this year
             </p>
           )}
         </div>
+        {showAdd && (
         <div className="flex gap-2">
           {car.owner_kind === 'customer' && (
             <Button variant="outline" size="sm" asChild>
@@ -117,6 +118,7 @@ export function CarHistory({ car, jobs }: { car: Car; jobs: Job[] }) {
             <Plus /> Service
           </Button>
         </div>
+        )}
       </div>
       {services.isPending && <Skeleton className="h-16 rounded-xl" />}
       {services.isSuccess && entries.length === 0 && (
@@ -160,7 +162,7 @@ export function CarHistory({ car, jobs }: { car: Car; jobs: Job[] }) {
 }
 
 /** Parts bought for our own car: on the car, stored (summer/winter tyres …), and gone. */
-export function CarParts({ car }: { car: Car }) {
+export function CarParts({ car, showAdd = true }: { car: Car; showAdd?: boolean }) {
   const parts = useCarParts(car.id);
   const [showGone, setShowGone] = useState(false);
   const groups = PART_STATES.map((s) => ({ ...s, parts: (parts.data ?? []).filter((p) => p.state === s.value) }));
@@ -169,12 +171,14 @@ export function CarParts({ car }: { car: Car }) {
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-semibold">Parts</h2>
-        <Button variant="outline" size="sm" asChild>
-          <Link to={`/cars/${car.id}/parts/new`}>
-            <Plus /> Part
-          </Link>
-        </Button>
+        {showAdd && <h2 className="font-semibold">Parts</h2>}
+        {showAdd && (
+          <Button variant="outline" size="sm" asChild>
+            <Link to={`/cars/${car.id}/parts/new`}>
+              <Plus /> Part
+            </Link>
+          </Button>
+        )}
       </div>
       {parts.isPending && <Skeleton className="h-16 rounded-xl" />}
       {parts.isSuccess && parts.data.length === 0 && (
