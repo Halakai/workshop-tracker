@@ -18,6 +18,7 @@ import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { useDefaultShares } from '@/features/money/accounts';
 import { useActiveCars } from '@/features/cars/api';
+import { useProfileNames } from '@/features/auth/profiles';
 import { carTitle } from '@/domain/cars';
 import { cn } from '@/lib/utils';
 import { stockOf, unitOf, usePostMovement, type Item } from './api';
@@ -36,6 +37,7 @@ function UseForm({ item, onDone }: { item: Item; onDone: () => void }) {
   const shares = useDefaultShares();
   const post = usePostMovement();
   const cars = useActiveCars();
+  const names = useProfileNames();
   /** 'workshop' or a car id */
   const [target, setTarget] = useState<string>('workshop');
   const targetCar = cars.find((c) => c.id === target);
@@ -126,7 +128,9 @@ function UseForm({ item, onDone }: { item: Item; onDone: () => void }) {
           </div>
           <FieldDescription>
             {targetCar
-              ? `The cost is added to ${targetCar.ref}.`
+              ? targetCar.owner_kind === 'member'
+                ? `${targetCar.ref} is ${names.get(targetCar.owner_member_id ?? '') ?? 'a partner'}’s own car: the cost is charged to them.`
+                : `The cost is added to ${targetCar.ref}.`
               : 'Overhead: the cost is shared between partners by their profit shares.'}
           </FieldDescription>
         </Field>

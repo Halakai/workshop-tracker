@@ -202,6 +202,13 @@ async function folderChainFor(entityType: EntityType, entityId: string, kind: Fi
     if (!car) throw new HttpError(404, 'Car not found');
     return folderChain({ type: 'car', car, kind });
   }
+  // a service's or part's receipts and photos go in its car's folder
+  if (entityType === 'car_service' || entityType === 'car_part') {
+    const table = entityType === 'car_service' ? 'car_services' : 'car_parts';
+    const { data: row } = await admin.from(table).select('car_id').eq('id', entityId).maybeSingle();
+    if (!row) throw new HttpError(404, entityType === 'car_service' ? 'Service not found' : 'Part not found');
+    return folderChainFor('car', row.car_id, kind === 'photo' ? 'photo' : 'receipt');
+  }
   if (entityType === 'job') {
     const { data: job } = await admin
       .from('jobs')

@@ -13,9 +13,14 @@ import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { stockOf, unitOf, useItems, usePostMovement, type Item } from '@/features/inventory/api';
 import type { Car, CarStockRow } from './api';
+import { useFileCost } from './services';
+import { useOwnerPeople } from './owners';
 
-/** "Use from stock" on the car page: pick an item, enter how much. */
-export function UseOnCarDrawer({ car, open, onOpenChange }: { car: Car; open: boolean; onOpenChange: (o: boolean) => void }) {
+/**
+ * "Use from stock" on the car page: pick an item, enter how much. On a member's own car it is charged to the owner.
+ * From a service's page it goes into that service.
+ */
+export function UseOnCarDrawer({ car, open, onOpenChange, serviceId }: { car: Car; open: boolean; onOpenChange: (o: boolean) => void; serviceId?: string }) {
   const [item, setItem] = useState<Item | null>(null);
   const close = (o: boolean) => {
     onOpenChange(o);
@@ -23,7 +28,12 @@ export function UseOnCarDrawer({ car, open, onOpenChange }: { car: Car; open: bo
   };
   return (
     <FormDrawer open={open} onOpenChange={close} title={item ? `${item.name} → ${car.ref}` : `Parts from stock → ${car.ref}`}>
-      {open && (item ? <UseOnCarForm car={car} item={item} onBack={() => setItem(null)} onDone={() => close(false)} /> : <ItemPicker onPick={setItem} />)}
+      {open &&
+        (item ? (
+          <UseOnCarForm car={car} item={item} serviceId={serviceId} onBack={() => setItem(null)} onDone={() => close(false)} />
+        ) : (
+          <ItemPicker onPick={setItem} />
+        ))}
     </FormDrawer>
   );
 }
@@ -69,10 +79,13 @@ export function ItemPicker({ onPick, includeEmpty = false }: { onPick: (item: It
   );
 }
 
-function UseOnCarForm({ car, item, onBack, onDone }: { car: Car; item: Item; onBack: () => void; onDone: () => void }) {
+function UseOnCarForm({ car, item, serviceId, onBack, onDone }: { car: Car; item: Item; serviceId?: string; onBack: () => void; onDone: () => void }) {
   const unit = unitOf(item);
   const stock = stockOf(item);
   const post = usePostMovement();
+  const file = useFileCost();
+  const people = useOwnerPeople();
+  const owner = car.owner_kind === 'member' ? (people.members.find((m) => m.id === car.owner_member_id)?.display_name ?? 'the owner') : null;
   const [qtyText, setQtyText] = useState(unit.wholeOnly ? '1' : '');
   const [error, setError] = useState<string | null>(null);
   const qty = parseQuantity(qtyText, { wholeOnly: unit.wholeOnly });
@@ -82,10 +95,11 @@ function UseOnCarForm({ car, item, onBack, onDone }: { car: Car; item: Item; onB
     if (qty === null) return setError(unit.wholeOnly ? 'Whole numbers, more than 0' : 'Enter how much');
     if (qty > stock.qty) return setError(`Only ${formatQuantity(stock.qty, unit.name)} in stock`);
     try {
-      await post.mutateAsync({
+      const movementId = await post.mutateAsync({
         itemId: item.id,
         build: (fresh) => buildUseOnCar({ stock: stockOf(fresh), qty, carId: car.id, occurredOn: todayIso() }),
       });
+      if (serviceId && movementId) await file.mutateAsync({ carId: car.id, serviceId, movementId });
       toast.success(`${formatQuantity(qty, unit.name)} ${item.name} used on ${car.ref}`);
       onDone();
     } catch (e) {
@@ -113,7 +127,13 @@ function UseOnCarForm({ car, item, onBack, onDone }: { car: Car; item: Item; onB
           </Button>
         </div>
         <FieldError>{error}</FieldError>
-        {cost !== null && <FieldDescription>Adds {formatMoney(cost)} to the car (average price).</FieldDescription>}
+        {cost !== null && (
+          <FieldDescription>
+            {owner
+              ? `${formatMoney(cost)} (average price) is charged to ${owner}: their share of the workshop goes down by that much.`
+              : `Adds ${formatMoney(cost)} to the car (average price).`}
+          </FieldDescription>
+        )}
       </Field>
       <Button size="lg" disabled={post.isPending} onClick={submit}>
         {post.isPending && <Loader2 className="animate-spin" />}
@@ -224,5 +244,40 @@ function ReturnForm({
         Return to stock
       </Button>
     </FieldGroup>
+  );
+}
+
+/** Which part goes back to stock from a car: the items still on it. */
+export function PickReturnDrawer({
+  open,
+  rows,
+  onPick,
+  onClose,
+}: {
+  open: boolean;
+  rows: CarStockRow[];
+  onPick: (itemId: string) => void;
+  onClose: () => void;
+}) {
+  const onTheCar = [...new Set(rows.map((r) => r.item_id))]
+    .map((itemId) => {
+      const itemRows = rows.filter((r) => r.item_id === itemId);
+      return { itemId, item: itemRows[0].item, left: onCar(itemRows.map((r) => ({ qty: toMilli(r.qty_delta), value: r.value_delta_cents }))) };
+    })
+    .filter((x) => x.left.qty > 0);
+  return (
+    <FormDrawer open={open} onOpenChange={(o) => !o && onClose()} title="Back to stock">
+      <ul className="flex flex-col divide-y overflow-hidden rounded-xl border">
+        {onTheCar.map((x) => (
+          <li key={x.itemId}>
+            <button type="button" onClick={() => onPick(x.itemId)} className="flex min-h-14 w-full items-center gap-3 px-4 py-2 text-left active:bg-muted">
+              <span className="min-w-0 flex-1 truncate font-medium">{x.item?.name ?? 'Item'}</span>
+              <span className="text-sm font-semibold tabular-nums">{formatQuantity(x.left.qty, x.item?.unit?.name ?? '')}</span>
+            </button>
+          </li>
+        ))}
+        {onTheCar.length === 0 && <li className="px-4 py-3 text-sm text-muted-foreground">Nothing from stock is on this car.</li>}
+      </ul>
+    </FormDrawer>
   );
 }

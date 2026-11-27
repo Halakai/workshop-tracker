@@ -27,18 +27,11 @@ import {
 import { useProfiles } from '@/features/auth/profiles';
 import { useSettings, useUpdateSettings } from '@/features/settings/api';
 
+/** A whole table, read by the database for an admin: rows the admin can't see (others' private cars) included. */
 async function fetchAll(table: string) {
-  const rows: BackupRow[] = [];
-  const page = 1000;
-  for (let from = 0; ; from += page) {
-    const { data, error } = await supabase
-      .from(table as 'items')
-      .select('*')
-      .range(from, from + page - 1);
-    if (error) throw new Error(`${table}: ${error.message}`);
-    rows.push(...(data as BackupRow[]));
-    if (data.length < page) return rows;
-  }
+  const { data, error } = await supabase.rpc('backup_table', { p_table: table });
+  if (error) throw new Error(`${table}: ${error.message}`);
+  return data as unknown as BackupRow[];
 }
 
 /** Everything in the database: the users first, then every table parents before children (the database decides which). */

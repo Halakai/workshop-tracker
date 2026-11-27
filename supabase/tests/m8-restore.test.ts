@@ -33,18 +33,11 @@ async function exportAll(client: Client) {
   const { data: tables, error } = await client.rpc('backup_tables');
   if (error) throw error;
   const result: Record<string, Rows> = {};
+  // each table whole, read by the database (an admin's backup has others' private cars too)
   for (const table of ['profiles', ...tables]) {
-    const rows: Rows = [];
-    for (let from = 0; ; from += 1000) {
-      const { data, error: e } = await client
-        .from(table as 'items')
-        .select('*')
-        .range(from, from + 999);
-      if (e) throw new Error(`${table}: ${e.message}`);
-      rows.push(...(data as Rows));
-      if (data.length < 1000) break;
-    }
-    result[table] = rows;
+    const { data, error: e } = await client.rpc('backup_table', { p_table: table });
+    if (e) throw new Error(`${table}: ${e.message}`);
+    result[table] = data as unknown as Rows;
   }
   return { app: 'workshop-tracker', version: 2, exported_at: new Date().toISOString(), tables: result };
 }

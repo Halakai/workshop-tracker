@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { BookOpen, Search } from 'lucide-react';
+import { BookOpen, ChevronRight, Search } from 'lucide-react';
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -78,5 +78,27 @@ export function ManualCard({ car, to }: { car: ManualCar; to: string }) {
       </CardContent>
       <ChooseManualDrawer car={car} found={found} open={choosing} onOpenChange={setChoosing} />
     </Card>
+  );
+}
+
+/** A short line instead of the whole card: the manual's name, opening its page (search, jobs, choosing another). */
+export function ManualRow({ car, to }: { car: ManualCar; to: string }) {
+  const found = useCarManual(car);
+  const note = !found.named
+    ? 'Fill in the make and model to get it'
+    : found.loading
+      ? 'Looking…'
+      : found.slug
+        ? (found.title ?? '')
+        : 'None found: choose one, or look for videos';
+  return (
+    <Link to={to} className="flex min-h-14 items-center gap-3 rounded-xl border px-4 py-3 active:bg-muted">
+      <BookOpen className="size-5 shrink-0 text-primary" />
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium">Repair manual</span>
+        <span className="block truncate text-sm text-muted-foreground">{note}</span>
+      </span>
+      <ChevronRight className="size-5 shrink-0 text-muted-foreground" />
+    </Link>
   );
 }

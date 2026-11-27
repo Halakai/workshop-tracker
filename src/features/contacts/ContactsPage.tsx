@@ -46,6 +46,7 @@ export function ContactsPage() {
     for (const c of cars.data ?? []) {
       add(c.seller_id, `sold us ${c.ref}`);
       add(c.buyer_id, `bought ${c.ref}`);
+      add(c.owner_contact_id, `owns ${c.ref}`);
     }
     for (const j of jobs.data ?? []) add(j.customer_id, j.ref);
     return map;

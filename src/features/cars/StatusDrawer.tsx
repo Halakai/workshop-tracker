@@ -12,7 +12,10 @@ import { syncErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { useUpdateCar, type Car } from './api';
 
-/** Bought → In repair → Ready for sale → Listed → Sold (or Scrapped). "Sold" opens the sale form. */
+/**
+ * Bought → In repair → Ready for sale → Listed → Sold (or Scrapped). "Sold" opens the sale form.
+ * The workshop's own vehicles: In use → In repair → Sold (or Scrapped).
+ */
 export function StatusDrawer({
   car,
   open,
@@ -80,7 +83,9 @@ export function StatusDrawer({
         </FieldGroup>
       ) : (
         <div className="flex flex-col gap-2">
-          {CAR_STATUSES.map((s) => (
+          {CAR_STATUSES.filter((s) => car.for_sale || !['ready', 'listed'].includes(s.value))
+            .map((s) => (!car.for_sale && s.value === 'bought' ? { ...s, label: 'In use' } : s))
+            .map((s) => (
             <Button
               key={s.value}
               variant="outline"

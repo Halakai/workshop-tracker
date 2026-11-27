@@ -1,10 +1,16 @@
 import { useEffect, useMemo, useState, type ComponentProps } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Car, Loader2, RefreshCw, Trash2 } from 'lucide-react';
+import { Car, Loader2, Lock, RefreshCw, Trash2 } from 'lucide-react';
+import { CarLogo } from '@/components/CarLogo';
+import { carTitle, nextCarRef, ownerLabel, type OwnerPeople } from '@/domain/cars';
+import { compact, fold } from '@/domain/search';
+import { carKeys, insertCar, useCars, type Car as CarRecord } from '@/features/cars/api';
+import { useOwnerPeople } from '@/features/cars/owners';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { SuffixInput } from '@/components/SuffixInput';
 import { SuggestionInput } from '@/components/SuggestionInput';
@@ -35,6 +41,8 @@ const schema = z.object({
   engine: z.string().trim().max(60),
   plate: z.string().trim().max(15),
   vin: z.string().trim().max(20),
+  carId: z.string().nullable(),
+  mileage: z.string().refine((v) => !v.trim() || /^\d{1,7}$/.test(v.replace(/\s/g, '')), 'Whole kilometres'),
   description: z.string().trim().min(1, 'What needs doing?').max(2000),
   labor: z.string().refine((v) => !v.trim() || parseMoney(v) !== null, 'Enter a price (or leave empty)'),
   notes: z.string().max(2000),
@@ -44,7 +52,8 @@ type Values = z.infer<typeof schema>;
 export function JobFormPage() {
   const { id } = useParams();
   const existing = useJob(id);
-  if (id && existing.isPending) {
+  const cars = useCars();
+  if ((id && existing.isPending) || cars.isPending) {
     return (
       <>
         <PageHeader title="Edit job" back />
@@ -63,28 +72,60 @@ function JobForm({ job }: { job?: Job }) {
   const save = useSaveJob();
   const remove = useDeleteJob();
   const contacts = useContacts();
+  const cars = useCars();
+  const people = useOwnerPeople();
+  const [params] = useSearchParams();
   const [refEdited, setRefEdited] = useState(Boolean(job));
+  const [carQuery, setCarQuery] = useState('');
+  const queryClient = useQueryClient();
+
+  // a new job from a car's page starts on that car, with its owner as the customer
+  const startCar = job ? null : (cars.data?.find((c) => c.id === params.get('car')) ?? null);
+  const startCustomer = startCar ? carCustomer(startCar, people) : null;
 
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
       ref: job?.ref ?? '',
-      customer: job?.customer?.name ?? '',
-      phone: job?.customer?.phone ?? '',
-      make: job?.car_make ?? '',
-      model: job?.car_model ?? '',
-      generation: job?.car_generation ?? '',
-      year: job?.car_year ? String(job.car_year) : '',
-      engine: job?.car_engine ?? '',
-      plate: job?.car_plate ?? '',
-      vin: job?.car_vin ?? '',
+      customer: job?.customer?.name ?? startCustomer?.name ?? '',
+      phone: job?.customer?.phone ?? startCustomer?.phone ?? '',
+      ...(startCar
+        ? carFields(startCar)
+        : {
+            make: job?.car_make ?? '',
+            model: job?.car_model ?? '',
+            generation: job?.car_generation ?? '',
+            year: job?.car_year ? String(job.car_year) : '',
+            engine: job?.car_engine ?? '',
+            plate: job?.car_plate ?? '',
+            vin: job?.car_vin ?? '',
+          }),
+      carId: job?.car_id ?? startCar?.id ?? null,
+      mileage: job?.mileage_km != null ? String(job.mileage_km) : '',
       description: job?.description ?? '',
       labor: job ? centsToInput(job.labor_price_cents) : '',
       notes: job?.notes ?? '',
     },
   });
 
-  const [customer, make, model, generation, year] = form.watch(['customer', 'make', 'model', 'generation', 'year']);
+  const [customer, make, model, generation, year, carId, plate] = form.watch(['customer', 'make', 'model', 'generation', 'year', 'carId', 'plate']);
+  const pickedCar = cars.data?.find((c) => c.id === carId) ?? null;
+  // the job's car can be someone's private car that the others don't see
+  const hiddenCar = Boolean(carId && !pickedCar);
+  const customerContact = contacts.data?.find((c) => c.name.toLowerCase() === customer.trim().toLowerCase());
+  const theirCars = (cars.data ?? []).filter((c) => customerContact && c.owner_contact_id === customerContact.id);
+  const foundCars = useMemo(() => findCars(carQuery, cars.data ?? []), [carQuery, cars.data]);
+
+  const pickCar = (car: CarRecord) => {
+    form.setValue('carId', car.id);
+    for (const [name, value] of Object.entries(carFields(car))) form.setValue(name as keyof CarFields, value);
+    const owner = carCustomer(car, people);
+    if (owner && !form.getValues('customer').trim()) {
+      form.setValue('customer', owner.name);
+      if (owner.phone && !form.getValues('phone')) form.setValue('phone', owner.phone);
+    }
+    setCarQuery('');
+  };
   const suggestions = useJobSuggestions(customer);
   const catalog = useCarFieldOptions({ make, model, generation, year }, { makes: suggestions.makes, models: suggestions.models });
   const otherRefs = useMemo(() => suggestions.refs.filter((r) => r !== job?.ref), [suggestions.refs, job?.ref]);
@@ -104,17 +145,44 @@ function JobForm({ job }: { job?: Job }) {
     }
     try {
       const contact = await ensureContact(v.customer, v.phone);
+      // a picked car's details are copied onto the job (invoices and keys read them from there)
+      if (v.carId && pickedCar) v = { ...v, ...carFields(pickedCar) };
       const names = catalog.canonical(v);
-      void rememberCar({ ...names, year: v.year.trim() ? Number(v.year) : null });
+      const carYear = v.year.trim() ? Number(v.year) : null;
+      void rememberCar({ ...names, year: carYear });
+      // a car typed in by hand becomes one of the customer's cars
+      let jobCarId = v.carId;
+      if (!jobCarId && ((names.make && names.model) || v.plate.trim())) {
+        const added = await insertCar(
+          {
+            ref: nextCarRef((cars.data ?? []).map((c) => c.ref)),
+            owner_kind: 'customer',
+            owner_contact_id: contact!.id,
+            for_sale: false,
+            make: names.make || 'Unknown',
+            model: names.model || 'Unknown',
+            generation: names.generation || null,
+            year: carYear,
+            engine: names.engine || null,
+            plate: v.plate.toUpperCase() || null,
+            vin: v.vin.toUpperCase() || null,
+          },
+          true,
+        );
+        jobCarId = added.id;
+        void queryClient.invalidateQueries({ queryKey: carKeys.all });
+      }
       const saved = await save.mutateAsync({
         id: job?.id,
         values: {
           ref: v.ref.toUpperCase(),
           customer_id: contact!.id,
+          car_id: jobCarId,
+          mileage_km: v.mileage.trim() ? Number(v.mileage.replace(/\s/g, '')) : null,
           car_make: names.make || null,
           car_model: names.model || null,
           car_generation: names.generation || null,
-          car_year: v.year.trim() ? Number(v.year) : null,
+          car_year: carYear,
           car_engine: names.engine || null,
           car_plate: v.plate.toUpperCase() || null,
           car_vin: v.vin.toUpperCase() || null,
@@ -186,31 +254,89 @@ function JobForm({ job }: { job?: Job }) {
             </FieldSet>
 
             <FieldSet>
-              <FieldLegend>Their car</FieldLegend>
+              <FieldLegend>Car</FieldLegend>
               <FieldGroup>
-                {suggestions.customerCars.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {suggestions.customerCars.map((c) => (
+                {carId ? (
+                  <div className="flex items-center gap-3 rounded-xl border p-3">
+                    {pickedCar ? <CarLogo make={pickedCar.make} /> : <Lock className="size-5 text-muted-foreground" />}
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{pickedCar ? carTitle(pickedCar) : 'Someone’s private car'}</p>
+                      {pickedCar && (
+                        <p className="truncate font-mono text-xs text-muted-foreground">
+                          {[pickedCar.ref, pickedCar.plate].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+                    {!hiddenCar && (
                       <Button
-                        key={`${c.plate}${c.make}${c.model}`}
                         type="button"
-                        variant="secondary"
+                        variant="ghost"
                         size="sm"
                         onClick={() => {
-                          form.setValue('make', c.make);
-                          form.setValue('model', c.model);
-                          form.setValue('generation', c.generation);
-                          form.setValue('year', c.year);
-                          form.setValue('engine', c.engine);
-                          form.setValue('plate', c.plate);
-                          form.setValue('vin', c.vin);
+                          form.setValue('carId', null);
+                          for (const name of Object.keys(carFields(null))) form.setValue(name as keyof CarFields, '');
                         }}
                       >
-                        <Car /> {[c.make, c.model, c.plate].filter(Boolean).join(' ')}
+                        Change
                       </Button>
-                    ))}
+                    )}
                   </div>
+                ) : (
+                  <>
+                    {theirCars.length > 0 && (
+                      <Field>
+                        <FieldLabel>{customerContact?.name}’s cars</FieldLabel>
+                        <div className="flex flex-wrap gap-2">
+                          {theirCars.map((c) => (
+                            <Button key={c.id} type="button" variant="secondary" size="sm" onClick={() => pickCar(c)}>
+                              <Car /> {[c.make, c.model, c.plate].filter(Boolean).join(' ')}
+                            </Button>
+                          ))}
+                        </div>
+                      </Field>
+                    )}
+                    <Field>
+                      <FieldLabel htmlFor="job-car-find">Find a car we know</FieldLabel>
+                      <Input
+                        id="job-car-find"
+                        type="search"
+                        value={carQuery}
+                        onChange={(e) => setCarQuery(e.target.value)}
+                        placeholder="Plate, make, model or owner"
+                        autoComplete="off"
+                      />
+                      {foundCars.length > 0 && (
+                        <ul className="flex flex-col divide-y overflow-hidden rounded-xl border">
+                          {foundCars.map((c) => (
+                            <li key={c.id}>
+                              <button type="button" className="flex w-full items-center gap-3 px-3 py-2 text-left active:bg-muted" onClick={() => pickCar(c)}>
+                                <CarLogo make={c.make} className="size-7" />
+                                <span className="min-w-0 flex-1">
+                                  <span className="block truncate text-sm font-medium">{carTitle(c)}</span>
+                                  <span className="block truncate text-xs text-muted-foreground">
+                                    {[c.plate, ownerLabel(c, { ...people, contactName: c.owner_contact?.name })].filter(Boolean).join(' · ')}
+                                  </span>
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {carQuery.trim() && foundCars.length === 0 && <FieldDescription>No car like that yet: fill it in below.</FieldDescription>}
+                    </Field>
+                    <p className="text-sm text-muted-foreground">
+                      {(make.trim() && model.trim()) || plate.trim()
+                        ? 'A new car: it is added to the customer’s cars when the job is saved.'
+                        : 'Or a new car:'}
+                    </p>
+                  </>
                 )}
+              </FieldGroup>
+            </FieldSet>
+
+            {!carId && (
+            <FieldSet>
+              <FieldGroup>
                 {suggest('make', 'Make', catalog.makes, { placeholder: 'e.g. Škoda', renderOption: (o) => <MakeOption name={o} /> })}
                 {suggest('model', 'Model', catalog.models, { placeholder: 'e.g. Octavia' })}
                 <div className="grid grid-cols-2 gap-3">
@@ -241,6 +367,14 @@ function JobForm({ job }: { job?: Job }) {
                 </div>
               </FieldGroup>
             </FieldSet>
+            )}
+
+            <Field data-invalid={!!err.mileage}>
+              <FieldLabel htmlFor="job-mileage">Mileage</FieldLabel>
+              <SuffixInput id="job-mileage" suffix="km" inputMode="numeric" {...form.register('mileage')} />
+              <FieldDescription>What the car showed when it came in.</FieldDescription>
+              <FieldError errors={[err.mileage]} />
+            </Field>
 
             <Field data-invalid={!!err.description}>
               <FieldLabel htmlFor="job-desc">Work</FieldLabel>
@@ -307,4 +441,40 @@ function JobForm({ job }: { job?: Job }) {
       </PageBody>
     </>
   );
+}
+
+type CarFields = Pick<Values, 'make' | 'model' | 'generation' | 'year' | 'engine' | 'plate' | 'vin'>;
+
+/** The car's details as the job form holds them (all empty for null). */
+function carFields(car: CarRecord | null): CarFields {
+  return {
+    make: car?.make ?? '',
+    model: car?.model ?? '',
+    generation: car?.generation ?? '',
+    year: car?.year ? String(car.year) : '',
+    engine: car?.engine ?? '',
+    plate: car?.plate ?? '',
+    vin: car?.vin ?? '',
+  };
+}
+
+/** Who a job on this car is for, by default: the customer who owns it, or the member. */
+function carCustomer(car: CarRecord, people: OwnerPeople): { name: string; phone: string | null } | null {
+  if (car.owner_kind === 'customer' && car.owner_contact) return { name: car.owner_contact.name, phone: car.owner_contact.phone };
+  const member = car.owner_kind === 'member' ? people.members.find((m) => m.id === car.owner_member_id) : null;
+  return member ? { name: member.display_name, phone: null } : null;
+}
+
+/** Cars matching what was typed: plate (spaces and dashes don't matter), ID, make, model or owner. */
+function findCars(query: string, cars: CarRecord[], limit = 5): CarRecord[] {
+  const words = fold(query).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  const code = compact(query);
+  return cars
+    .filter((c) => {
+      if (code.length >= 3 && (compact(c.plate ?? '').includes(code) || compact(c.ref).includes(code))) return true;
+      const text = fold([c.make, c.model, c.generation, c.year, c.plate, c.ref, c.owner_contact?.name].filter(Boolean).join(' '));
+      return words.every((w) => text.includes(w));
+    })
+    .slice(0, limit);
 }

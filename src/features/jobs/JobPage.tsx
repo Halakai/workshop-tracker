@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { Banknote, ChevronRight, FileText, Handshake, Link2, Loader2, Package, Pencil, Phone, Plus, Undo2, Wrench } from 'lucide-react';
+import { Banknote, Car as CarIcon, ChevronRight, FileText, Handshake, Link2, Loader2, Package, Pencil, Phone, Plus, Undo2, Wrench } from 'lucide-react';
+import { useCars } from '@/features/cars/api';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { AddedBy } from '@/components/AddedBy';
 import { ConfirmButton } from '@/components/ConfirmButton';
@@ -11,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { JOB_STATUSES, type JobStatus } from '@/domain/jobs';
 import { formatMoney } from '@/domain/money';
 import { formatShare } from '@/domain/shares';
-import { formatQuantity, toMilli } from '@/domain/quantity';
+import { formatInteger, formatQuantity, toMilli } from '@/domain/quantity';
 import { formatDate } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
 import { cn } from '@/lib/utils';
@@ -81,6 +82,9 @@ function JobView({ job }: { job: Job }) {
   // the invoice drawer: just made (with the PDF), or only the link to the copy made earlier
   const [invoiceDrawer, setInvoiceDrawer] = useState<'made' | 'link' | null>(null);
   const [made, setMade] = useState<MadeInvoice | null>(null);
+  const cars = useCars();
+  // someone's private car doesn't open for the others
+  const carVisible = Boolean(job.car_id && cars.data?.some((c) => c.id === job.car_id));
   const files = useAttachments('job', job.id);
   const hasInvoiceCopy = (files.data ?? []).some((f) => f.kind === 'invoice');
   const uploadFile = useUploadAttachment();
@@ -169,8 +173,16 @@ function JobView({ job }: { job: Job }) {
             <div className="flex items-center justify-between gap-2">
               <div>
                 <p className="font-semibold">{job.customer?.name}</p>
-                {jobCar(job) && <p className="text-muted-foreground">{jobCar(job)}</p>}
+                {jobCar(job) &&
+                  (carVisible ? (
+                    <Link to={`/cars/${job.car_id}`} className="flex items-center gap-1 text-primary underline-offset-2 hover:underline">
+                      <CarIcon className="size-4" /> {jobCar(job)}
+                    </Link>
+                  ) : (
+                    <p className="text-muted-foreground">{jobCar(job)}</p>
+                  ))}
                 {job.car_engine && <p className="text-muted-foreground">{job.car_engine}</p>}
+                {job.mileage_km != null && <p className="text-muted-foreground">{formatInteger(job.mileage_km)} km</p>}
                 {job.car_vin && <p className="font-mono text-xs text-muted-foreground">{job.car_vin}</p>}
               </div>
               {job.customer?.phone && (
