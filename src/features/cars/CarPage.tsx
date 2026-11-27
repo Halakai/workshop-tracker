@@ -225,6 +225,8 @@ function CarView({ car }: { car: Car }) {
           </span>
         </div>
 
+        <DetailsCard car={car} />
+
         <div className="grid grid-cols-2 gap-2">
           {workshop && <Fact label="Invested" value={formatMoney(car.totals.invested)} />}
           {workshop && car.totals.profit !== null && (
@@ -565,9 +567,9 @@ function MoneyTab({
 }
 
 // ---------------------------------------------------------------------------
-// Info: owner, details, manual, photos, papers, keys and the website
+// The car's details (right under its ID and plate), and Info: manual, photos, papers, keys and the website
 // ---------------------------------------------------------------------------
-function InfoTab({ car }: { car: Car }) {
+function DetailsCard({ car }: { car: Car }) {
   const people = useOwnerPeople();
   const workshop = hasWorkshopMoney(car);
   const status = car.status as CarStatus;
@@ -575,49 +577,56 @@ function InfoTab({ car }: { car: Car }) {
   const mine = car.owner_kind === 'member' && car.owner_member_id === people.meId;
 
   return (
-    <>
-      <Card>
-        <CardContent className="flex flex-col gap-3 text-sm">
-          {!workshop && (
-            <>
-              {/* a customer is shown at the top of the page, with a call button */}
-              {car.owner_kind === 'member' && (
-                <div>
-                  <p className="text-muted-foreground">Owner</p>
-                  <p className="font-medium">
-                    {ownerName ?? 'A partner'}
-                    {mine && ' (you)'}
-                  </p>
-                </div>
-              )}
-              <p className="flex items-center gap-2 text-muted-foreground">
-                {car.is_private ? <Lock className="size-4 shrink-0" /> : <Eye className="size-4 shrink-0" />}
-                {car.is_private
-                  ? 'Only you can see this car.'
-                  : car.owner_kind === 'member'
-                    ? 'Everyone in the workshop sees it. What is spent on it is the owner’s, not the workshop’s.'
-                    : 'Everyone in the workshop sees it. Work on it goes through jobs.'}
-              </p>
-              <div className="border-t" />
-            </>
-          )}
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
-            {car.vin && <Detail label="VIN" value={car.vin} mono />}
-            {car.engine && <Detail label="Engine" value={car.engine} />}
-            {car.fuel && <Detail label="Fuel" value={car.fuel} />}
-            {car.colour && <Detail label="Colour" value={car.colour} />}
-            {car.mileage_km != null && <Detail label={workshop ? 'Mileage bought' : 'Mileage (entered)'} value={`${formatInteger(car.mileage_km)} km`} />}
-            {car.sale_mileage_km != null && <Detail label="Mileage sold" value={`${formatInteger(car.sale_mileage_km)} km`} />}
-            {workshop && <Detail label="Bought on" value={formatDate(car.purchase_date)} />}
-            {car.sale_date && <Detail label={status === 'scrapped' ? 'Scrapped on' : 'Sold on'} value={formatDate(car.sale_date)} />}
-          </dl>
-          {car.seller && <ContactLine label="Bought from" name={car.seller.name} phone={car.seller.phone} />}
-          {car.buyer && <ContactLine label={status === 'scrapped' ? 'Scrapyard' : 'Sold to'} name={car.buyer.name} phone={car.buyer.phone} />}
-          {car.notes && <p className="whitespace-pre-wrap">{car.notes}</p>}
-          <AddedBy by={car.created_by} at={car.created_at} />
-        </CardContent>
-      </Card>
+    <Card>
+      <CardContent className="flex flex-col gap-3 text-sm">
+        {!workshop && (
+          <>
+            {/* a customer is shown at the top of the page, with a call button */}
+            {car.owner_kind === 'member' && (
+              <div>
+                <p className="text-muted-foreground">Owner</p>
+                <p className="font-medium">
+                  {ownerName ?? 'A partner'}
+                  {mine && ' (you)'}
+                </p>
+              </div>
+            )}
+            <p className="flex items-center gap-2 text-muted-foreground">
+              {car.is_private ? <Lock className="size-4 shrink-0" /> : <Eye className="size-4 shrink-0" />}
+              {car.is_private
+                ? 'Only you can see this car.'
+                : car.owner_kind === 'member'
+                  ? 'Everyone in the workshop sees it. What is spent on it is the owner’s, not the workshop’s.'
+                  : 'Everyone in the workshop sees it. Work on it goes through jobs.'}
+            </p>
+            <div className="border-t" />
+          </>
+        )}
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+          {car.vin && <Detail label="VIN" value={car.vin} mono />}
+          {car.engine && <Detail label="Engine" value={car.engine} />}
+          {car.fuel && <Detail label="Fuel" value={car.fuel} />}
+          {car.colour && <Detail label="Colour" value={car.colour} />}
+          {car.mileage_km != null && <Detail label={workshop ? 'Mileage bought' : 'Mileage (entered)'} value={`${formatInteger(car.mileage_km)} km`} />}
+          {car.sale_mileage_km != null && <Detail label="Mileage sold" value={`${formatInteger(car.sale_mileage_km)} km`} />}
+          {workshop && <Detail label="Bought on" value={formatDate(car.purchase_date)} />}
+          {car.sale_date && <Detail label={status === 'scrapped' ? 'Scrapped on' : 'Sold on'} value={formatDate(car.sale_date)} />}
+        </dl>
+        {car.seller && <ContactLine label="Bought from" name={car.seller.name} phone={car.seller.phone} />}
+        {car.buyer && <ContactLine label={status === 'scrapped' ? 'Scrapyard' : 'Sold to'} name={car.buyer.name} phone={car.buyer.phone} />}
+        {car.notes && <p className="whitespace-pre-wrap">{car.notes}</p>}
+        <AddedBy by={car.created_by} at={car.created_at} />
+      </CardContent>
+    </Card>
+  );
+}
 
+function InfoTab({ car }: { car: Car }) {
+  const workshop = hasWorkshopMoney(car);
+  const status = car.status as CarStatus;
+
+  return (
+    <>
       <ManualRow car={car} to={`/cars/${car.id}/manual`} />
       <PhotoSection entityType="car" entityId={car.id} albums />
       <AttachmentStrip entityType="car" entityId={car.id} kind="receipt" title="Papers & receipts" allowPdf />
