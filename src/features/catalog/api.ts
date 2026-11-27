@@ -12,7 +12,7 @@ export type ExpenseCategory = Tables<'expense_categories'>;
 export type ToolCategory = Tables<'tool_categories'>;
 export type PhotoAlbum = Tables<'photo_albums'>;
 
-export type ListTable = 'item_categories' | 'units' | 'brands' | 'expense_categories' | 'tool_categories' | 'photo_albums';
+export type ListTable = 'item_categories' | 'units' | 'brands' | 'expense_categories' | 'tool_categories' | 'photo_albums' | 'service_types';
 
 export const catalogKeys: Record<ListTable, readonly string[]> = {
   item_categories: ['item_categories'],
@@ -21,6 +21,7 @@ export const catalogKeys: Record<ListTable, readonly string[]> = {
   expense_categories: ['expense_categories'],
   tool_categories: ['tool_categories'],
   photo_albums: ['photo_albums'],
+  service_types: ['service_types'],
 };
 
 export function useCategories() {
@@ -88,6 +89,18 @@ export function useAddToolCategory() {
   return useMutation({
     mutationFn: async (values: TablesInsert<'tool_categories'>) => {
       const { data, error } = await supabase.from('tool_categories').insert(values).select().single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: invalidate,
+  });
+}
+
+export function useAddServiceType() {
+  const invalidate = useInvalidate('service_types');
+  return useMutation({
+    mutationFn: async (values: TablesInsert<'service_types'>) => {
+      const { data, error } = await supabase.from('service_types').insert(values).select().single();
       if (error) throw error;
       return data;
     },

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Banknote, Car as CarIcon, ChevronRight, ExternalLink, Eye, Handshake, Lock, Package, Pencil, Phone, Plus, Receipt, Undo2, Wrench } from 'lucide-react';
+import { Banknote, Car as CarIcon, ChevronRight, ExternalLink, Eye, Handshake, Lock, Package, Pencil, Phone, Receipt, Undo2, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { syncErrorMessage } from '@/lib/errors';
@@ -18,8 +18,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { carTitle, hasWorkshopMoney, isClosed, type CarStatus } from '@/domain/cars';
-import { jobStatusLabel, type JobStatus } from '@/domain/jobs';
-import { jobDate, useJobsByCar, type Job } from '@/features/jobs/api';
+
+import { jobDate, useJobsByCar } from '@/features/jobs/api';
 import { OwnerBadge, useOwnerPeople } from './owners';
 import { formatMoney } from '@/domain/money';
 import { formatPercentBp, formatShare } from '@/domain/shares';
@@ -34,7 +34,10 @@ import { SaleDrawer } from './SaleDrawer';
 import { StatusDrawer } from './StatusDrawer';
 import { useRememberVisit } from '@/features/home/recent';
 import { CarLogo } from '@/components/CarLogo';
-import { ReturnToStockDrawer, UseOnCarDrawer } from './CarStockDrawers';
+import { PickReturnDrawer, ReturnToStockDrawer, UseOnCarDrawer } from './CarStockDrawers';
+import { CarHistory, CarParts } from './CarHistory';
+import { serviceTitle, useCarServices, type CarService } from './services';
+import { latestMileage } from '@/domain/carServices';
 
 export function CarPage() {
   const { id } = useParams();
@@ -67,7 +70,15 @@ function OwnedCarView({ car }: { car: Car }) {
   useRememberVisit('car', car.id);
   const people = useOwnerPeople();
   const jobs = useJobsByCar().get(car.id) ?? [];
-  const mileage = latestMileage(car, jobs);
+  const services = useCarServices(car.id);
+  const [usingStock, setUsingStock] = useState(false);
+  const [returning, setReturning] = useState<string | null>(null);
+  const stock = useCarStock(car.owner_kind === 'member' ? car.id : undefined);
+  const mileage = latestMileage([
+    { km: car.mileage_km, date: null },
+    ...jobs.map((j) => ({ km: j.mileage_km, date: jobDate(j) })),
+    ...(services.data ?? []).map((s) => ({ km: s.mileage_km, date: s.performed_on })),
+  ]);
   const ownerName = car.owner_kind === 'member' ? people.members.find((m) => m.id === car.owner_member_id)?.display_name : car.owner_contact?.name;
   const mine = car.owner_kind === 'member' && car.owner_member_id === people.meId;
 
@@ -129,7 +140,16 @@ function OwnedCarView({ car }: { car: Car }) {
           </CardContent>
         </Card>
 
-        <CarJobs car={car} jobs={jobs} />
+        <CarHistory car={car} jobs={jobs} />
+        {car.owner_kind === 'member' && (
+          <>
+            <div className="grid grid-cols-2 gap-2">
+              <QuickAction icon={Package} label="From workshop stock" onClick={() => setUsingStock(true)} />
+              <QuickAction icon={Undo2} label="Back to stock" onClick={() => setReturning('pick')} />
+            </div>
+            <CarParts car={car} />
+          </>
+        )}
 
         <ManualCard car={car} to={`/cars/${car.id}/manual`} />
 
@@ -156,59 +176,14 @@ function OwnedCarView({ car }: { car: Car }) {
         {car.owner_kind === 'customer' && <KeysCard target={{ carId: car.id }} subject={car.ref} />}
         <AttachmentStrip entityType="car" entityId={car.id} kind="receipt" title="Papers & receipts" allowPdf />
       </PageBody>
-    </>
-  );
-}
-
-/** The highest mileage known: from the car itself or from a job done on it. */
-function latestMileage(car: Car, jobs: Job[]): { km: number; date: string | null } | null {
-  let best: { km: number; date: string | null } | null = car.mileage_km != null ? { km: car.mileage_km, date: null } : null;
-  for (const job of jobs) {
-    if (job.mileage_km != null && (!best || job.mileage_km > best.km)) best = { km: job.mileage_km, date: jobDate(job) };
-  }
-  return best;
-}
-
-/** Jobs done on a car, newest first, with a button for a new one. */
-function CarJobs({ car, jobs }: { car: Car; jobs: Job[] }) {
-  // our own cars get their services in V2; jobs on them are rare
-  if (car.owner_kind !== 'customer' && jobs.length === 0) return null;
-  return (
-    <section className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
-        <h2 className="font-semibold">Jobs</h2>
-        <Button variant="outline" size="sm" asChild>
-          <Link to={`/jobs/new?car=${car.id}`}>
-            <Plus /> Job
-          </Link>
-        </Button>
-      </div>
-      {jobs.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No jobs on this car yet.</p>
-      ) : (
-        <ul className="flex flex-col divide-y overflow-hidden rounded-xl border">
-          {jobs.map((job) => (
-            <li key={job.id}>
-              <Link to={`/jobs/${job.id}`} className="flex items-start gap-3 px-4 py-3 active:bg-muted">
-                <Wrench className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <span className="truncate font-medium">{job.description}</span>
-                    <span className="font-semibold tabular-nums">{formatMoney(job.totals.due)}</span>
-                  </div>
-                  <p className="truncate text-sm text-muted-foreground">
-                    {[formatDate(jobDate(job)), job.ref, jobStatusLabel(job.status as JobStatus), job.mileage_km != null && `${formatInteger(job.mileage_km)} km`]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </p>
-                </div>
-                <ChevronRight className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
-              </Link>
-            </li>
-          ))}
-        </ul>
+      {car.owner_kind === 'member' && (
+        <>
+          <UseOnCarDrawer car={car} open={usingStock} onOpenChange={setUsingStock} />
+          <PickReturnDrawer open={returning === 'pick'} rows={stock.data ?? []} onPick={setReturning} onClose={() => setReturning(null)} />
+          <ReturnToStockDrawer car={car} itemId={returning === 'pick' ? null : returning} rows={stock.data ?? []} onClose={() => setReturning(null)} />
+        </>
       )}
-    </section>
+    </>
   );
 }
 
@@ -234,6 +209,8 @@ function CarView({ car }: { car: Car }) {
   const profiles = useProfiles();
   const partnerName = (id: string) => profiles.data?.find((p) => p.id === id)?.display_name ?? 'partner';
   const jobs = useJobsByCar().get(car.id) ?? [];
+  const carServices = useCarServices(car.id);
+  const serviceOf = (id: string | null) => (id ? carServices.data?.find((s) => s.id === id) : undefined);
 
   const status = car.status as CarStatus;
   const settled = Boolean(car.settled_at);
@@ -350,7 +327,7 @@ function CarView({ car }: { car: Car }) {
         )}
 
         <ManualCard car={car} to={`/cars/${car.id}/manual`} />
-        <CarJobs car={car} jobs={jobs} />
+        <CarHistory car={car} jobs={jobs} />
 
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold">Costs</h2>
@@ -365,10 +342,11 @@ function CarView({ car }: { car: Car }) {
                   key={e.row.id}
                   row={e.row}
                   payer={payerLabel(e.row.from_account_id)}
+                  service={serviceOf(e.row.service_id)}
                   onOpen={locked ? undefined : () => setMoneyDrawer({ kind: moneyKind(e.row), row: e.row })}
                 />
               ) : (
-                <StockRow key={e.row.id} row={e.row} onReturn={locked ? undefined : () => setReturning(e.row.item_id)} />
+                <StockRow key={e.row.id} row={e.row} service={serviceOf(e.row.service_id)} onReturn={locked ? undefined : () => setReturning(e.row.item_id)} />
               ),
             )}
           </ul>
@@ -553,7 +531,7 @@ function ContactLine({ label, name, phone }: { label: string; name: string; phon
   );
 }
 
-function MoneyRow({ row, payer, onOpen }: { row: CarMoneyRow; payer: string; onOpen?: () => void }) {
+function MoneyRow({ row, payer, service, onOpen }: { row: CarMoneyRow; payer: string; service?: CarService; onOpen?: () => void }) {
   const title =
     row.category === 'car_purchase'
       ? 'Purchase'
@@ -561,7 +539,9 @@ function MoneyRow({ row, payer, onOpen }: { row: CarMoneyRow; payer: string; onO
         ? (row.description ?? 'Part')
         : [row.expense_category?.name, row.description].filter(Boolean).join(': ');
   const Icon = row.category === 'car_purchase' ? Banknote : row.category === 'car_part' ? Wrench : Receipt;
-  const meta = [formatDate(row.occurred_on), `paid by ${payer}`, row.category !== 'car_purchase' && row.counterparty].filter(Boolean).join(' · ');
+  const meta = [formatDate(row.occurred_on), `paid by ${payer}`, row.category !== 'car_purchase' && row.counterparty, service && `in ${serviceTitle(service)}`]
+    .filter(Boolean)
+    .join(' · ');
   const content = (
     <>
       <Icon className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
@@ -589,7 +569,7 @@ function MoneyRow({ row, payer, onOpen }: { row: CarMoneyRow; payer: string; onO
   );
 }
 
-function StockRow({ row, onReturn }: { row: CarStockRow; onReturn?: () => void }) {
+function StockRow({ row, service, onReturn }: { row: CarStockRow; service?: CarService; onReturn?: () => void }) {
   const qty = toMilli(row.qty_delta);
   const isReturn = row.type === 'return';
   const unitName = row.item?.unit?.name ?? '';
@@ -608,6 +588,7 @@ function StockRow({ row, onReturn }: { row: CarStockRow; onReturn?: () => void }
         <p className="truncate text-sm text-muted-foreground">
           {formatDate(row.occurred_on)} · {isReturn ? 'returned' : 'from stock'} {formatQuantity(Math.abs(qty), unitName)}
           {row.item?.part_number && ` · ${row.item.part_number}`}
+          {service && ` · in ${serviceTitle(service)}`}
         </p>
         <div className="flex items-center justify-between">
           <AddedBy by={row.created_by} at={row.created_at} />

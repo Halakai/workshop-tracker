@@ -87,7 +87,8 @@ create table public.car_parts (
   service_id uuid references public.car_services (id) on delete set null,
   -- src/domain/carParts.ts lists the kinds and their extra fields (kept in details)
   kind text not null default 'other' check (kind in (
-    'tyres', 'wheels', 'battery', 'oil', 'filter', 'brakes', 'wipers', 'bulbs', 'suspension', 'timing', 'plugs', 'coolant', 'other'
+    'tyres', 'wheels', 'battery', 'oil', 'filter', 'brakes', 'wipers', 'bulbs', 'suspension', 'timing', 'clutch', 'plugs', 'coolant',
+    'other'
   )),
   name text not null check (char_length(btrim(name)) between 1 and 120),
   brand_id uuid references public.brands (id),

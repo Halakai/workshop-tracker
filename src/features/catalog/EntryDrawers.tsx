@@ -15,6 +15,7 @@ import {
   useAddCategory,
   useAddExpenseCategory,
   useAddPhotoAlbum,
+  useAddServiceType,
   useAddToolCategory,
   useAddUnit,
   useCategories,
@@ -236,6 +237,41 @@ export function AddToolCategoryDrawer({ open, onOpenChange }: { open: boolean; o
   );
 }
 
+export function AddServiceTypeDrawer({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+  const add = useAddServiceType();
+  const form = useForm({ resolver: zodResolver(expenseCategorySchema), defaultValues: { name: '' } });
+  const close = (next: boolean) => {
+    onOpenChange(next);
+    if (!next) form.reset();
+  };
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      const type = await add.mutateAsync({ ...values, sort_order: 80 });
+      toast.success(`Service type ${type.name} added`);
+      close(false);
+    } catch (e) {
+      toast.error(duplicateMessage(e, 'service type'));
+    }
+  });
+  return (
+    <FormDrawer open={open} onOpenChange={close} title="New service type">
+      <form onSubmit={onSubmit} noValidate>
+        <FieldGroup>
+          <Field data-invalid={!!form.formState.errors.name}>
+            <FieldLabel htmlFor="servicetype-name">Name</FieldLabel>
+            <Input id="servicetype-name" placeholder="e.g. Clutch, Air conditioning" autoFocus {...form.register('name')} />
+            <FieldError errors={[form.formState.errors.name]} />
+          </Field>
+          <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting && <Loader2 className="animate-spin" />}
+            Add service type
+          </Button>
+        </FieldGroup>
+      </form>
+    </FormDrawer>
+  );
+}
+
 /** A new photo album (Before, After, Damage …); the new album is passed to onAdded. */
 export function AddPhotoAlbumDrawer({
   open,
@@ -304,7 +340,8 @@ export type EditTarget =
   | { table: 'brands'; entry: Brand; usedBy: number }
   | { table: 'expense_categories'; entry: ExpenseCategory; usedBy: number }
   | { table: 'tool_categories'; entry: ToolCategory; usedBy: number }
-  | { table: 'photo_albums'; entry: PhotoAlbum; usedBy: number };
+  | { table: 'photo_albums'; entry: PhotoAlbum; usedBy: number }
+  | { table: 'service_types'; entry: { id: string; name: string }; usedBy: number };
 
 const TITLES: Record<ListTable, string> = {
   item_categories: 'category',
@@ -313,6 +350,7 @@ const TITLES: Record<ListTable, string> = {
   expense_categories: 'cost type',
   tool_categories: 'tool category',
   photo_albums: 'photo album',
+  service_types: 'service type',
 };
 
 const editSchema = z.object({

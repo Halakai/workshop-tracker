@@ -21,7 +21,17 @@ import {
   type Brand,
   type Supplier,
 } from './api';
-import { AddCategoryDrawer, AddExpenseCategoryDrawer, AddPhotoAlbumDrawer, AddToolCategoryDrawer, AddUnitDrawer, EditEntryDrawer, type EditTarget } from './EntryDrawers';
+import {
+  AddCategoryDrawer,
+  AddExpenseCategoryDrawer,
+  AddPhotoAlbumDrawer,
+  AddServiceTypeDrawer,
+  AddToolCategoryDrawer,
+  AddUnitDrawer,
+  EditEntryDrawer,
+  type EditTarget,
+} from './EntryDrawers';
+import { useServiceTypes } from '@/features/cars/services';
 import { AddBrandDrawer } from './AddBrandDrawer';
 import { AddSupplierDrawer, EditSupplierDrawer } from './SupplierDrawers';
 
@@ -57,9 +67,20 @@ export function ListsPage() {
       return map;
     },
   });
+  const serviceTypes = useServiceTypes();
+  const serviceUsage = useQuery({
+    queryKey: ['service-type-usage'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('car_services').select('service_type_id').not('service_type_id', 'is', null);
+      if (error) throw error;
+      const map = new Map<string, number>();
+      for (const r of data) map.set(r.service_type_id!, (map.get(r.service_type_id!) ?? 0) + 1);
+      return map;
+    },
+  });
   const suppliers = useSupplierList();
   const sortedSuppliers = useMemo(() => [...(suppliers.data ?? [])].sort((a, b) => a.name.localeCompare(b.name)), [suppliers.data]);
-  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'supplier' | 'cost' | 'tool-category' | 'album' | null>(null);
+  const [adding, setAdding] = useState<'category' | 'unit' | 'brand' | 'supplier' | 'cost' | 'tool-category' | 'album' | 'service-type' | null>(null);
   const [editing, setEditing] = useState<EditTarget | null>(null);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
 
@@ -174,6 +195,21 @@ export function ListsPage() {
           })}
         </Section>
 
+        <Section title="Service types" onAdd={() => setAdding('service-type')} loading={serviceTypes.isPending}>
+          {serviceTypes.data?.map((t) => {
+            const used = serviceUsage.data?.get(t.id) ?? 0;
+            return (
+              <Row
+                key={t.id}
+                title={t.name}
+                usedBy={used}
+                usedLabel="service"
+                onEdit={isAdmin ? () => setEditing({ table: 'service_types', entry: t, usedBy: used }) : undefined}
+              />
+            );
+          })}
+        </Section>
+
         <Section title="Cost types" onAdd={() => setAdding('cost')} loading={expenseCategories.isPending}>
           {expenseCategories.data?.map((c) => {
             const used = expenseUsage.data?.get(c.id) ?? 0;
@@ -198,6 +234,7 @@ export function ListsPage() {
       <EditSupplierDrawer supplier={editingSupplier} onClose={() => setEditingSupplier(null)} />
       <AddToolCategoryDrawer open={adding === 'tool-category'} onOpenChange={(o) => !o && setAdding(null)} />
       <AddPhotoAlbumDrawer open={adding === 'album'} onOpenChange={(o) => !o && setAdding(null)} />
+      <AddServiceTypeDrawer open={adding === 'service-type'} onOpenChange={(o) => !o && setAdding(null)} />
       <EditEntryDrawer target={editing} onClose={() => setEditing(null)} />
     </>
   );

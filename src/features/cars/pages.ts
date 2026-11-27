@@ -2,3 +2,5 @@
 export { CarsListPage } from './CarsListPage';
 export { CarPage } from './CarPage';
 export { CarFormPage } from './CarFormPage';
+export { ServicePage } from './ServicePage';
+export { PartFormPage } from './PartFormPage';

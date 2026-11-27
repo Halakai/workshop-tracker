@@ -21,6 +21,8 @@ const ToolFormPage = lazy(() => tools().then((m) => ({ default: m.ToolFormPage }
 const CarsListPage = lazy(() => cars().then((m) => ({ default: m.CarsListPage })));
 const CarPage = lazy(() => cars().then((m) => ({ default: m.CarPage })));
 const CarFormPage = lazy(() => cars().then((m) => ({ default: m.CarFormPage })));
+const ServicePage = lazy(() => cars().then((m) => ({ default: m.ServicePage })));
+const PartFormPage = lazy(() => cars().then((m) => ({ default: m.PartFormPage })));
 const AccountPage = lazy(() => import('@/features/account/AccountPage').then((m) => ({ default: m.AccountPage })));
 const carLists = () => import('@/features/catalog/CarCatalogPages');
 const CarMakesPage = lazy(() => carLists().then((m) => ({ default: m.CarMakesPage })));
@@ -85,6 +87,9 @@ export const router = createHashRouter([
           { path: 'cars/:id/settle', element: <SettlePage /> },
           { path: 'cars/:id/website', element: <CarWebsitePage /> },
           { path: 'cars/:id/manual', element: <CarManualPage /> },
+          { path: 'cars/:id/services/:serviceId', element: <ServicePage /> },
+          { path: 'cars/:id/parts/new', element: <PartFormPage /> },
+          { path: 'cars/:id/parts/:partId', element: <PartFormPage /> },
           { path: 'money', element: <MoneyPage /> },
           { path: 'money/overview', element: <OverviewPage /> },
           { path: 'partners', element: <PartnersPage /> },

@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types';
-import { carTotals, hasWorkshopMoney, isClosed, nextCarRef, type CarMoney, type CarStatus } from '@/domain/cars';
+import { carTotals, isClosed, nextCarRef, type CarMoney, type CarStatus } from '@/domain/cars';
 
 export type CarRow = Tables<'cars'>;
 export type CarTransaction = Tables<'transactions'>;
@@ -47,11 +47,14 @@ export function useCar(id: string | undefined) {
   return { ...cars, data: cars.data?.find((c) => c.id === id) };
 }
 
-/** The workshop's cars that can still take parts and costs: not sold/scrapped and not settled. */
+/**
+ * Cars that can take parts from stock: the workshop's (not sold/scrapped, not settled) and our own (charged to the
+ * owner). Customers' cars get parts through jobs.
+ */
 export function useActiveCars() {
   const cars = useCars();
   return useMemo(
-    () => (cars.data ?? []).filter((c) => hasWorkshopMoney(c) && !isClosed(c.status as CarStatus) && !c.settled_at),
+    () => (cars.data ?? []).filter((c) => c.owner_kind !== 'customer' && !isClosed(c.status as CarStatus) && !c.settled_at),
     [cars.data],
   );
 }

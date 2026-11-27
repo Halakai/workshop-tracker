@@ -666,6 +666,198 @@ export type Database = {
           },
         ];
       };
+      car_parts: {
+        Row: {
+          bought_from: string | null;
+          bought_on: string | null;
+          brand_id: string | null;
+          car_id: string;
+          created_at: string;
+          created_by: string | null;
+          details: NonNullable<Json>;
+          fitted_km: number | null;
+          id: string;
+          kind: string;
+          name: string;
+          notes: string | null;
+          part_number: string | null;
+          price_cents: number | null;
+          service_id: string | null;
+          state: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          bought_from?: string | null;
+          bought_on?: string | null;
+          brand_id?: string | null;
+          car_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          details?: NonNullable<Json>;
+          fitted_km?: number | null;
+          id?: string;
+          kind?: string;
+          name: string;
+          notes?: string | null;
+          part_number?: string | null;
+          price_cents?: number | null;
+          service_id?: string | null;
+          state?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          bought_from?: string | null;
+          bought_on?: string | null;
+          brand_id?: string | null;
+          car_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          details?: NonNullable<Json>;
+          fitted_km?: number | null;
+          id?: string;
+          kind?: string;
+          name?: string;
+          notes?: string | null;
+          part_number?: string | null;
+          price_cents?: number | null;
+          service_id?: string | null;
+          state?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_parts_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_parts_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "car_parts_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_parts_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_parts_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "car_services";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_parts_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      car_services: {
+        Row: {
+          car_id: string;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          garage: string | null;
+          id: string;
+          labor_cents: number | null;
+          mileage_km: number | null;
+          notes: string | null;
+          performed_on: string;
+          service_type_id: string | null;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          car_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          garage?: string | null;
+          id?: string;
+          labor_cents?: number | null;
+          mileage_km?: number | null;
+          notes?: string | null;
+          performed_on?: string;
+          service_type_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          car_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          garage?: string | null;
+          id?: string;
+          labor_cents?: number | null;
+          mileage_km?: number | null;
+          notes?: string | null;
+          performed_on?: string;
+          service_type_id?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "car_services_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "car_services_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_services_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_services_service_type_id_fkey";
+            columns: ["service_type_id"];
+            isOneToOne: false;
+            referencedRelation: "service_types";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "car_services_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       car_shares: {
         Row: {
           car_id: string;
@@ -1540,6 +1732,52 @@ export type Database = {
           },
         ];
       };
+      service_types: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          name: string;
+          sort_order: number;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          name?: string;
+          sort_order?: number;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "service_types_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "service_types_updated_by_fkey";
+            columns: ["updated_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       settings: {
         Row: {
           address: string | null;
@@ -1709,6 +1947,7 @@ export type Database = {
           qty_delta: number;
           reason: string | null;
           seq: number;
+          service_id: string | null;
           supplier: string | null;
           transaction_id: string | null;
           type: Database["public"]["Enums"]["movement_type"];
@@ -1729,6 +1968,7 @@ export type Database = {
           qty_delta: number;
           reason?: string | null;
           seq?: never;
+          service_id?: string | null;
           supplier?: string | null;
           transaction_id?: string | null;
           type: Database["public"]["Enums"]["movement_type"];
@@ -1748,6 +1988,7 @@ export type Database = {
           qty_delta?: number;
           reason?: string | null;
           seq?: never;
+          service_id?: string | null;
           supplier?: string | null;
           transaction_id?: string | null;
           type?: Database["public"]["Enums"]["movement_type"];
@@ -1796,6 +2037,13 @@ export type Database = {
             columns: ["job_id"];
             isOneToOne: false;
             referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "stock_movements_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "car_services";
             referencedColumns: ["id"];
           },
           {
@@ -2047,6 +2295,7 @@ export type Database = {
           job_id: string | null;
           kind: Database["public"]["Enums"]["txn_kind"];
           occurred_on: string;
+          service_id: string | null;
           settlement_id: string | null;
           to_account_id: string;
           updated_at: string;
@@ -2068,6 +2317,7 @@ export type Database = {
           job_id?: string | null;
           kind: Database["public"]["Enums"]["txn_kind"];
           occurred_on?: string;
+          service_id?: string | null;
           settlement_id?: string | null;
           to_account_id: string;
           updated_at?: string;
@@ -2088,6 +2338,7 @@ export type Database = {
           job_id?: string | null;
           kind?: Database["public"]["Enums"]["txn_kind"];
           occurred_on?: string;
+          service_id?: string | null;
           settlement_id?: string | null;
           to_account_id?: string;
           updated_at?: string;
@@ -2141,6 +2392,13 @@ export type Database = {
             columns: ["job_id"];
             isOneToOne: false;
             referencedRelation: "jobs";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "transactions_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "car_services";
             referencedColumns: ["id"];
           },
           {
@@ -2886,6 +3144,10 @@ export type Database = {
       };
       set_job_shares: {
         Args: { p_job_id: string; p_shares: Json };
+        Returns: undefined;
+      };
+      set_movement_service: {
+        Args: { p_movement_id: string; p_service_id: string };
         Returns: undefined;
       };
       set_photo_on_website: {

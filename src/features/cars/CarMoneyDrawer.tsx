@@ -1,4 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { formatDate } from '@/domain/dates';
+import { serviceTitle, useCarServices } from './services';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,7 +15,7 @@ import { ConfirmButton } from '@/components/ConfirmButton';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { centsToInput, parseMoney } from '@/domain/money';
 import { todayIso } from '@/domain/dates';
 import { syncErrorMessage } from '@/lib/errors';
@@ -41,25 +43,30 @@ export function CarMoneyDrawer({
   car,
   kind,
   row,
+  serviceId,
   onClose,
 }: {
   car: Car;
   kind: CarMoneyKind | null;
   row?: CarMoneyRow;
+  /** a new entry goes into this service (from the service's page) */
+  serviceId?: string;
   onClose: () => void;
 }) {
   return (
     <FormDrawer open={kind !== null} onOpenChange={(o) => !o && onClose()} title={kind ? TITLES[kind][row ? 'edit' : 'add'] : ''}>
-      {kind && <CarMoneyForm key={row?.id ?? kind} car={car} kind={kind} row={row} onDone={onClose} />}
+      {kind && <CarMoneyForm key={row?.id ?? kind} car={car} kind={kind} row={row} serviceId={serviceId} onDone={onClose} />}
     </FormDrawer>
   );
 }
 
-function CarMoneyForm({ car, kind, row, onDone }: { car: Car; kind: CarMoneyKind; row?: CarMoneyRow; onDone: () => void }) {
+function CarMoneyForm({ car, kind, row, serviceId, onDone }: { car: Car; kind: CarMoneyKind; row?: CarMoneyRow; serviceId?: string; onDone: () => void }) {
   const payers = usePayerOptions();
   const accounts = useAccounts();
   const categories = useExpenseCategories();
   const suppliers = useSuppliers();
+  const services = useCarServices(kind === 'purchase' ? undefined : car.id);
+  const [service, setService] = useState<string>(row ? (row.service_id ?? '') : (serviceId ?? ''));
   const save = useSaveCarTransaction();
   const remove = useDeleteCarTransaction();
   const lastPayer = getLastPayer();
@@ -113,6 +120,7 @@ function CarMoneyForm({ car, kind, row, onDone }: { car: Car; kind: CarMoneyKind
           description: kind === 'purchase' ? 'Purchase' : v.description || null,
           counterparty: v.counterparty || null,
           expense_category_id: kind === 'cost' ? v.categoryId : null,
+          service_id: kind === 'purchase' ? null : service || null,
         },
       });
       setLastPayer(v.paidBy!);
@@ -193,6 +201,19 @@ function CarMoneyForm({ car, kind, row, onDone }: { car: Car; kind: CarMoneyKind
             render={({ field }) => <DateField id="money-date" value={field.value} onChange={field.onChange} />}
           />
         </Field>
+        {kind !== 'purchase' && (services.data ?? []).length > 0 && (
+          <Field>
+            <FieldLabel>Part of a service</FieldLabel>
+            <ToggleGroup type="single" variant="outline" spacing={2} className="flex flex-wrap" value={service} onValueChange={(v) => setService(v)}>
+              {(services.data ?? []).slice(0, 6).map((s) => (
+                <ToggleGroupItem key={s.id} value={s.id} className="h-auto py-1.5 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                  {serviceTitle(s)} · {formatDate(s.performed_on)}
+                </ToggleGroupItem>
+              ))}
+            </ToggleGroup>
+            <FieldDescription>{service ? 'Tap it again to keep the cost outside a service.' : 'Optional: tap the service this cost belongs to.'}</FieldDescription>
+          </Field>
+        )}
         {row && <AttachmentStrip entityType="transaction" entityId={row.id} kind="receipt" title="Receipt" allowPdf label={row.description ?? undefined} />}
         <Button type="submit" size="lg" disabled={form.formState.isSubmitting}>
           {form.formState.isSubmitting && <Loader2 className="animate-spin" />}

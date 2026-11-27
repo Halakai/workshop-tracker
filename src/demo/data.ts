@@ -168,11 +168,71 @@ const tool = (name: string, code: string, values: Row = {}): Row => ({
 });
 const tools: Row[] = [tool('Torque wrench 40–200 Nm', 'T-001'), tool('PD locking tool set T10050', 'T-002', { lent_to: 'Marko', lent_on: day(12) }), tool('Spring compressor', 'T-003')];
 
+// services and parts (V2): your private Astra, the workshop's van, Ana's Passat
+const service_types: Row[] = ['Small service', 'Big service', 'Timing belt', 'Tyres', 'Brakes', 'Technical inspection', 'Repair', 'Other'].map((name, i) => ({
+  id: id(),
+  name,
+  sort_order: (i + 1) * 10,
+  ...stamps(200),
+}));
+const typeOf = (name: string) => {
+  const t = service_types.find((s) => s.name === name)!;
+  return { service_type_id: t.id, type: { id: t.id, name } };
+};
+const service = (car: Row, ago: number, values: Row): Row => ({
+  id: id(),
+  car_id: car.id,
+  performed_on: day(ago),
+  mileage_km: null,
+  service_type_id: null,
+  type: null,
+  description: null,
+  garage: null,
+  labor_cents: null,
+  notes: null,
+  ...stamps(ago),
+  ...values,
+});
+const [astra, van, passat] = [cars[4], cars[3], cars[6]];
+const car_services: Row[] = [
+  service(astra, 25, { id: '00000000-0000-4000-9000-000000000001', mileage_km: 241800, ...typeOf('Small service'), description: 'Oil, oil and air filter' }),
+  service(astra, 30, { mileage_km: 241500, ...typeOf('Tyres'), description: 'Winter tyres on', garage: 'Vulkanizer Horvat', labor_cents: 2000 }),
+  service(astra, 400, { mileage_km: 215000, ...typeOf('Technical inspection'), garage: 'STP Zagreb', labor_cents: 4500 }),
+  service(van, 12, { mileage_km: 300800, ...typeOf('Brakes'), description: 'Front pads and discs' }),
+  service(passat, 500, { mileage_km: 210000, ...typeOf('Timing belt'), description: 'Belt kit and water pump, before it came to us', garage: 'VW servis Kovač', labor_cents: 45000 }),
+];
+const brand = (name: string) => ({ id: id(), name });
+const part = (values: Row): Row => ({
+  id: id(),
+  car_id: astra.id,
+  service_id: null,
+  brand_id: null,
+  brand: null,
+  part_number: null,
+  bought_on: null,
+  bought_from: null,
+  price_cents: null,
+  fitted_km: null,
+  state: 'fitted',
+  details: {},
+  notes: null,
+  ...stamps(30),
+  ...values,
+});
+const car_parts: Row[] = [
+  part({ id: '00000000-0000-4000-9000-000000000101', kind: 'tyres', name: 'Winter tyres', brand: brand('Nokian'), price_cents: 36000, bought_on: day(400), bought_from: 'Vulkanizer Horvat', fitted_km: 241500, service_id: car_services[1].id, details: { season: 'winter', size: '205/55 R16', load_speed: '91H', dot: '3823', count: '4', on_rims: 'yes' } }),
+  part({ kind: 'tyres', name: 'Summer tyres', brand: brand('Michelin'), price_cents: 42000, bought_on: day(600), bought_from: 'Vulkanizer Horvat', fitted_km: 222000, state: 'stored', details: { season: 'summer', size: '205/55 R16', load_speed: '91V', dot: '1219', count: '4', tread_mm: '5', on_rims: 'no' }, notes: 'In the attic' }),
+  part({ kind: 'battery', name: 'Battery', brand: brand('Varta'), part_number: 'E11', price_cents: 11500, bought_on: day(250), bought_from: 'Tokić', fitted_km: 230100, details: { capacity_ah: '74', cca: '680', technology: 'standard', warranty_until: '2028-03-12' } }),
+  part({ kind: 'filter', name: 'Oil filter', brand: brand('MANN'), part_number: 'HU 712/11 x', price_cents: 900, bought_on: day(26), bought_from: 'Tokić', fitted_km: 241800, service_id: car_services[0].id, details: { filter_type: 'oil' } }),
+  part({ kind: 'filter', name: 'Air filter', brand: brand('MANN'), part_number: 'C 30 005', price_cents: 1600, bought_on: day(26), bought_from: 'Tokić', fitted_km: 241800, service_id: car_services[0].id, details: { filter_type: 'air' } }),
+];
+
 const txn = (values: Row): Row => ({
   id: id(),
   car_id: null,
   car: null,
   job_id: null,
+  service_id: null,
   counterparty: null,
   currency: 'EUR',
   description: null,
@@ -190,6 +250,7 @@ const transactions: Row[] = [
   txn({ kind: 'expense', category: 'car_purchase', amount_cents: 90000, from_account_id: WALLET, to_account_id: OUTSIDE, occurred_on: day(40), car_id: cars[0].id, car: carOf(cars[0]), description: 'Purchase', counterparty: 'Auto Kuća Sjever' }),
   txn({ kind: 'expense', category: 'car_part', amount_cents: 21500, from_account_id: WALLET, to_account_id: OUTSIDE, occurred_on: day(22), car_id: cars[0].id, car: carOf(cars[0]), description: 'Front struts, pair', counterparty: 'Tokić' }),
   txn({ kind: 'expense', category: 'workshop_expense', amount_cents: 8900, from_account_id: WALLET, to_account_id: OUTSIDE, occurred_on: day(9), description: 'Electricity' }),
+  txn({ kind: 'expense', category: 'car_part', amount_cents: 14000, from_account_id: WALLET, to_account_id: OUTSIDE, occurred_on: day(12), car_id: van.id, car: carOf(van), description: 'Front pads and discs', counterparty: 'Tokić', service_id: car_services[3].id }),
   txn({ kind: 'expense', category: 'job_part', amount_cents: 13200, from_account_id: WALLET, to_account_id: OUTSIDE, occurred_on: day(5), job_id: jobs[0].id, description: 'Timing belt kit', counterparty: 'Tokić' }),
 ];
 
@@ -252,6 +313,31 @@ export const DEMO_TABLES: Record<string, Row[]> = {
   car_generations,
   activity_log,
   car_manuals: [],
+  service_types,
+  car_services,
+  car_parts,
+  // 4 L of oil from workshop stock into the Astra's small service (charged to you)
+  stock_movements: [
+    {
+      id: id(),
+      seq: 1,
+      item_id: items[2].id,
+      item: { id: items[2].id, name: items[2].name, part_number: items[2].part_number, unit: { name: 'L', whole_only: false } },
+      type: 'use_car',
+      occurred_on: day(25),
+      qty_delta: -4,
+      value_delta_cents: -2800,
+      car_id: astra.id,
+      job_id: null,
+      service_id: car_services[0].id,
+      supplier: null,
+      reason: null,
+      note: null,
+      transaction_id: null,
+      reverses_id: null,
+      ...stamps(25),
+    },
+  ],
   car_shares: cars.filter((c) => c.owner_kind === 'workshop').flatMap((c) => [ME, PARTNER].map((p) => ({ car_id: c.id, partner_id: p, share_bp: 5000 }))),
   job_shares: jobs.flatMap((j) => [ME, PARTNER].map((p) => ({ job_id: j.id, partner_id: p, share_bp: 5000 }))),
   settings: [{ id: true, workshop_name: 'Demo workshop', address: null, email: null, iban: null, invoice_footer: null, invoice_title: 'Invoice', last_export_at: `${day(3)}T09:00:00Z`, logo_data_url: null, phone: null, website: null, ...stamps(200) }],
