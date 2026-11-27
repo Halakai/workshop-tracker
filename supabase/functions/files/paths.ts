@@ -1,9 +1,9 @@
 // Pure helpers for the files function (no Deno APIs, so they are unit-tested with Vitest).
 
-export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool' | 'item' | 'website';
+export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool' | 'item' | 'website' | 'car_service' | 'car_part';
 export type FileKind = 'photo' | 'receipt' | 'invoice' | 'document';
 
-export const ENTITY_TYPES: readonly EntityType[] = ['car', 'job', 'stock_movement', 'transaction', 'tool', 'item', 'website'];
+export const ENTITY_TYPES: readonly EntityType[] = ['car', 'job', 'stock_movement', 'transaction', 'tool', 'item', 'website', 'car_service', 'car_part'];
 export const FILE_KINDS: readonly FileKind[] = ['photo', 'receipt', 'invoice', 'document'];
 
 export const ROOT_FOLDER_NAME = 'Workshop Tracker';

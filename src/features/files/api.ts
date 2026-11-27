@@ -6,7 +6,7 @@ import { resizeToJpeg } from '@/lib/image';
 import { coverPhotos, orderPhotos } from '@/domain/photos';
 import type { Tables } from '@/lib/database.types';
 
-export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool' | 'item' | 'website';
+export type EntityType = 'car' | 'job' | 'stock_movement' | 'transaction' | 'tool' | 'item' | 'website' | 'car_service' | 'car_part';
 export type FileKind = 'photo' | 'receipt' | 'invoice' | 'document';
 export type Attachment = Tables<'attachments'>;
 
