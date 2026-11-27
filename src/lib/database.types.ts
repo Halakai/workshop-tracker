@@ -708,14 +708,19 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           engine: string | null;
+          for_sale: boolean;
           fuel: string | null;
           generation: string | null;
           id: string;
+          is_private: boolean;
           listing_url: string | null;
           make: string;
           mileage_km: number | null;
           model: string;
           notes: string | null;
+          owner_contact_id: string | null;
+          owner_kind: string;
+          owner_member_id: string | null;
           plate: string | null;
           purchase_date: string;
           ref: string;
@@ -737,14 +742,19 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           engine?: string | null;
+          for_sale?: boolean;
           fuel?: string | null;
           generation?: string | null;
           id?: string;
+          is_private?: boolean;
           listing_url?: string | null;
           make: string;
           mileage_km?: number | null;
           model: string;
           notes?: string | null;
+          owner_contact_id?: string | null;
+          owner_kind?: string;
+          owner_member_id?: string | null;
           plate?: string | null;
           purchase_date?: string;
           ref: string;
@@ -766,14 +776,19 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           engine?: string | null;
+          for_sale?: boolean;
           fuel?: string | null;
           generation?: string | null;
           id?: string;
+          is_private?: boolean;
           listing_url?: string | null;
           make?: string;
           mileage_km?: number | null;
           model?: string;
           notes?: string | null;
+          owner_contact_id?: string | null;
+          owner_kind?: string;
+          owner_member_id?: string | null;
           plate?: string | null;
           purchase_date?: string;
           ref?: string;
@@ -799,6 +814,20 @@ export type Database = {
           {
             foreignKeyName: "cars_created_by_fkey";
             columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cars_owner_contact_id_fkey";
+            columns: ["owner_contact_id"];
+            isOneToOne: false;
+            referencedRelation: "contacts";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "cars_owner_member_id_fkey";
+            columns: ["owner_member_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
@@ -1230,6 +1259,7 @@ export type Database = {
         Row: {
           car_engine: string | null;
           car_generation: string | null;
+          car_id: string | null;
           car_make: string | null;
           car_model: string | null;
           car_plate: string | null;
@@ -1244,6 +1274,7 @@ export type Database = {
           invoice_date: string | null;
           invoice_number: string | null;
           labor_price_cents: number;
+          mileage_km: number | null;
           notes: string | null;
           ref: string;
           settled_at: string | null;
@@ -1254,6 +1285,7 @@ export type Database = {
         Insert: {
           car_engine?: string | null;
           car_generation?: string | null;
+          car_id?: string | null;
           car_make?: string | null;
           car_model?: string | null;
           car_plate?: string | null;
@@ -1268,6 +1300,7 @@ export type Database = {
           invoice_date?: string | null;
           invoice_number?: string | null;
           labor_price_cents?: number;
+          mileage_km?: number | null;
           notes?: string | null;
           ref: string;
           settled_at?: string | null;
@@ -1278,6 +1311,7 @@ export type Database = {
         Update: {
           car_engine?: string | null;
           car_generation?: string | null;
+          car_id?: string | null;
           car_make?: string | null;
           car_model?: string | null;
           car_plate?: string | null;
@@ -1292,6 +1326,7 @@ export type Database = {
           invoice_date?: string | null;
           invoice_number?: string | null;
           labor_price_cents?: number;
+          mileage_km?: number | null;
           notes?: string | null;
           ref?: string;
           settled_at?: string | null;
@@ -1300,6 +1335,13 @@ export type Database = {
           updated_by?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "jobs_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
+            referencedRelation: "cars";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "jobs_created_by_fkey";
             columns: ["created_by"];
@@ -2667,6 +2709,7 @@ export type Database = {
         Args: { p_actor: string; p_shares: Json };
         Returns: undefined;
       };
+      backup_table: { Args: { p_table: string }; Returns: Json };
       backup_tables: { Args: never; Returns: string[] };
       create_access_key: {
         Args: {

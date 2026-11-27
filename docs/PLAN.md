@@ -542,3 +542,109 @@ publishing; look for another site that has European cars and lets its data be re
 
 **Not known yet:** whether the site answers Supabase's servers as it answers this computer (it is behind Cloudflare).
 Try one manual right after deploying the function. If it refuses, the indexes can be fetched from a computer instead.
+
+---
+
+## 13. Vehicles we own and service, quotes, service plans (R6, planned 27.11.2026)
+
+**Asked for:**
+- every car gets an owner: me (private), the workshop, or someone else. The owner field suggests everyone with an
+  account (like brands on tools), and a newly typed name is an outside owner;
+- a car I own is private (only I see it, with a choice to let the others see it); a car owned by anyone else is
+  visible to everyone and can't be made private;
+- Cars should feel like "the vehicles we've serviced and the ones we own";
+- service history with prices for every vehicle; on private cars the money comes from the owner's pocket, the app
+  only records what a service cost; private cars also track parts bought for them (tyres and the like);
+- quotes in Jobs: list the parts needed with prices without any money leaving the workshop;
+- service planning on cars: a maintenance plan **and** a calendar of appointments.
+
+**Your answers:** workshop vehicles are flips **plus** the workshop's own vehicles (not for sale); a workshop
+vehicle's money works like a flip's; three tabs (For sale · Ours · Customers); parts from workshop stock may go on a
+private car and are charged to its owner; on workshop cars a service is a folder for its costs; a quote is a status
+of the job.
+
+### Owners
+
+| Owner | What it is | Money | Who sees it |
+|---|---|---|---|
+| **Workshop, for sale** | flips, as today | purchase, costs, sale, settle up (unchanged) | everyone |
+| **Workshop, own vehicle** | van, tow truck… ("Not for sale") | like a flip: workshop money adds up on the vehicle; settle up if it is ever sold or scrapped | everyone |
+| **Member** (you or a partner) | our own cars | from the owner's pocket: services and parts only record their price; parts from workshop stock are charged to the owner at cost | private when the owner added it: only the owner, unless they switch on "Others can see it". A car added for another member is always visible |
+| **Customer** (anyone else, from contacts) | cars we service | through jobs, as today | everyone |
+
+- The car form starts with **Owner**: *Workshop* first, then members (you marked), then known contacts; a new name
+  is added to contacts ("will be added").
+- Workshop cars keep purchase, status (bought → sold) and shares. Member and customer cars have none of these; they
+  get *mileage* (not "mileage at purchase") and the owner's phone for customers.
+- The owner can change only while the car has no money entries.
+- **Privacy lives in the database** (RLS): a private car, its photos, papers, services, parts, plans, keys and
+  activity are invisible to the others. Jobs stay visible to everyone (they move workshop money); a job on a private
+  car shows the car's name but doesn't open it.
+- **Backups** (admins) contain everything, private cars included, read through a database function; otherwise a
+  restore would erase the cars the admin can't see.
+
+### Cars tab: For sale · Ours · Customers
+
+- **For sale:** the flips, with today's status chips and "invested".
+- **Ours:** workshop vehicles and members' cars (chips: All · Workshop · Mine · each partner's).
+- **Customers:** customers' cars, searchable by plate, name and owner, newest job first.
+- The last tab used is remembered. Cards show the owner, the last service and (from V4) the next one.
+
+### Jobs ↔ vehicles
+
+- A job picks its vehicle from the list (type-ahead by plate, make, owner; the customer's cars first) or a new one,
+  which becomes a customer's car when the job is saved. The job's car fields are copied from the vehicle, so the
+  invoice, keys and website stay as they are. A job also gets **mileage**.
+- Existing jobs: each distinct car of a customer (same plate, or same make and model when there is no plate) becomes
+  a customer's car, and the jobs are linked to it.
+- The car page lists the jobs done on it.
+
+### Service history (V2)
+
+- `car_services`: car, date, mileage, what (a list of service types: small service, big service, timing belt, tyres,
+  brakes, inspection…; members add), where (us / another garage), note, photos and receipts.
+- **Price:** on a workshop car, the sum of the costs filed under it (parts bought, other costs and parts from stock
+  get a `service_id`; costs outside a service work as today). On a member's car the price is typed in (paid by the
+  owner) plus parts from workshop stock. On a customer's car the jobs are its services (date, mileage, what the
+  customer was charged); a service can also be typed in for work done elsewhere.
+- The car page shows one **History** list (services and jobs, newest first, with prices and the total).
+- **Parts on members' cars** (`car_parts`): name, brand, bought on, from (suppliers), price, mileage fitted, state
+  (fitted / stored / gone), note, photos and receipt; optionally part of a service. Tyres: summer and winter sets as
+  two parts, one fitted, one stored.
+- **Workshop stock on a member's car:** "From stock" posts a `use_car` movement and at once books the cost to the
+  owner (an allocation of −value, so their share of the workshop goes down by what they took). Returning reverses it.
+  Others see "used for a private car" in the item's history.
+
+### Quotes (V3)
+
+- A job can start as a **Quote**: Quote → Open → Done → Paid.
+- **Planned lines** (description, qty, price for the customer, optional expected cost) never touch stock or money.
+- **Quote PDF** with its own number and title (Settings, like the invoice title); the customer's job key shows it.
+- **Start job** turns the quote into an open job. Each planned line becomes "bought" or "from stock" with one tap,
+  keeping the customer's price; only then does money move.
+
+### Service plan (V4)
+
+- `service_plans`: car, service type, due date and/or due mileage, repeat every N months and/or N km, note.
+- State: overdue · soon (30 days or 1 000 km) · later. A car's current mileage is the highest one known (the car,
+  its services, its jobs).
+- **Done** files a service (or opens a job / quote for a customer's car) and plans the next one from the repeat.
+- Home gets a **Services** tile with what's due; customers' cars due soon have a call button.
+
+### Calendar (V5)
+
+- `appointments`: date and time, length, vehicle (or just a name and phone), what, optional job / quote / plan, note.
+- A **Calendar** page (day by day, a week at a time) and today's appointments on Home.
+- A private car's appointment shows to the others only as "busy".
+
+### Steps
+
+| | Scope |
+|---|---|
+| **V1** | Owners, privacy, workshop vehicles, three tabs, jobs linked to vehicles (old jobs too), job mileage |
+| **V2** | Service history, parts on members' cars, workshop stock on a member's car |
+| **V3** | Quotes |
+| **V4** | Service plan, Home tile |
+| **V5** | Calendar |
+
+Each step is shown in `demo.html` before it goes live.

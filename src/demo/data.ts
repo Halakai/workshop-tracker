@@ -49,19 +49,34 @@ const car = (ref: string, values: Row): Row => ({
   seller: contact(2),
   settled_at: null,
   status_changed_at: `${day(30)}T09:00:00Z`,
+  status: 'bought',
   vin: null,
+  owner_kind: 'workshop',
+  owner_member_id: null,
+  owner_contact_id: null,
+  owner_contact: null,
+  for_sale: true,
+  is_private: false,
   ...stamps(40),
   ...values,
 });
+const ownedBy = (i: number): Row => ({ owner_kind: 'customer', owner_contact_id: contacts[i].id, owner_contact: contact(i), for_sale: false, seller_id: null, seller: null });
 const cars: Row[] = [
   car('CAR-003', { make: 'Volkswagen', model: 'Golf', generation: 'IV (1J)', year: 2002, engine: '1.9 TDI 96 kW (130 HP)', plate: 'ZG1234AB', status: 'in_repair' }),
   car('CAR-002', { make: 'Škoda', model: 'Octavia', generation: 'II (1Z)', year: 2008, engine: '1.9 TDI 77 kW (105 HP)', plate: 'ČK555CD', status: 'listed', asking_price_cents: 420000 }),
   car('CAR-001', { make: 'BMW', model: '3 Series', generation: 'E46', year: 2003, engine: '320d 2.0 110 kW (150 HP)', plate: null, status: 'sold', sale_date: day(60), buyer: contact(0), settled_at: `${day(50)}T09:00:00Z` }),
+  // the workshop's own van, a private car of yours, the partner's car, and two customers' cars
+  car('CAR-004', { make: 'Volkswagen', model: 'Caddy', generation: null, year: 2009, engine: '1.9 TDI 77 kW (105 HP)', plate: 'ZG4455RA', for_sale: false, colour: 'White', mileage_km: 301000 }),
+  car('CAR-005', { make: 'Opel', model: 'Astra', generation: 'H', year: 2007, engine: '1.9 CDTI 88 kW (120 HP)', plate: 'ZG777IV', owner_kind: 'member', owner_member_id: ME, for_sale: false, is_private: true, seller_id: null, seller: null, mileage_km: 243500, colour: 'Black' }),
+  car('CAR-006', { make: 'Škoda', model: 'Octavia', generation: 'I (1U)', year: 2004, engine: '1.9 TDI 66 kW (90 HP)', plate: 'ZG100MK', owner_kind: 'member', owner_member_id: PARTNER, for_sale: false, seller_id: null, seller: null, mileage_km: 388000, ...stamps(70), created_by: PARTNER }),
+  car('CAR-007', { make: 'Volkswagen', model: 'Passat', generation: 'B5.5 (3BG)', year: 2003, engine: '1.9 TDI 96 kW (130 HP)', plate: 'VŽ987XY', colour: 'Blue', mileage_km: null, ...ownedBy(0), ...stamps(200) }),
+  car('CAR-008', { make: 'Renault', model: 'Megane', generation: 'II', year: 2006, engine: '1.5 dCi 78 kW (106 HP)', plate: 'KR321EF', colour: 'Red', mileage_km: null, ...ownedBy(1), ...stamps(6) }),
 ];
 const car_summaries: Row[] = [
   { car_id: cars[0].id, purchase_cents: 90000, stock_cents: 8200, parts_cents: 21500, other_costs_cents: 4300, sale_cents: 0, sale_count: 0 },
   { car_id: cars[1].id, purchase_cents: 260000, stock_cents: 4100, parts_cents: 38000, other_costs_cents: 9000, sale_cents: 0, sale_count: 0 },
   { car_id: cars[2].id, purchase_cents: 180000, stock_cents: 6000, parts_cents: 42000, other_costs_cents: 7000, sale_cents: 310000, sale_count: 1 },
+  { car_id: cars[3].id, purchase_cents: 350000, stock_cents: 3200, parts_cents: 0, other_costs_cents: 25000, sale_cents: 0, sale_count: 0 },
 ];
 
 const job = (ref: string, customer: number, values: Row): Row => ({
@@ -70,6 +85,8 @@ const job = (ref: string, customer: number, values: Row): Row => ({
   customer_id: contacts[customer].id,
   customer: contact(customer),
   car_vin: null,
+  car_id: null,
+  mileage_km: null,
   done_on: null,
   invoice_date: null,
   invoice_number: null,
@@ -79,12 +96,14 @@ const job = (ref: string, customer: number, values: Row): Row => ({
   ...values,
 });
 const jobs: Row[] = [
-  job('JOB-012', 0, { car_make: 'Volkswagen', car_model: 'Passat', car_generation: 'B5.5 (3BG)', car_year: 2003, car_engine: '1.9 TDI 96 kW (130 HP)', car_plate: 'VŽ987XY', description: 'Big service: timing belt, water pump, all filters', labor_price_cents: 18000, status: 'open' }),
-  job('JOB-011', 1, { car_make: 'Renault', car_model: 'Megane', car_generation: 'II', car_year: 2006, car_engine: '1.5 dCi 78 kW (106 HP)', car_plate: 'KR321EF', description: 'Front brake discs and pads', labor_price_cents: 6000, status: 'done', done_on: day(3) }),
+  job('JOB-012', 0, { car_id: cars[6].id, mileage_km: 251300, car_make: 'Volkswagen', car_model: 'Passat', car_generation: 'B5.5 (3BG)', car_year: 2003, car_engine: '1.9 TDI 96 kW (130 HP)', car_plate: 'VŽ987XY', description: 'Big service: timing belt, water pump, all filters', labor_price_cents: 18000, status: 'open' }),
+  job('JOB-011', 1, { car_id: cars[7].id, mileage_km: 176400, car_make: 'Renault', car_model: 'Megane', car_generation: 'II', car_year: 2006, car_engine: '1.5 dCi 78 kW (106 HP)', car_plate: 'KR321EF', description: 'Front brake discs and pads', labor_price_cents: 6000, status: 'done', done_on: day(3) }),
+  job('JOB-008', 0, { car_id: cars[6].id, mileage_km: 236900, car_make: 'Volkswagen', car_model: 'Passat', car_generation: 'B5.5 (3BG)', car_year: 2003, car_engine: '1.9 TDI 96 kW (130 HP)', car_plate: 'VŽ987XY', description: 'Oil and filters, rear brake pads', labor_price_cents: 5000, status: 'paid', done_on: day(190), ...stamps(195) }),
 ];
 const job_summaries: Row[] = [
   { job_id: jobs[0].id, lines_cents: 23400, labor_cents: 18000, payments_cents: 0, stock_cents: 0, parts_cents: 17900 },
   { job_id: jobs[1].id, lines_cents: 11500, labor_cents: 6000, payments_cents: 0, stock_cents: 0, parts_cents: 8200 },
+  { job_id: jobs[2].id, lines_cents: 9800, labor_cents: 5000, payments_cents: 14800, stock_cents: 6100, parts_cents: 0 },
 ];
 const job_lines: Row[] = [
   { id: id(), job_id: jobs[0].id, kind: 'bought', description: 'Timing belt kit with water pump', qty: 1, unit: null, sale_price_cents: 16900, movement: null, purchase: { id: id(), amount_cents: 13200, from_account_id: WALLET, counterparty: 'Tokić', occurred_on: day(5) }, ...stamps(5) },
@@ -233,7 +252,7 @@ export const DEMO_TABLES: Record<string, Row[]> = {
   car_generations,
   activity_log,
   car_manuals: [],
-  car_shares: cars.flatMap((c) => [ME, PARTNER].map((p) => ({ car_id: c.id, partner_id: p, share_bp: 5000 }))),
+  car_shares: cars.filter((c) => c.owner_kind === 'workshop').flatMap((c) => [ME, PARTNER].map((p) => ({ car_id: c.id, partner_id: p, share_bp: 5000 }))),
   job_shares: jobs.flatMap((j) => [ME, PARTNER].map((p) => ({ job_id: j.id, partner_id: p, share_bp: 5000 }))),
   settings: [{ id: true, workshop_name: 'Demo workshop', address: null, email: null, iban: null, invoice_footer: null, invoice_title: 'Invoice', last_export_at: `${day(3)}T09:00:00Z`, logo_data_url: null, phone: null, website: null, ...stamps(200) }],
 };

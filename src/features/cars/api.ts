@@ -2,13 +2,13 @@ import { useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import type { Tables, TablesInsert, TablesUpdate } from '@/lib/database.types';
-import { carTotals, isClosed, type CarMoney, type CarStatus } from '@/domain/cars';
+import { carTotals, hasWorkshopMoney, isClosed, nextCarRef, type CarMoney, type CarStatus } from '@/domain/cars';
 
 export type CarRow = Tables<'cars'>;
 export type CarTransaction = Tables<'transactions'>;
 
 const CAR_SELECT =
-  '*, seller:contacts!cars_seller_id_fkey(id, name, phone), buyer:contacts!cars_buyer_id_fkey(id, name, phone)';
+  '*, seller:contacts!cars_seller_id_fkey(id, name, phone), buyer:contacts!cars_buyer_id_fkey(id, name, phone), owner_contact:contacts!cars_owner_contact_id_fkey(id, name, phone)';
 
 async function fetchCars() {
   const [cars, summaries] = await Promise.all([
@@ -47,11 +47,11 @@ export function useCar(id: string | undefined) {
   return { ...cars, data: cars.data?.find((c) => c.id === id) };
 }
 
-/** Cars that can still take parts and costs: not sold/scrapped and not settled. */
+/** The workshop's cars that can still take parts and costs: not sold/scrapped and not settled. */
 export function useActiveCars() {
   const cars = useCars();
   return useMemo(
-    () => (cars.data ?? []).filter((c) => !isClosed(c.status as CarStatus) && !c.settled_at),
+    () => (cars.data ?? []).filter((c) => hasWorkshopMoney(c) && !isClosed(c.status as CarStatus) && !c.settled_at),
     [cars.data],
   );
 }
@@ -113,18 +113,35 @@ function refError(error: { code?: string; message: string }) {
     : error;
 }
 
+/**
+ * Adds a car. With `autoRef` the ID was filled in by the app: when it is taken (by a car you can't see, e.g.
+ * someone's private car) the next number is tried instead.
+ */
+export async function insertCar(car: TablesInsert<'cars'>, autoRef: boolean) {
+  const taken: string[] = [];
+  for (let attempt = 0; ; attempt++) {
+    const { data, error } = await supabase.from('cars').insert(car).select().single();
+    if (!error) return data;
+    const refTaken = error.code === '23505' && error.message.includes('ref');
+    if (!autoRef || !refTaken || attempt >= 20) throw refError(error);
+    taken.push(car.ref);
+    car = { ...car, ref: nextCarRef(taken) };
+  }
+}
+
 export function useCreateCar() {
   const invalidate = useInvalidateCar();
   return useMutation({
     mutationFn: async ({
       car,
       purchase,
+      autoRef = false,
     }: {
       car: TablesInsert<'cars'>;
       purchase: Omit<TablesInsert<'transactions'>, 'car_id'> | null;
+      autoRef?: boolean;
     }) => {
-      const { data, error } = await supabase.from('cars').insert(car).select().single();
-      if (error) throw refError(error);
+      const data = await insertCar(car, autoRef);
       if (purchase) {
         const { error: purchaseError } = await supabase.from('transactions').insert({ ...purchase, car_id: data.id });
         if (purchaseError) {
@@ -159,6 +176,8 @@ export function useDeleteCar() {
         .select('id', { count: 'exact', head: true })
         .eq('car_id', carId);
       if (count) throw new Error('Parts from stock were used on this car. Return them to stock first.');
+      const { count: jobCount } = await supabase.from('jobs').select('id', { count: 'exact', head: true }).eq('car_id', carId);
+      if (jobCount) throw new Error(`${jobCount === 1 ? 'A job was' : `${jobCount} jobs were`} done on this car, so it stays in its history.`);
       const { error: moneyError } = await supabase.from('transactions').delete().eq('car_id', carId);
       if (moneyError) throw moneyError;
       const { error } = await supabase.from('cars').delete().eq('id', carId);

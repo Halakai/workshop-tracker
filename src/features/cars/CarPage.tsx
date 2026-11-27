@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
-import { Banknote, Car as CarIcon, ChevronRight, ExternalLink, Handshake, Package, Pencil, Phone, Receipt, Undo2, Wrench } from 'lucide-react';
+import { Banknote, Car as CarIcon, ChevronRight, ExternalLink, Eye, Handshake, Lock, Package, Pencil, Phone, Plus, Receipt, Undo2, Wrench } from 'lucide-react';
 import { toast } from 'sonner';
 import { ConfirmButton } from '@/components/ConfirmButton';
 import { syncErrorMessage } from '@/lib/errors';
@@ -17,7 +17,10 @@ import { AddedBy } from '@/components/AddedBy';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { carTitle, isClosed, type CarStatus } from '@/domain/cars';
+import { carTitle, hasWorkshopMoney, isClosed, type CarStatus } from '@/domain/cars';
+import { jobStatusLabel, type JobStatus } from '@/domain/jobs';
+import { jobDate, useJobsByCar, type Job } from '@/features/jobs/api';
+import { OwnerBadge, useOwnerPeople } from './owners';
 import { formatMoney } from '@/domain/money';
 import { formatPercentBp, formatShare } from '@/domain/shares';
 import { formatInteger, formatQuantity, toMilli } from '@/domain/quantity';
@@ -56,7 +59,156 @@ export function CarPage() {
       </>
     );
   }
-  return <CarView car={car.data} />;
+  return hasWorkshopMoney(car.data) ? <CarView car={car.data} /> : <OwnedCarView car={car.data} />;
+}
+
+/** A member's or a customer's car: no workshop money, only its details, the jobs done on it, photos and papers. */
+function OwnedCarView({ car }: { car: Car }) {
+  useRememberVisit('car', car.id);
+  const people = useOwnerPeople();
+  const jobs = useJobsByCar().get(car.id) ?? [];
+  const mileage = latestMileage(car, jobs);
+  const ownerName = car.owner_kind === 'member' ? people.members.find((m) => m.id === car.owner_member_id)?.display_name : car.owner_contact?.name;
+  const mine = car.owner_kind === 'member' && car.owner_member_id === people.meId;
+
+  return (
+    <>
+      <PageHeader
+        title={carTitle(car)}
+        back="/cars"
+        actions={
+          <Button variant="ghost" size="icon" asChild aria-label="Edit car">
+            <Link to={`/cars/${car.id}/edit`}>
+              <Pencil className="size-5" />
+            </Link>
+          </Button>
+        }
+      />
+      <PageBody>
+        <PhotoGallery
+          entityType="car"
+          entityId={car.id}
+          albums
+          className="-mx-4 -mt-4 sm:mx-0 sm:mt-0 sm:rounded-xl"
+          empty={(upload, pending) => (
+            <div className="-mx-4 -mt-4 flex flex-col items-center gap-3 bg-muted px-4 py-6 text-center sm:mx-0 sm:mt-0 sm:rounded-xl">
+              <CarLogo make={car.make} className="size-14" />
+              <p className="text-sm text-muted-foreground">{pending > 0 ? 'Uploading…' : 'No photos yet.'}</p>
+              {upload}
+            </div>
+          )}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          <CarLogo make={car.make} className="size-10" />
+          <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-sm font-semibold">{car.ref}</span>
+          {car.plate && <span className="rounded-md border px-2 py-0.5 font-mono text-sm">{car.plate}</span>}
+          <OwnerBadge car={car} people={people} className="ml-auto" />
+        </div>
+
+        <Card>
+          <CardContent className="flex flex-col gap-2 text-sm">
+            {car.owner_kind === 'customer' ? (
+              <ContactLine label="Owner" name={ownerName ?? 'Customer'} phone={car.owner_contact?.phone ?? null} />
+            ) : (
+              <div>
+                <p className="text-muted-foreground">Owner</p>
+                <p className="font-medium">
+                  {ownerName ?? 'A partner'}
+                  {mine && ' (you)'}
+                </p>
+              </div>
+            )}
+            <p className="flex items-center gap-2 text-muted-foreground">
+              {car.is_private ? <Lock className="size-4" /> : <Eye className="size-4" />}
+              {car.is_private
+                ? 'Only you can see this car.'
+                : car.owner_kind === 'member'
+                  ? 'Everyone in the workshop sees it. What is spent on it is the owner’s, not the workshop’s.'
+                  : 'Everyone in the workshop sees it. Work on it goes through jobs.'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <CarJobs car={car} jobs={jobs} />
+
+        <ManualCard car={car} to={`/cars/${car.id}/manual`} />
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3 text-sm">
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-2">
+              {car.vin && <Detail label="VIN" value={car.vin} mono />}
+              {car.engine && <Detail label="Engine" value={car.engine} />}
+              {car.fuel && <Detail label="Fuel" value={car.fuel} />}
+              {car.colour && <Detail label="Colour" value={car.colour} />}
+              {mileage && (
+                <Detail label="Mileage" value={`${formatInteger(mileage.km)} km${mileage.date ? ` (${formatDate(mileage.date)})` : ''}`} />
+              )}
+            </dl>
+            {car.notes && <p className="whitespace-pre-wrap">{car.notes}</p>}
+            <AddedBy by={car.created_by} at={car.created_at} />
+          </CardContent>
+        </Card>
+
+        <PhotoSection entityType="car" entityId={car.id} albums />
+        {car.owner_kind === 'customer' && <KeysCard target={{ carId: car.id }} subject={car.ref} />}
+        <AttachmentStrip entityType="car" entityId={car.id} kind="receipt" title="Papers & receipts" allowPdf />
+      </PageBody>
+    </>
+  );
+}
+
+/** The highest mileage known: from the car itself or from a job done on it. */
+function latestMileage(car: Car, jobs: Job[]): { km: number; date: string | null } | null {
+  let best: { km: number; date: string | null } | null = car.mileage_km != null ? { km: car.mileage_km, date: null } : null;
+  for (const job of jobs) {
+    if (job.mileage_km != null && (!best || job.mileage_km > best.km)) best = { km: job.mileage_km, date: jobDate(job) };
+  }
+  return best;
+}
+
+/** Jobs done on a car, newest first, with a button for a new one. */
+function CarJobs({ car, jobs }: { car: Car; jobs: Job[] }) {
+  if (hasWorkshopMoney(car) && jobs.length === 0) return null;
+  return (
+    <section className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-semibold">Jobs</h2>
+        <Button variant="outline" size="sm" asChild>
+          <Link to={`/jobs/new?car=${car.id}`}>
+            <Plus /> Job
+          </Link>
+        </Button>
+      </div>
+      {jobs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No jobs on this car yet.</p>
+      ) : (
+        <ul className="flex flex-col divide-y overflow-hidden rounded-xl border">
+          {jobs.map((job) => (
+            <li key={job.id}>
+              <Link to={`/jobs/${job.id}`} className="flex items-start gap-3 px-4 py-3 active:bg-muted">
+                <Wrench className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate font-medium">{job.description}</span>
+                    <span className="font-semibold tabular-nums">{formatMoney(job.totals.due)}</span>
+                  </div>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {[formatDate(jobDate(job)), job.ref, jobStatusLabel(job.status as JobStatus), job.mileage_km != null && `${formatInteger(job.mileage_km)} km`]
+                      .filter(Boolean)
+                      .join(' · ')}
+                  </p>
+                </div>
+                <ChevronRight className="mt-0.5 size-5 shrink-0 text-muted-foreground" />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 type Entry =
@@ -80,6 +232,7 @@ function CarView({ car }: { car: Car }) {
   const undoSettlement = useUndoSettlement();
   const profiles = useProfiles();
   const partnerName = (id: string) => profiles.data?.find((p) => p.id === id)?.display_name ?? 'partner';
+  const jobs = useJobsByCar().get(car.id) ?? [];
 
   const status = car.status as CarStatus;
   const settled = Boolean(car.settled_at);
@@ -133,7 +286,7 @@ function CarView({ car }: { car: Car }) {
           <span className="rounded-md bg-muted px-2 py-0.5 font-mono text-sm font-semibold">{car.ref}</span>
           {car.plate && <span className="rounded-md border px-2 py-0.5 font-mono text-sm">{car.plate}</span>}
           <button type="button" disabled={locked} onClick={() => setStatusOpen(true)} className="ml-auto">
-            <CarStatusBadge status={status} />
+            <CarStatusBadge status={status} forSale={car.for_sale} />
           </button>
         </div>
 
@@ -196,6 +349,7 @@ function CarView({ car }: { car: Car }) {
         )}
 
         <ManualCard car={car} to={`/cars/${car.id}/manual`} />
+        <CarJobs car={car} jobs={jobs} />
 
         <section className="flex flex-col gap-2">
           <h2 className="font-semibold">Costs</h2>

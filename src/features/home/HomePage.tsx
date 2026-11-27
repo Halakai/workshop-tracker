@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { PageBody, PageHeader } from '@/components/PageHeader';
 import { formatMoney } from '@/domain/money';
-import { isClosed, type CarStatus } from '@/domain/cars';
+import { carTab, isClosed, type CarStatus } from '@/domain/cars';
 import { formatDate } from '@/domain/dates';
 import { toolTotals } from '@/domain/tools';
 import { useCurrentProfile } from '@/features/auth/profiles';
@@ -31,7 +31,7 @@ export function HomePage() {
   const tools = useTools();
 
   const lowStock = useMemo(() => (items.data ?? []).filter(itemIsLow).length, [items.data]);
-  const activeCars = useMemo(() => (cars.data ?? []).filter((c) => !isClosed(c.status as CarStatus)).length, [cars.data]);
+  const activeCars = useMemo(() => (cars.data ?? []).filter((c) => carTab(c) === 'sale' && !isClosed(c.status as CarStatus)).length, [cars.data]);
   const openJobs = (jobs.data ?? []).filter((j) => j.status === 'open').length;
   const unpaid = (jobs.data ?? []).filter((j) => j.status === 'done');
   const toCollect = unpaid.reduce((s, j) => s + j.totals.outstanding, 0);

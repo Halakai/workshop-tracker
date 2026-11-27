@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { search, type SearchDoc } from '@/domain/search';
-import { carStatusLabel, carTitle, type CarStatus } from '@/domain/cars';
+import { carStatusLabel, carTitle, hasWorkshopMoney, type CarStatus } from '@/domain/cars';
 import { jobStatusLabel, type JobStatus } from '@/domain/jobs';
 import { centsToInput, formatMoney } from '@/domain/money';
 import { formatDate } from '@/domain/dates';
@@ -66,10 +66,10 @@ export function SearchPage() {
         to: `/cars/${c.id}`,
         title: carTitle(c),
         codes: [c.ref, c.plate, c.vin],
-        text: [c.generation, c.engine, c.fuel, c.colour, c.notes, c.seller?.name, c.buyer?.name, carStatusLabel(c.status as CarStatus)],
+        text: [c.generation, c.engine, c.fuel, c.colour, c.notes, c.seller?.name, c.buyer?.name, c.owner_contact?.name, hasWorkshopMoney(c) ? carStatusLabel(c.status as CarStatus) : null],
         heading: carTitle(c),
         sub: [c.ref, c.plate].filter(Boolean).join(' · '),
-        right: carStatusLabel(c.status as CarStatus),
+        right: hasWorkshopMoney(c) ? carStatusLabel(c.status as CarStatus) : (c.owner_contact?.name ?? (c.owner_kind === 'member' ? 'Our car' : '')),
       });
     }
     for (const j of jobs.data ?? []) {

@@ -49,6 +49,25 @@ export function useJob(id: string | undefined) {
   return { ...jobs, data: jobs.data?.find((j) => j.id === id) };
 }
 
+/** The day a job counts for in a car's history: when it was done, else when it was added. */
+export function jobDate(job: Pick<Job, 'done_on' | 'created_at'>): string {
+  return job.done_on ?? job.created_at.slice(0, 10);
+}
+
+/** Jobs per car, newest first. */
+export function useJobsByCar() {
+  const jobs = useJobs();
+  return useMemo(() => {
+    const byCar = new Map<string, Job[]>();
+    for (const job of jobs.data ?? []) {
+      if (!job.car_id) continue;
+      byCar.set(job.car_id, [...(byCar.get(job.car_id) ?? []), job]);
+    }
+    for (const list of byCar.values()) list.sort((a, b) => jobDate(b).localeCompare(jobDate(a)) || b.created_at.localeCompare(a.created_at));
+    return byCar;
+  }, [jobs.data]);
+}
+
 /** What the customer is charged, with the cost behind each line. */
 export function useJobLines(jobId: string | undefined) {
   return useQuery({
