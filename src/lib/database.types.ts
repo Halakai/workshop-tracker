@@ -7,11 +7,6 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.18";
-  };
   public: {
     Tables: {
       access_keys: {
@@ -32,6 +27,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           car_id?: string | null;
           code: string;
@@ -119,6 +115,7 @@ export type Database = {
           name: string | null;
           partner_id: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: string;
@@ -153,6 +150,7 @@ export type Database = {
           id: number;
           summary: string;
         };
+        ComputedFields: never;
         Insert: {
           action: string;
           actor_id?: string | null;
@@ -195,6 +193,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           amount_cents: number;
           created_at?: string;
@@ -285,6 +284,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           album_id?: string | null;
           created_at?: string;
@@ -355,6 +355,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           code: string;
           created_at?: string;
@@ -402,6 +403,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -460,6 +462,7 @@ export type Database = {
           year_from: number | null;
           year_to: number | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -516,6 +519,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -565,6 +569,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -618,6 +623,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -666,6 +672,7 @@ export type Database = {
           partner_id: string;
           share_bp: number;
         };
+        ComputedFields: never;
         Insert: {
           car_id: string;
           partner_id: string;
@@ -735,6 +742,7 @@ export type Database = {
           vin: string | null;
           year: number | null;
         };
+        ComputedFields: never;
         Insert: {
           asking_price_cents?: number | null;
           buyer_id?: string | null;
@@ -859,6 +867,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -901,6 +910,7 @@ export type Database = {
           name: string;
           value: number;
         };
+        ComputedFields: never;
         Insert: {
           name: string;
           value: number;
@@ -917,6 +927,7 @@ export type Database = {
           drive_folder_id: string;
           key: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           drive_folder_id: string;
@@ -939,6 +950,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -985,6 +997,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           code: string;
           created_at?: string;
@@ -1043,6 +1056,7 @@ export type Database = {
           updated_by: string | null;
           version: number;
         };
+        ComputedFields: never;
         Insert: {
           archived_at?: string | null;
           brand_id?: string | null;
@@ -1138,6 +1152,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -1221,6 +1236,7 @@ export type Database = {
           partner_id: string;
           share_bp: number;
         };
+        ComputedFields: never;
         Insert: {
           job_id: string;
           partner_id: string;
@@ -1282,6 +1298,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           car_engine?: string | null;
           car_generation?: string | null;
@@ -1339,6 +1356,13 @@ export type Database = {
             foreignKeyName: "jobs_car_id_fkey";
             columns: ["car_id"];
             isOneToOne: false;
+            referencedRelation: "car_summaries";
+            referencedColumns: ["car_id"];
+          },
+          {
+            foreignKeyName: "jobs_car_id_fkey";
+            columns: ["car_id"];
+            isOneToOne: false;
             referencedRelation: "cars";
             referencedColumns: ["id"];
           },
@@ -1368,16 +1392,17 @@ export type Database = {
       manual_indexes: {
         Row: {
           base: string;
-          chapters: Json;
+          chapters: NonNullable<Json>;
           fetched_at: string;
           page_count: number;
           pages: string;
           slug: string;
           title: string;
         };
+        ComputedFields: never;
         Insert: {
           base: string;
-          chapters: Json;
+          chapters: NonNullable<Json>;
           fetched_at?: string;
           page_count: number;
           pages: string;
@@ -1386,7 +1411,7 @@ export type Database = {
         };
         Update: {
           base?: string;
-          chapters?: Json;
+          chapters?: NonNullable<Json>;
           fetched_at?: string;
           page_count?: number;
           pages?: string;
@@ -1401,6 +1426,7 @@ export type Database = {
           id: number;
           slugs: string[];
         };
+        ComputedFields: never;
         Insert: {
           fetched_at?: string;
           id?: number;
@@ -1423,6 +1449,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -1471,6 +1498,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -1530,6 +1558,7 @@ export type Database = {
           website: string | null;
           workshop_name: string;
         };
+        ComputedFields: never;
         Insert: {
           address?: string | null;
           created_at?: string;
@@ -1583,7 +1612,7 @@ export type Database = {
       };
       settlements: {
         Row: {
-          breakdown: Json;
+          breakdown: NonNullable<Json>;
           car_id: string | null;
           created_at: string;
           created_by: string | null;
@@ -1595,8 +1624,9 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
-          breakdown?: Json;
+          breakdown?: NonNullable<Json>;
           car_id?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -1609,7 +1639,7 @@ export type Database = {
           updated_by?: string | null;
         };
         Update: {
-          breakdown?: Json;
+          breakdown?: NonNullable<Json>;
           car_id?: string | null;
           created_at?: string;
           created_by?: string | null;
@@ -1686,6 +1716,7 @@ export type Database = {
           updated_by: string | null;
           value_delta_cents: number;
         };
+        ComputedFields: never;
         Insert: {
           car_id?: string | null;
           created_at?: string;
@@ -1792,6 +1823,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -1835,6 +1867,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -1898,6 +1931,7 @@ export type Database = {
           updated_by: string | null;
           warranty_until: string | null;
         };
+        ComputedFields: never;
         Insert: {
           bought_from?: string | null;
           bought_on?: string | null;
@@ -2018,6 +2052,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           amount_cents: number;
           car_id?: string | null;
@@ -2142,6 +2177,7 @@ export type Database = {
           updated_by: string | null;
           whole_only: boolean;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -2203,6 +2239,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           car_id?: string | null;
           created_at?: string;
@@ -2308,6 +2345,7 @@ export type Database = {
           viber: boolean;
           whatsapp: boolean;
         };
+        ComputedFields: never;
         Insert: {
           call?: boolean;
           created_at?: string;
@@ -2359,6 +2397,7 @@ export type Database = {
           updated_by: string | null;
           weekday: number;
         };
+        ComputedFields: never;
         Insert: {
           closes?: string | null;
           opens?: string | null;
@@ -2395,6 +2434,7 @@ export type Database = {
           updated_by: string | null;
           website_car_id: string;
         };
+        ComputedFields: never;
         Insert: {
           after_photo_id: string;
           before_photo_id: string;
@@ -2468,6 +2508,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           author: string;
           created_at?: string;
@@ -2522,6 +2563,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by?: string | null;
@@ -2583,6 +2625,7 @@ export type Database = {
           updated_at: string;
           updated_by: string | null;
         };
+        ComputedFields: never;
         Insert: {
           about_en?: string | null;
           about_hr?: string | null;
@@ -2650,6 +2693,7 @@ export type Database = {
           sale_count: number | null;
           stock_cents: number | null;
         };
+        ComputedFields: never;
         Relationships: [];
       };
       item_last_purchases: {
@@ -2660,6 +2704,7 @@ export type Database = {
           supplier: string | null;
           total_cents: number | null;
         };
+        ComputedFields: never;
         Relationships: [
           {
             foreignKeyName: "stock_movements_item_id_fkey";
@@ -2679,6 +2724,7 @@ export type Database = {
           payments_cents: number | null;
           stock_cents: number | null;
         };
+        ComputedFields: never;
         Relationships: [];
       };
       supplier_usage: {
@@ -2687,6 +2733,7 @@ export type Database = {
           name: string | null;
           uses: number | null;
         };
+        ComputedFields: never;
         Relationships: [];
       };
     };
@@ -2710,7 +2757,7 @@ export type Database = {
         Returns: undefined;
       };
       backup_table: { Args: { p_table: string }; Returns: Json };
-      backup_tables: { Args: never; Returns: string[] };
+      backup_tables: { Args: Record<PropertyKey, never>; Returns: string[] };
       create_access_key: {
         Args: {
           p_car_id?: string;
@@ -2745,7 +2792,7 @@ export type Database = {
         };
       };
       issue_invoice_number: { Args: { p_job_id: string }; Returns: string };
-      keepalive: { Args: never; Returns: boolean };
+      keepalive: { Args: Record<PropertyKey, never>; Returns: boolean };
       move_photo_to_album: {
         Args: { p_album_id: string; p_attachment_id: string };
         Returns: undefined;
@@ -2864,8 +2911,8 @@ export type Database = {
           mime_type: string;
         }[];
       };
-      website_preview: { Args: never; Returns: Json };
-      website_snapshot: { Args: never; Returns: Json };
+      website_preview: { Args: Record<PropertyKey, never>; Returns: Json };
+      website_snapshot: { Args: Record<PropertyKey, never>; Returns: Json };
     };
     Enums: {
       account_kind: "wallet" | "partner" | "external";

@@ -4,6 +4,7 @@ import { carStatusLabel, carTitle, hasWorkshopMoney, type CarStatus, type OwnerP
 import { formatMoney } from '@/domain/money';
 import { formatPercentBp } from '@/domain/shares';
 import { formatDate } from '@/domain/dates';
+import { formatInteger } from '@/domain/quantity';
 import { cn } from '@/lib/utils';
 import { CarLogo } from '@/components/CarLogo';
 import type { Car } from './api';
@@ -70,7 +71,9 @@ export function CarCard({ car, people, lastJob }: { car: Car; people?: Pick<Owne
         <p className="text-sm text-muted-foreground">
           {lastJob
             ? `Last job ${formatDate(lastJob.date)} · ${lastJob.ref}${lastJob.count > 1 ? ` · ${lastJob.count} jobs` : ''}`
-            : 'No jobs yet'}
+            : car.owner_kind === 'customer'
+              ? 'No jobs yet'
+              : [car.fuel, car.mileage_km != null && `${formatInteger(car.mileage_km)} km`].filter(Boolean).join(' · ') || '—'}
         </p>
       )}
     </Link>

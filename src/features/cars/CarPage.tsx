@@ -171,7 +171,8 @@ function latestMileage(car: Car, jobs: Job[]): { km: number; date: string | null
 
 /** Jobs done on a car, newest first, with a button for a new one. */
 function CarJobs({ car, jobs }: { car: Car; jobs: Job[] }) {
-  if (hasWorkshopMoney(car) && jobs.length === 0) return null;
+  // our own cars get their services in V2; jobs on them are rare
+  if (car.owner_kind !== 'customer' && jobs.length === 0) return null;
   return (
     <section className="flex flex-col gap-2">
       <div className="flex items-center justify-between gap-2">
